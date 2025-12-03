@@ -1,70 +1,81 @@
-# Getting Started with Create React App
+## 環境変数は個人で作成お願いします
+.env
+.env.example
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## ディレクトリ構成
 
-## Available Scripts
-
-In the project directory, you can run:
-
-### `npm start`
-
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
-
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
-
-### `npm test`
-
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
-
-### `npm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+```
+fitness-gym-frontend/
+├── public/
+│   └── index.html
+├── src/
+│   ├── api/                    # API通信関連
+│   │   ├── axiosConfig.js     # Axios設定
+│   │   ├── authApi.js         # 認証API
+│   │   ├── customerApi.js     # 顧客API
+│   │   ├── lessonApi.js       # レッスンAPI
+│   │   ├── postureApi.js      # 姿勢API
+│   │   └── userApi.js         # ユーザーAPI
+│   │
+│   ├── components/             # 共通コンポーネント
+│   │   ├── common/            # 汎用コンポーネント
+│   │   │   ├── Sidebar.jsx
+│   │   │   ├── MainLayout.jsx
+│   │   │   └── Header.jsx
+│   │   │
+│   │   ├── customer/          # 顧客関連コンポーネント
+│   │   │   ├── CustomerCard.jsx
+│   │   │   └── CustomerForm.jsx
+│   │   │
+│   │   ├── lesson/            # レッスン関連コンポーネント
+│   │   │   ├── LessonCard.jsx
+│   │   │   └── LessonForm.jsx
+│   │   │
+│   │   └── posture/           # 姿勢関連コンポーネント
+│   │       ├── PostureCard.jsx
+│   │       └── PostureComparisonView.jsx
+│   │
+│   ├── pages/                 # ページコンポーネント
+│   │   ├── Login.jsx
+│   │   ├── ShopManagement.jsx
+│   │   ├── CustomerSelect.jsx
+│   │   ├── LessonForm.jsx
+│   │   ├── LessonHistory.jsx
+│   │   ├── CustomerProfile.jsx
+│   │   ├── PostureList.jsx
+│   │   ├── PostureDetail.jsx
+│   │   ├── PostureCompare.jsx
+│   │   ├── CustomerManagement.jsx
+│   │   ├── CustomerList.jsx
+│   │   ├── UserManagement.jsx
+│   │   └── UserList.jsx
+│   │
+│   ├── hooks/                 # カスタムフック
+│   │   ├── useAuth.js
+│   │   ├── useCustomer.js
+│   │   └── useLesson.js
+│   │
+│   ├── context/               # Context API
+│   │   └── AuthContext.jsx
+│   │
+│   ├── utils/                 # ユーティリティ関数
+│   │   ├── dateFormatter.js
+│   │   └── validators.js
+│   │
+│   ├── constants/             # 定数
+│   │   └── apiEndpoints.js
+│   │
+│   ├── styles/                # スタイル
+│   │   └── index.css
+│   │
+│   ├── App.jsx                # メインアプリケーション
+│   ├── index.js               # エントリーポイント
+│   └── routes.jsx             # ルーティング設定
+│
+├── .env                       # 環境変数
+├── .env.example              # 環境変数サンプル
+├── .gitignore
+├── package.json
+├── tailwind.config.js
+└── README.md
+```
