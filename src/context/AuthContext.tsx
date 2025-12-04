@@ -18,18 +18,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   useEffect(() => {
     const initAuth = async () => {
-      const token = localStorage.getItem('token');
-      const savedUser = localStorage.getItem('user');
-      
-      if (token && savedUser) {
-        try {
-          const currentUser = await authApi.getCurrentUser();
-          setUser(currentUser);
-        } catch (error) {
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-        }
-      }
+      // 一時的に認証チェックを無効化（開発用）
+      // const token = localStorage.getItem('token');
+      // const savedUser = localStorage.getItem('user');
+
+      // if (token && savedUser) {
+      //   try {
+      //     const currentUser = await authApi.getCurrentUser();
+      //     setUser(currentUser);
+      //   } catch (error) {
+      //     localStorage.removeItem('token');
+      //     localStorage.removeItem('user');
+      //   }
+      // }
       setLoading(false);
     };
 
@@ -44,7 +45,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const logout = async () => {
-    await authApi.logout();
+    // 一時的にAPI呼び出しを無効化（開発用）
+    // await authApi.logout();
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
     setUser(null);
   };
 

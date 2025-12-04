@@ -27,7 +27,9 @@ const PrivateRoute: React.FC<{ children: React.ReactElement }> = ({ children }) 
     return <Loading />;
   }
 
-  return isAuthenticated ? children : <Navigate to={ROUTES.LOGIN} replace />;
+  // 一時的に認証チェックを無効化（開発用）
+  return children;
+  // return isAuthenticated ? children : <Navigate to={ROUTES.LOGIN} replace />;
 };
 
 const AppRoutes: React.FC = () => {
