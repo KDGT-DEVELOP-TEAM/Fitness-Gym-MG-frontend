@@ -23,8 +23,8 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#E5E5E5' }}>
-      <div className="w-full max-w-md px-8 py-16 rounded-3xl" style={{ backgroundColor: '#68BE6B' }}>
+    <div className="min-h-screen flex items-center justify-center bg-login-bg">
+      <div className="w-full max-w-md px-8 py-16 rounded-3xl bg-login-card font-poppins">
         <h2 className="text-5xl font-normal text-white text-center mb-12">Login</h2>
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
@@ -60,8 +60,7 @@ export const Login: React.FC = () => {
           <div className="pt-8">
             <button
               type="submit"
-              className="w-full py-4 rounded-lg text-white text-xl font-normal transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50"
-              style={{ backgroundColor: '#FDB7B7' }}
+              className="w-full py-4 rounded-lg text-white text-xl font-normal bg-login-button transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50"
             >
               Sign in
             </button>

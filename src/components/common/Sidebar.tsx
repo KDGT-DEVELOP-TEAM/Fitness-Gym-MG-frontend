@@ -16,7 +16,7 @@ export const Sidebar: React.FC = () => {
   ];
 
   return (
-    <aside className="w-64 text-white min-h-screen flex flex-col" style={{ backgroundColor: '#6B8E6B', fontFamily: 'Poppins, sans-serif' }}>
+    <aside className="w-64 bg-sidebar text-white min-h-screen flex flex-col font-poppins">
       <nav className="flex-1 p-4">
         <ul className="space-y-2">
           {menuItems.map((item) => {
@@ -25,20 +25,12 @@ export const Sidebar: React.FC = () => {
               <li key={item.path}>
                 <Link
                   to={item.path}
-                  className="block transition-all"
-                  style={{
-                    borderRadius: '20px',
-                    padding: '0',
-                  }}
+                  className="block rounded-20 p-0 transition-all"
                 >
                   <div
-                    style={{
-                      borderRadius: '20px',
-                      padding: '20px 24px 0.5px',
-                      backgroundColor: isActive ? 'rgba(122, 183, 122, 0.4)' : 'transparent',
-                      boxShadow: isActive ? 'inset 0 2px 4px rgba(0, 0, 0, 0.1)' : 'none',
-                      transition: 'background-color 0.2s',
-                    }}
+                    className={`rounded-20 px-6 pt-5 pb-[0.5px] transition-colors duration-200 ${
+                      isActive ? 'bg-sidebar-hover shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)]' : 'bg-transparent'
+                    }`}
                     onMouseEnter={(e) => {
                       if (!isActive) {
                         e.currentTarget.style.backgroundColor = 'rgba(122, 183, 122, 0.4)';
@@ -54,14 +46,7 @@ export const Sidebar: React.FC = () => {
                       {item.icon && item.icon}
                       <span className="text-lg">{item.label}</span>
                     </div>
-                    <div
-                      className="bg-white"
-                      style={{
-                        height: '3px',
-                        marginTop: '12px',
-                        opacity: isActive ? 1 : 0.3
-                      }}
-                    />
+                    <div className={`bg-white h-[3px] mt-3 ${isActive ? 'opacity-100' : 'opacity-30'}`} />
                   </div>
                 </Link>
               </li>
@@ -73,19 +58,10 @@ export const Sidebar: React.FC = () => {
       <div className="p-4">
         <button
           onClick={logout}
-          className="block w-full transition-all text-left"
-          style={{
-            borderRadius: '20px',
-            padding: '0',
-          }}
+          className="block w-full rounded-20 p-0 transition-all text-left"
         >
           <div
-            style={{
-              borderRadius: '20px',
-              padding: '20px 24px 0.5px',
-              backgroundColor: 'transparent',
-              transition: 'background-color 0.2s',
-            }}
+            className="rounded-20 px-6 pt-5 pb-[0.5px] bg-transparent transition-colors duration-200"
             onMouseEnter={(e) => {
               e.currentTarget.style.backgroundColor = 'rgba(122, 183, 122, 0.4)';
             }}
@@ -99,14 +75,7 @@ export const Sidebar: React.FC = () => {
               </svg>
               <span className="text-lg">Log out</span>
             </div>
-            <div
-              className="bg-white"
-              style={{
-                height: '3px',
-                marginTop: '12px',
-                opacity: 0.3
-              }}
-            />
+            <div className="bg-white h-[3px] mt-3 opacity-30" />
           </div>
         </button>
       </div>
