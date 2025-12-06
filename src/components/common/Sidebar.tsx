@@ -48,28 +48,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ menuItems }) => {
         </ul>
       </nav>
 
-      <div className="p-4">
+      <div className="p-4 pb-8">
         <button
           onClick={logout}
-          className="block w-full rounded-20 p-0 transition-all text-left"
+          className="w-full text-center text-lg text-white hover:opacity-60 transition-opacity"
         >
-          <div
-            className="rounded-20 px-6 pt-5 pb-[0.5px] bg-transparent transition-colors duration-200"
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(122, 183, 122, 0.4)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'transparent';
-            }}
-          >
-            <div className="flex items-center gap-3">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-              <span className="text-lg">Log out</span>
-            </div>
-            <div className="bg-white h-[3px] mt-3 opacity-30" />
-          </div>
+          Log out
         </button>
       </div>
     </aside>
