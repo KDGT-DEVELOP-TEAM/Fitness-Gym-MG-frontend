@@ -34,10 +34,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ menuItems }) => {
     <aside className="w-64 bg-sidebar text-white min-h-screen flex flex-col font-poppins">
       <nav className="flex-1 p-4">
         <ul className="space-y-2">
-          {menuItems.map((item, index) => {
+          {menuItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
-              <li key={`${item.path}-${index}`}>
+              <li key={item.path}>
                 <Link
                   to={item.path}
                   className="block rounded-20 p-0 transition-all"
