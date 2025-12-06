@@ -4,7 +4,8 @@ import { authApi } from '../api/authApi';
 
 interface AuthContextType {
   user: User | null;
-  loading: boolean;
+  authLoading: boolean;
+  actionLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
@@ -14,52 +15,71 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(true); // 認証初期化中
+  const [actionLoading, setActionLoading] = useState(false); // アクション実行中（login/logoutなど）
 
   useEffect(() => {
     const initAuth = async () => {
-      // 一時的に認証チェックを無効化（開発用）
-      // const token = localStorage.getItem('token');
-      // const savedUser = localStorage.getItem('user');
+      const token = localStorage.getItem('token');
 
-      // if (token && savedUser) {
-      //   try {
-      //     const currentUser = await authApi.getCurrentUser();
-      //     setUser(currentUser);
-      //   } catch (error) {
-      //     localStorage.removeItem('token');
-      //     localStorage.removeItem('user');
-      //   }
-      // }
-      setLoading(false);
+      if (token) {
+        try {
+          // getCurrentUser()が成功して初めて認証済みと判断
+          const currentUser = await authApi.getCurrentUser();
+          setUser(currentUser);
+        } catch (error) {
+          // トークンがあっても getCurrentUser() が失敗したら未認証
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          setUser(null);
+        }
+      }
+      setAuthLoading(false);
     };
 
     initAuth();
   }, []);
 
   const login = async (email: string, password: string) => {
-    const response = await authApi.login({ email, password });
-    localStorage.setItem('token', response.token);
-    localStorage.setItem('user', JSON.stringify(response.user));
-    setUser(response.user);
+    setActionLoading(true);
+    try {
+      // ログイン実行
+      const response = await authApi.login({ email, password });
+      localStorage.setItem('token', response.token);
+
+      // getCurrentUser()で認証を確定
+      const currentUser = await authApi.getCurrentUser();
+      setUser(currentUser);
+      localStorage.setItem('user', JSON.stringify(currentUser));
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const logout = async () => {
-    // 一時的にAPI呼び出しを無効化（開発用）
-    // await authApi.logout();
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setUser(null);
+    setActionLoading(true);
+    try {
+      await authApi.logout();
+    } catch (error) {
+      // ログアウトAPIが失敗してもローカルの状態はクリア
+      console.error('Logout API failed:', error);
+    } finally {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      setUser(null);
+      setActionLoading(false);
+    }
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        loading,
+        authLoading,
+        actionLoading,
         login,
         logout,
-        isAuthenticated: !!user,
+        isAuthenticated: !!user, // userがあれば認証済み
       }}
     >
       {children}
