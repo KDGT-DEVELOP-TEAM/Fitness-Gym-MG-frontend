@@ -15,7 +15,7 @@ interface MainLayoutProps {
 
 export const MainLayout: React.FC<MainLayoutProps> = ({ children, menuItems }) => {
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen bg-[#FAF8F3]">
       <Sidebar menuItems={menuItems} />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />
