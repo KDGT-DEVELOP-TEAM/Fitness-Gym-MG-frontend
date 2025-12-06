@@ -4,8 +4,6 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { MainLayout } from './components/common/MainLayout';
 import { Loading } from './components/common/Loading';
 import { ROUTES } from './constants/routes';
-
-// Pages
 import { Login } from './pages/Login';
 import { ShopManagement } from './pages/ShopManagement';
 import { CustomerSelect } from './pages/CustomerSelect';
@@ -19,15 +17,33 @@ import { CustomerManagement } from './pages/CustomerManagement';
 import { CustomerList } from './pages/CustomerList';
 import { UserManagement } from './pages/UserManagement';
 import { UserList } from './pages/UserList';
+import { HiHome } from 'react-icons/hi';
+
+// アイコンコンポーネント
+const HomeIcon = (props: { className?: string }) => {
+  const Icon = HiHome as any;
+  return <Icon {...props} />;
+};
+
+// ページごとのメニュー項目
+const shopManagementMenuItems = [
+  { path: ROUTES.SHOP_MANAGEMENT, label: 'Home', icon: <HomeIcon className="w-5 h-5" /> },
+];
+
+const defaultMenuItems = [
+  { path: ROUTES.SHOP_MANAGEMENT, label: 'Home', icon: <HomeIcon className="w-5 h-5" /> },
+];
 
 const PrivateRoute: React.FC<{ children: React.ReactElement }> = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
+  const { authLoading, isAuthenticated } = useAuth();
 
-  if (loading) {
+  if (authLoading) {
     return <Loading />;
   }
 
-  return isAuthenticated ? children : <Navigate to={ROUTES.LOGIN} replace />;
+  // 開発中: 認証をスキップ
+  return children;
+  // return isAuthenticated ? children : <Navigate to={ROUTES.LOGIN} replace />;
 };
 
 const AppRoutes: React.FC = () => {
@@ -40,7 +56,7 @@ const AppRoutes: React.FC = () => {
             path={ROUTES.SHOP_MANAGEMENT}
             element={
               <PrivateRoute>
-                <MainLayout>
+                <MainLayout menuItems={shopManagementMenuItems}>
                   <ShopManagement />
                 </MainLayout>
               </PrivateRoute>
@@ -50,7 +66,7 @@ const AppRoutes: React.FC = () => {
             path={ROUTES.CUSTOMER_SELECT}
             element={
               <PrivateRoute>
-                <MainLayout>
+                <MainLayout menuItems={defaultMenuItems}>
                   <CustomerSelect />
                 </MainLayout>
               </PrivateRoute>
@@ -60,7 +76,7 @@ const AppRoutes: React.FC = () => {
             path={ROUTES.LESSON_FORM}
             element={
               <PrivateRoute>
-                <MainLayout>
+                <MainLayout menuItems={defaultMenuItems}>
                   <LessonForm />
                 </MainLayout>
               </PrivateRoute>
@@ -70,7 +86,7 @@ const AppRoutes: React.FC = () => {
             path={ROUTES.LESSON_HISTORY}
             element={
               <PrivateRoute>
-                <MainLayout>
+                <MainLayout menuItems={defaultMenuItems}>
                   <LessonHistory />
                 </MainLayout>
               </PrivateRoute>
@@ -80,7 +96,7 @@ const AppRoutes: React.FC = () => {
             path={ROUTES.CUSTOMER_PROFILE}
             element={
               <PrivateRoute>
-                <MainLayout>
+                <MainLayout menuItems={defaultMenuItems}>
                   <CustomerProfile />
                 </MainLayout>
               </PrivateRoute>
@@ -90,7 +106,7 @@ const AppRoutes: React.FC = () => {
             path={ROUTES.POSTURE_LIST}
             element={
               <PrivateRoute>
-                <MainLayout>
+                <MainLayout menuItems={defaultMenuItems}>
                   <PostureList />
                 </MainLayout>
               </PrivateRoute>
@@ -100,7 +116,7 @@ const AppRoutes: React.FC = () => {
             path={ROUTES.POSTURE_DETAIL}
             element={
               <PrivateRoute>
-                <MainLayout>
+                <MainLayout menuItems={defaultMenuItems}>
                   <PostureDetail />
                 </MainLayout>
               </PrivateRoute>
@@ -110,7 +126,7 @@ const AppRoutes: React.FC = () => {
             path={ROUTES.POSTURE_COMPARE}
             element={
               <PrivateRoute>
-                <MainLayout>
+                <MainLayout menuItems={defaultMenuItems}>
                   <PostureCompare />
                 </MainLayout>
               </PrivateRoute>
@@ -120,7 +136,7 @@ const AppRoutes: React.FC = () => {
             path={ROUTES.CUSTOMER_MANAGEMENT}
             element={
               <PrivateRoute>
-                <MainLayout>
+                <MainLayout menuItems={defaultMenuItems}>
                   <CustomerManagement />
                 </MainLayout>
               </PrivateRoute>
@@ -130,7 +146,7 @@ const AppRoutes: React.FC = () => {
             path={ROUTES.CUSTOMER_LIST}
             element={
               <PrivateRoute>
-                <MainLayout>
+                <MainLayout menuItems={defaultMenuItems}>
                   <CustomerList />
                 </MainLayout>
               </PrivateRoute>
@@ -140,7 +156,7 @@ const AppRoutes: React.FC = () => {
             path={ROUTES.USER_MANAGEMENT}
             element={
               <PrivateRoute>
-                <MainLayout>
+                <MainLayout menuItems={defaultMenuItems}>
                   <UserManagement />
                 </MainLayout>
               </PrivateRoute>
@@ -150,7 +166,7 @@ const AppRoutes: React.FC = () => {
             path={ROUTES.USER_LIST}
             element={
               <PrivateRoute>
-                <MainLayout>
+                <MainLayout menuItems={defaultMenuItems}>
                   <UserList />
                 </MainLayout>
               </PrivateRoute>
