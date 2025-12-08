@@ -1,6 +1,11 @@
 import { AxiosError } from 'axios';
 
 export const getErrorMessage = (error: unknown): string => {
+  // error が null/undefined やオブジェクトでない場合は早期リターン
+  if (!error || typeof error !== 'object') {
+    return '予期しないエラーが発生しました';
+  }
+
   if (error instanceof Error) {
     // ネットワークエラー
     if (error.message === 'Network Error' || !navigator.onLine) {
@@ -21,7 +26,7 @@ export const getErrorMessage = (error: unknown): string => {
         case 403:
           return 'アクセス権限がありません';
         case 404:
-          return '要求されたリソースが見つかりません';
+          return '登録されていないメールアドレスです';
         case 500:
         case 502:
         case 503:

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { ROUTES } from '../constants/routes';
-import { getErrorMessage } from '../utils/errorMessages';
+import { getErrorMessage } from '../utils/loginErrorMessages';
 
 export const Login: React.FC = () => {
   const [email, setEmail] = useState('');
