@@ -1,40 +1,98 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ROUTES } from '../../constants/routes';
+import { useAuth } from '../../hooks/useAuth';
 
-export const Sidebar: React.FC = () => {
+interface MenuItem {
+  path: string;
+  label: string;
+  icon: React.ReactNode;
+}
+
+interface SidebarProps {
+  menuItems: MenuItem[];
+}
+
+export const Sidebar: React.FC<SidebarProps> = ({ menuItems }) => {
   const location = useLocation();
+  const { logout } = useAuth();
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  const menuItems = [
-    { path: ROUTES.SHOP_MANAGEMENT, label: '店舗管理' },
-    { path: ROUTES.CUSTOMER_SELECT, label: '顧客選択' },
-    { path: ROUTES.LESSON_FORM, label: 'レッスン登録' },
-    { path: ROUTES.LESSON_HISTORY, label: 'レッスン履歴' },
-    { path: ROUTES.POSTURE_LIST, label: '姿勢一覧' },
-    { path: ROUTES.CUSTOMER_MANAGEMENT, label: '顧客管理' },
-    { path: ROUTES.USER_MANAGEMENT, label: 'ユーザー管理' },
-  ];
+  const handleLogoutClick = () => {
+    setShowLogoutModal(true);
+  };
+
+  const handleConfirmLogout = () => {
+    setShowLogoutModal(false);
+    logout();
+  };
+
+  const handleCancelLogout = () => {
+    setShowLogoutModal(false);
+  };
 
   return (
-    <aside className="w-64 bg-gray-800 text-white min-h-screen">
-      <nav className="p-4">
+    <aside className="w-64 bg-sidebar text-white min-h-screen flex flex-col font-poppins">
+      <nav className="flex-1 p-4">
         <ul className="space-y-2">
-          {menuItems.map((item) => (
-            <li key={item.path}>
-              <Link
-                to={item.path}
-                className={`block px-4 py-2 rounded ${
-                  location.pathname === item.path
-                    ? 'bg-gray-700 text-white'
-                    : 'text-gray-300 hover:bg-gray-700'
-                }`}
-              >
-                {item.label}
-              </Link>
-            </li>
-          ))}
+          {menuItems.map((item) => {
+            const isActive = location.pathname === item.path;
+            return (
+              <li key={item.path}>
+                <Link
+                  to={item.path}
+                  className="block rounded-20 p-0 transition-all"
+                >
+                  <div
+                    className={`rounded-20 px-6 pt-5 pb-[0.5px] transition-colors duration-200 ${ /*ホバースタイル　*/
+                      isActive
+                        ? 'bg-sidebar-hover shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)]'
+                        : 'bg-transparent hover:bg-[rgba(122,183,122,0.4)]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      {item.icon && item.icon}
+                      <span className="text-lg">{item.label}</span>
+                    </div>
+                    <div className="bg-white h-[3px] mt-3" />
+                  </div>
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       </nav>
+
+      <div className="p-4 pb-8 flex justify-center">
+        <button
+          onClick={handleLogoutClick}
+          className="text-center text-lg text-white px-6 py-2 rounded-xl bg-[rgba(122,183,122,0.4)] border border-[rgba(122,183,122,0.6)] hover:bg-[rgba(122,183,122,0.5)] transition-all"
+        >
+          Log out
+        </button>
+      </div>
+
+      {showLogoutModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-[#FAF8F3] border border-[#DFDFDF] rounded-2xl p-8 max-w-md w-full mx-4 font-poppins">
+            <h3 className="text-2xl font-medium text-gray-800 mb-4">ログアウトしますか？</h3>
+            <p className="text-gray-600 mb-6">本当にログアウトしますか？</p>
+            <div className="flex gap-4 justify-end">
+              <button
+                onClick={handleCancelLogout}
+                className="px-6 py-2 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={handleConfirmLogout}
+                className="px-6 py-2 rounded-lg bg-[#FDB7B7] text-white hover:bg-red-600 transition-colors"
+              >
+                ログアウト
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </aside>
   );
 };
