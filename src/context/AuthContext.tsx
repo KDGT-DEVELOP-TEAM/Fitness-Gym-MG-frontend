@@ -51,6 +51,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const currentUser = await authApi.getCurrentUser();
       setUser(currentUser);
       localStorage.setItem('user', JSON.stringify(currentUser));
+    } catch (error) {
+      console.error('ログインに失敗しました:', error);
+      throw error; // UI側がハンドリングできるように返す
     } finally {
       setActionLoading(false);
     }
