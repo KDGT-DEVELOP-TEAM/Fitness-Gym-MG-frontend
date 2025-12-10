@@ -24,7 +24,10 @@ export const getErrorMessage = (error: unknown): string => {
         case 401:
           return 'メールアドレスまたはパスワードが正しくありません';
         case 403:
-          return 'アクセス権限がありません';
+          // 無効アカウント or アクセス権限なし
+          return message === 'Account is disabled' || message?.includes('無効')
+            ? 'アカウントが無効です'
+            : 'アクセス権限がありません';
         case 404:
           return '登録されていないメールアドレスです';
         case 500:

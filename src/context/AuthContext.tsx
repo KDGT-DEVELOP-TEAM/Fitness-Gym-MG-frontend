@@ -6,7 +6,7 @@ interface AuthContextType {
   user: User | null;
   authLoading: boolean;
   actionLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
 }
@@ -40,7 +40,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     initAuth();
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<User> => {
     setActionLoading(true);
     try {
       // ログイン実行
@@ -51,6 +51,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const currentUser = await authApi.getCurrentUser();
       setUser(currentUser);
       localStorage.setItem('user', JSON.stringify(currentUser));
+
+      return currentUser;
     } catch (error) {
       console.error('ログインに失敗しました:', error);
       throw error; // UI側がハンドリングできるように返す
