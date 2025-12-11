@@ -17,3 +17,36 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* Rechartsグラフの選択を無効化 */
+.recharts-wrapper,
+.recharts-surface {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+}
+
+.recharts-wrapper *,
+.recharts-surface * {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+}
+
+/* SVG要素のフォーカス時の青い枠線を削除 */
+.recharts-wrapper svg,
+.recharts-surface svg,
+svg:focus,
+svg *:focus {
+  outline: none !important;
+}
+
+/* Recharts内の全要素のフォーカス枠線を削除 */
+.recharts-wrapper *:focus,
+.recharts-surface *:focus,
+.recharts-layer:focus,
+.recharts-line:focus {
+  outline: none !important;
+}

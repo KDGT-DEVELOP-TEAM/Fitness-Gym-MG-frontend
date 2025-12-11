@@ -1,31 +1,337 @@
-import React from 'react';
-import { useCustomers } from '../hooks/useCustomer';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
+import { lessonApi } from '../api/lessonApi';
+import { AppointmentWithDetails } from '../types/lesson';
 import { ROUTES } from '../constants/routes';
+import { FiChevronRight, FiSearch, FiCalendar, FiUser, FiPhone, FiClock } from 'react-icons/fi';
+
+// アイコンコンポーネント
+const SearchIcon = (props: { className?: string; style?: React.CSSProperties }) => {
+  const Icon = FiSearch as any;
+  return <Icon {...props} />;
+};
+
+const ChevronRightIcon = (props: { className?: string; style?: React.CSSProperties }) => {
+  const Icon = FiChevronRight as any;
+  return <Icon {...props} />;
+};
+
+const CalendarIcon = (props: { className?: string; style?: React.CSSProperties }) => {
+  const Icon = FiCalendar as any;
+  return <Icon {...props} />;
+};
+
+const UserIcon = (props: { className?: string; style?: React.CSSProperties }) => {
+  const Icon = FiUser as any;
+  return <Icon {...props} />;
+};
+
+const PhoneIcon = (props: { className?: string; style?: React.CSSProperties }) => {
+  const Icon = FiPhone as any;
+  return <Icon {...props} />;
+};
+
+const ClockIcon = (props: { className?: string; style?: React.CSSProperties }) => {
+  const Icon = FiClock as any;
+  return <Icon {...props} />;
+};
+
+// 仮データ
+const mockAppointments: AppointmentWithDetails[] = [
+  {
+    id: '1',
+    customerId: 'c1',
+    instructorId: 'i1',
+    date: '2024-01-15',
+    startTime: '10:00:00',
+    endTime: '11:00:00',
+    createdAt: '2024-01-10T10:00:00Z',
+    updatedAt: '2024-01-10T10:00:00Z',
+    status: 'scheduled',
+    customer: { id: 'c1', name: '山田太郎', phone: '090-1234-5678' },
+    shop: { id: 's1', name: '渋谷店' },
+    lessonType: 'チェスト',
+  },
+  {
+    id: '2',
+    customerId: 'c2',
+    instructorId: 'i1',
+    date: '2024-01-15',
+    startTime: '14:00:00',
+    endTime: '15:00:00',
+    createdAt: '2024-01-10T10:00:00Z',
+    updatedAt: '2024-01-10T10:00:00Z',
+    status: 'scheduled',
+    customer: { id: 'c2', name: '佐藤花子', phone: '090-2345-6789' },
+    shop: { id: 's1', name: '新宿店' },
+    lessonType: 'レッグ',
+  },
+  {
+    id: '3',
+    customerId: 'c3',
+    instructorId: 'i1',
+    date: '2024-01-14',
+    startTime: '09:00:00',
+    endTime: '10:00:00',
+    createdAt: '2024-01-10T10:00:00Z',
+    updatedAt: '2024-01-10T10:00:00Z',
+    status: 'completed',
+    customer: { id: 'c3', name: '鈴木一郎', phone: '090-2345-6789'  },
+    shop: { id: 's2', name: '池袋店' },
+    lessonType: 'バック',
+  },
+];
 
 export const CustomerSelect: React.FC = () => {
-  const { customers, loading, error } = useCustomers();
+  const { user } = useAuth();
   const navigate = useNavigate();
+  const [appointments, setAppointments] = useState<AppointmentWithDetails[]>(mockAppointments);
+  const [displayedAppointments, setDisplayedAppointments] = useState<AppointmentWithDetails[]>(mockAppointments.slice(0, 10));
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [visibleCount, setVisibleCount] = useState(10); // 初期表示件数
 
-  if (loading) return <div>読み込み中...</div>;
-  if (error) return <div>エラー: {error.message}</div>;
+  useEffect(() => {
+    // 仮データを使用するため、コメントアウト
+    // if (user?.id) {
+    //   fetchAppointments();
+    // }
+  }, [user]);
+
+  useEffect(() => {
+    // 検索フィルタリング
+    if (searchQuery.trim() === '') {
+      setDisplayedAppointments(appointments.slice(0, visibleCount));
+    } else {
+      const filtered = appointments.filter((apt) =>
+        apt.customer.name.includes(searchQuery)
+      );
+      setDisplayedAppointments(filtered.slice(0, visibleCount));
+    }
+  }, [searchQuery, appointments, visibleCount]);
+
+  const fetchAppointments = async () => {
+    if (!user?.id) return;
+
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await lessonApi.getInstructorAppointments(user.id);
+      setAppointments(data);
+      setDisplayedAppointments(data.slice(0, visibleCount));
+    } catch (err) {
+      setError('予約情報の取得に失敗しました');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLoadMore = () => {
+    setVisibleCount((prev) => prev + 10);
+  };
+
+  const handleAppointmentClick = (customerId: string) => {
+    navigate(ROUTES.LESSON_HISTORY.replace(':id', customerId));
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return '済み';
+      case 'scheduled':
+        return '予定';
+      case 'cancelled':
+        return 'キャンセル';
+      default:
+        return status;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return 'bg-[#E8D4E8] text-[#9B6B9B]';
+      case 'scheduled':
+        return 'bg-[#E8D4E8] text-[#9B6B9B]';
+      case 'cancelled':
+        return 'bg-[#E8D4E8] text-[#9B6B9B]';
+      default:
+        return 'bg-[#E8D4E8] text-[#9B6B9B]';
+    }
+  };
+
+  const formatTime = (time: string) => {
+    // "HH:mm:ss" -> "HH:mm"
+    return time.substring(0, 5);
+  };
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+    const weekday = weekdays[date.getDay()];
+    return `今日 ${month}月${day}日 (${weekday})`;
+  };
+
+  const calculateDuration = (startTime: string, endTime: string) => {
+    const start = new Date(`2000-01-01 ${startTime}`);
+    const end = new Date(`2000-01-01 ${endTime}`);
+    const diffMs = end.getTime() - start.getTime();
+    const diffMins = Math.round(diffMs / 60000);
+    return diffMins;
+  };
+
+  // 日付ごとにグループ化
+  const groupedAppointments = displayedAppointments.reduce((acc, appointment) => {
+    const date = appointment.date;
+    if (!acc[date]) {
+      acc[date] = [];
+    }
+    acc[date].push(appointment);
+    return acc;
+  }, {} as Record<string, AppointmentWithDetails[]>);
+
+  const upcomingCount = appointments.filter(
+    (apt) => apt.status === 'scheduled'
+  ).length;
+
+  if (loading && appointments.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-gray-600">読み込み中...</div>
+      </div>
+    );
+  }
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-4">顧客選択</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {customers.map((customer) => (
-          <div
-            key={customer.id}
-            onClick={() => navigate(ROUTES.CUSTOMER_PROFILE.replace(':id', customer.id))}
-            className="p-4 border rounded-lg cursor-pointer hover:bg-gray-50"
-          >
-            <h3 className="font-semibold">{customer.name}</h3>
-            {customer.email && <p className="text-sm text-gray-600">{customer.email}</p>}
-          </div>
-        ))}
+    <div className="p-8 font-poppins">
+      <h1 className="text-3xl font-semibold mb-6 text-gray-800">顧客選択</h1>
+
+      {/* これからの予約件数 */}
+      <div className="mb-6">
+        <div className="border border-[#DFDFDF] bg-white rounded-[10px] flex items-center px-6 h-[65px]">
+          <CalendarIcon className="text-[#68BE6B] mr-3 w-[29px] h-[29px]" />
+          <p className="text-gray-700 text-[23px]">
+            これからの予約: <span className="font-semibold text-[#68BE6B]">{upcomingCount}</span>件
+          </p>
+        </div>
       </div>
+
+      {/* 検索バー */}
+      <div className="mb-6 flex justify-center">
+        <div className="relative border border-[#DFDFDF] rounded-[35px] h-[70px] max-w-[95%] w-full">
+          <SearchIcon className="absolute left-6 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <input
+            type="text"
+            placeholder="名前を入力"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full h-full pl-14 pr-6 rounded-[35px] border-none focus:outline-none focus:ring-2 focus:ring-[#68BE6B] text-base"
+          />
+        </div>
+      </div>
+
+      {error && (
+        <div className="mb-4 p-4 bg-red-50 text-red-600 rounded-lg">
+          {error}
+        </div>
+      )}
+
+      {/* 予約一覧 */}
+      <div className="space-y-6">
+        {displayedAppointments.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            {searchQuery ? '検索結果がありません' : '予約がありません'}
+          </div>
+        ) : (
+          Object.entries(groupedAppointments).map(([date, appointmentsForDate]) => (
+            <div key={date} className="space-y-3">
+              {/* 日付セパレーター */}
+              <div className="flex items-center gap-3 mb-4">
+                <div className="bg-[#68BE6B] text-white px-10 py-2 rounded-full font-medium text-sm whitespace-nowrap">
+                  {formatDate(date)}
+                </div>
+                <div className="flex-1 h-0.5 bg-[#68BE6B]"></div>
+              </div>
+
+              {/* その日の予約リスト */}
+              {appointmentsForDate.map((appointment) => (
+                <div
+                  key={appointment.id}
+                  onClick={() => handleAppointmentClick(appointment.customer.id)}
+                  className="group bg-white border border-[#DFDFDF] rounded-[15px] p-5 hover:shadow-md transition-shadow cursor-pointer flex items-center justify-between relative"
+                >
+                  {/* 右側の緑のアクセントバーと矢印 */}
+                  <div className="absolute right-4 top-4 bottom-4 bg-[#68BE6B] rounded-full w-[30px] transition-transform group-hover:scale-105">
+                    <ChevronRightIcon className="text-white absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex-shrink-0 w-7 h-7" />
+                  </div>
+
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-3">
+                      <span className="bg-[#68BE6B] text-white px-6 py-1 rounded-full text-lg font-semibold">
+                        {formatTime(appointment.startTime)}
+                      </span>
+                      <span
+                        className={`px-4 py-1.5 rounded-full text-sm font-semibold ${getStatusColor(
+                          appointment.status
+                        )}`}
+                      >
+                        {getStatusLabel(appointment.status)}
+                      </span>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <UserIcon className="text-[#FAB7B7] w-[18px] h-[18px]" />
+                        <p className="text-lg font-bold text-gray-900">
+                          {appointment.customer.name}
+                        </p>
+                      </div>
+                      {appointment.customer.phone && (
+                        <div className="flex items-center gap-2">
+                          <PhoneIcon className="text-[#FAB7B7] w-4 h-4" />
+                          <p className="text-sm text-gray-600">
+                            {appointment.customer.phone}
+                          </p>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-3 text-sm text-gray-600">
+                        {appointment.lessonType && (
+                          <span className="font-medium">{appointment.lessonType}</span>
+                        )}
+                        {appointment.lessonType && (
+                          <span>•</span>
+                        )}
+                        <div className="flex items-center gap-1 text-[#D3D3D3]">
+                          <ClockIcon className="w-4 h-4" />
+                          <span>
+                            {calculateDuration(appointment.startTime, appointment.endTime)}分
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* もっと見るボタン */}
+      {displayedAppointments.length < (searchQuery ? appointments.filter(apt => apt.customer.name.includes(searchQuery)).length : appointments.length) && (
+        <div className="mt-6 text-center">
+          <button
+            onClick={handleLoadMore}
+            className="px-8 py-3 rounded-lg bg-[#68BE6B] text-white font-medium hover:bg-[#5AB05D] transition-colors"
+          >
+            もっと見る
+          </button>
+        </div>
+      )}
     </div>
   );
 };
-

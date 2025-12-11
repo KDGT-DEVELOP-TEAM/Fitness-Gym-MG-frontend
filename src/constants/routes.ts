@@ -1,9 +1,9 @@
 export const ROUTES = {
   LOGIN: '/login',
   SHOP_MANAGEMENT: '/shop',
-  CUSTOMER_SELECT: '/customers/select',
+  CUSTOMER_SELECT: '/home',
   LESSON_FORM: '/lessons/new',
-  LESSON_HISTORY: '/lessons/history',
+  LESSON_HISTORY: '/lessons/history/:id',
   CUSTOMER_PROFILE: '/customers/:id',
   POSTURE_LIST: '/postures',
   POSTURE_DETAIL: '/postures/:id',

@@ -38,11 +38,8 @@ export const Login: React.FC = () => {
       if (user.role === 'instructor') {
         // トレーナー: 顧客選択画面へ
         navigate(ROUTES.CUSTOMER_SELECT);
-      } else if (user.role === 'admin' || user.role === 'staff') {
-        // 店長/本部管理者: 統計情報画面へ
-        navigate(ROUTES.SHOP_MANAGEMENT);
       } else {
-        // その他: デフォルトで統計情報画面へ
+        // 店長/本部管理者/その他: 店舗管理画面へ
         navigate(ROUTES.SHOP_MANAGEMENT);
       }
     } catch (err) {

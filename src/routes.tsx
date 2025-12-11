@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { MainLayout } from './components/common/MainLayout';
 import { Loading } from './components/common/Loading';
@@ -17,7 +17,7 @@ import { CustomerManagement } from './pages/CustomerManagement';
 import { CustomerList } from './pages/CustomerList';
 import { UserManagement } from './pages/UserManagement';
 import { UserList } from './pages/UserList';
-import { HiHome } from 'react-icons/hi';
+import { HiHome, HiClock } from 'react-icons/hi';
 
 // アイコンコンポーネント
 const HomeIcon = (props: { className?: string }) => {
@@ -25,9 +25,33 @@ const HomeIcon = (props: { className?: string }) => {
   return <Icon {...props} />;
 };
 
+const ClockIcon = (props: { className?: string }) => {
+  const Icon = HiClock as any;
+  return <Icon {...props} />;
+};
+
 // ページごとのメニュー項目
 const shopManagementMenuItems = [
   { path: ROUTES.SHOP_MANAGEMENT, label: 'Home', icon: <HomeIcon className="w-5 h-5" /> },
+];
+
+const customerSelectMenuItems = [
+  { path: ROUTES.CUSTOMER_SELECT, label: 'Home', icon: <HomeIcon className="w-5 h-5" /> },
+];
+
+// lessonHistoryMenuItemsは動的に生成する必要があるため、
+// Routeコンポーネント内で顧客IDを取得して使用します
+const getLessonHistoryMenuItems = (customerId: string) => [
+  { path: ROUTES.CUSTOMER_SELECT, label: 'Home', icon: <HomeIcon className="w-5 h-5" /> },
+  {
+    path: ROUTES.LESSON_HISTORY.replace(':id', customerId),
+    label: '履歴',
+    icon: <ClockIcon className="w-5 h-5" />,
+    subItems: [
+      { path: ROUTES.CUSTOMER_PROFILE.replace(':id', customerId), label: 'プロフィール' },
+      { path: `/postures/${customerId}`, label: '画像一覧' },
+    ],
+  },
 ];
 
 const defaultMenuItems = [
@@ -44,6 +68,37 @@ const PrivateRoute: React.FC<{ children: React.ReactElement }> = ({ children }) 
   // 開発中: 認証をスキップ
   return children;
   // return isAuthenticated ? children : <Navigate to={ROUTES.LOGIN} replace />;
+};
+
+// 顧客関連ページ用のラッパーコンポーネント（動的にメニューを生成）
+const LessonHistoryWithMenu: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const menuItems = getLessonHistoryMenuItems(id || 'current');
+  return (
+    <MainLayout menuItems={menuItems}>
+      <LessonHistory />
+    </MainLayout>
+  );
+};
+
+const CustomerProfileWithMenu: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const menuItems = getLessonHistoryMenuItems(id || 'current');
+  return (
+    <MainLayout menuItems={menuItems}>
+      <CustomerProfile />
+    </MainLayout>
+  );
+};
+
+const PostureListWithMenu: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const menuItems = getLessonHistoryMenuItems(id || 'current');
+  return (
+    <MainLayout menuItems={menuItems}>
+      <PostureList />
+    </MainLayout>
+  );
 };
 
 const AppRoutes: React.FC = () => {
@@ -66,7 +121,7 @@ const AppRoutes: React.FC = () => {
             path={ROUTES.CUSTOMER_SELECT}
             element={
               <PrivateRoute>
-                <MainLayout menuItems={defaultMenuItems}>
+                <MainLayout menuItems={customerSelectMenuItems}>
                   <CustomerSelect />
                 </MainLayout>
               </PrivateRoute>
@@ -86,9 +141,7 @@ const AppRoutes: React.FC = () => {
             path={ROUTES.LESSON_HISTORY}
             element={
               <PrivateRoute>
-                <MainLayout menuItems={defaultMenuItems}>
-                  <LessonHistory />
-                </MainLayout>
+                <LessonHistoryWithMenu />
               </PrivateRoute>
             }
           />
@@ -96,9 +149,7 @@ const AppRoutes: React.FC = () => {
             path={ROUTES.CUSTOMER_PROFILE}
             element={
               <PrivateRoute>
-                <MainLayout menuItems={defaultMenuItems}>
-                  <CustomerProfile />
-                </MainLayout>
+                <CustomerProfileWithMenu />
               </PrivateRoute>
             }
           />
@@ -106,9 +157,7 @@ const AppRoutes: React.FC = () => {
             path={ROUTES.POSTURE_LIST}
             element={
               <PrivateRoute>
-                <MainLayout menuItems={defaultMenuItems}>
-                  <PostureList />
-                </MainLayout>
+                <PostureListWithMenu />
               </PrivateRoute>
             }
           />

@@ -19,3 +19,18 @@ export interface LessonFormData {
   notes?: string;
 }
 
+// 予約一覧表示用の拡張型
+export interface AppointmentWithDetails extends Lesson {
+  customer: {
+    id: string;
+    name: string;
+    phone?: string;
+  };
+  shop: {
+    id: string;
+    name: string;
+  };
+  lessonType?: string;
+  status: 'scheduled' | 'completed' | 'cancelled';
+}
+
