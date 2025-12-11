@@ -49,7 +49,7 @@ const getLessonHistoryMenuItems = (customerId: string) => [
     icon: <ClockIcon className="w-5 h-5" />,
     subItems: [
       { path: ROUTES.CUSTOMER_PROFILE.replace(':id', customerId), label: 'プロフィール' },
-      { path: `/postures/${customerId}`, label: '画像一覧' },
+      { path: ROUTES.POSTURE_LIST.replace(':id', customerId), label: '画像一覧' },
     ],
   },
 ];

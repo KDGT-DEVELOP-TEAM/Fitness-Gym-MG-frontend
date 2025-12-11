@@ -22,7 +22,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ menuItems }) => {
   const location = useLocation();
   const { logout } = useAuth();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [expandedItem, setExpandedItem] = useState<string | null>(null);
 
   const handleLogoutClick = () => {
     setShowLogoutModal(true);
@@ -44,42 +43,38 @@ export const Sidebar: React.FC<SidebarProps> = ({ menuItems }) => {
           {menuItems.map((item) => {
             const isActive = location.pathname === item.path;
             const hasSubItems = item.subItems && item.subItems.length > 0;
-            const isExpanded = expandedItem === item.path;
 
             return (
               <li key={item.path}>
                 {hasSubItems ? (
                   <>
-                    <button
-                      onClick={() => setExpandedItem(isExpanded ? null : item.path)}
-                      className="w-full block rounded-20 p-0 transition-all"
+                    <div
+                      className={`rounded-20 px-6 pt-5 pb-[0.5px] transition-colors duration-200 ${
+                        isActive
+                          ? 'bg-sidebar-hover shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)]'
+                          : 'bg-transparent hover:bg-[rgba(122,183,122,0.4)]'
+                      }`}
                     >
-                      <div
-                        className={`rounded-20 px-6 pt-5 pb-[0.5px] transition-colors duration-200 ${
-                          isActive
-                            ? 'bg-sidebar-hover shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)]'
-                            : 'bg-transparent hover:bg-[rgba(122,183,122,0.4)]'
-                        }`}
+                      <Link
+                        to={item.path}
+                        className="block pb-2"
                       >
                         <div className="flex items-center gap-3">
                           {item.icon && item.icon}
                           <span className="text-lg">{item.label}</span>
                         </div>
-                        <div className="bg-white h-[3px] mt-3" />
-                      </div>
-                    </button>
-                    {isExpanded && (
-                      <ul className="ml-8 mt-2 space-y-1">
+                      </Link>
+                      <ul className="px-6 pt-2 pb-2 space-y-1">
                         {item.subItems?.map((subItem) => {
                           const isSubActive = location.pathname === subItem.path;
                           return (
                             <li key={subItem.path}>
                               <Link
                                 to={subItem.path}
-                                className={`block px-4 py-2 rounded-lg text-sm transition-colors ${
+                                className={`block py-1 text-base transition-colors ${
                                   isSubActive
-                                    ? 'bg-sidebar-hover'
-                                    : 'hover:bg-[rgba(122,183,122,0.3)]'
+                                    ? 'text-white font-medium'
+                                    : 'text-white/90 hover:text-white'
                                 }`}
                               >
                                 {subItem.label}
@@ -88,7 +83,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ menuItems }) => {
                           );
                         })}
                       </ul>
-                    )}
+                      <div className="bg-white h-[3px] mt-1" />
+                    </div>
                   </>
                 ) : (
                   <Link
