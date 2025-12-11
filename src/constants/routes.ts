@@ -4,6 +4,7 @@ export const ROUTES = {
   CUSTOMER_SELECT: '/customers/select',
   LESSON_FORM: '/lessons/new',
   LESSON_HISTORY: '/lessons/history',
+  LESSON_DETAIL: '/lessons/:id',
   CUSTOMER_PROFILE: '/customers/:id',
   POSTURE_LIST: '/postures',
   POSTURE_DETAIL: '/postures/:id',

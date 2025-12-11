@@ -19,38 +19,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [actionLoading, setActionLoading] = useState(false); // アクション実行中（login/logoutなど）
 
   useEffect(() => {
-    const initAuth = async () => {
-      const token = localStorage.getItem('token');
-
-      if (token) {
-        try {
-          // getCurrentUser()が成功して初めて認証済みと判断
-          const currentUser = await authApi.getCurrentUser();
-          setUser(currentUser);
-        } catch (error) {
-          // トークンがあっても getCurrentUser() が失敗したら未認証
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          setUser(null);
-        }
-      }
-      setAuthLoading(false);
-    };
-
-    initAuth();
+    const raw = localStorage.getItem('user');
+    if (raw) {
+      setUser(JSON.parse(raw) as User);
+    } else {
+      setUser(null);
+    }
+    setAuthLoading(false);
   }, []);
 
   const login = async (email: string, password: string) => {
     setActionLoading(true);
     try {
-      // ログイン実行
       const response = await authApi.login({ email, password });
       localStorage.setItem('token', response.token);
-
-      // getCurrentUser()で認証を確定
-      const currentUser = await authApi.getCurrentUser();
-      setUser(currentUser);
-      localStorage.setItem('user', JSON.stringify(currentUser));
+      localStorage.setItem('user', JSON.stringify(response.user));
+      setUser(response.user);
     } finally {
       setActionLoading(false);
     }

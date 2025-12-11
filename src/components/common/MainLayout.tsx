@@ -1,5 +1,4 @@
 import React, { ReactNode } from 'react';
-import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 
 interface MenuItem {
@@ -18,7 +17,6 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children, menuItems }) =
     <div className="flex h-screen bg-[#FAF8F3]">
       <Sidebar menuItems={menuItems} />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header />
         <main className="flex-1 overflow-y-auto p-6">{children}</main>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Posture } from '../types/posture';
 import { postureApi } from '../api/postureApi';
 import { PaginationParams } from '../types/common';
@@ -35,11 +35,7 @@ export const usePostures = (params?: PaginationParams) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  useEffect(() => {
-    fetchPostures();
-  }, [params?.page, params?.limit]);
-
-  const fetchPostures = async () => {
+  const fetchPostures = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -50,7 +46,11 @@ export const usePostures = (params?: PaginationParams) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [params]);
+
+  useEffect(() => {
+    fetchPostures();
+  }, [fetchPostures]);
 
   return { postures, loading, error, refetch: fetchPostures };
 };
@@ -60,13 +60,7 @@ export const usePosturesByCustomer = (customerId: string) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  useEffect(() => {
-    if (customerId) {
-      fetchPostures();
-    }
-  }, [customerId]);
-
-  const fetchPostures = async () => {
+  const fetchPostures = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -77,7 +71,13 @@ export const usePosturesByCustomer = (customerId: string) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [customerId]);
+
+  useEffect(() => {
+    if (customerId) {
+      fetchPostures();
+    }
+  }, [customerId, fetchPostures]);
 
   return { postures, loading, error, refetch: fetchPostures };
 };

@@ -9,6 +9,7 @@ import { ShopManagement } from './pages/ShopManagement';
 import { CustomerSelect } from './pages/CustomerSelect';
 import { LessonForm } from './pages/LessonForm';
 import { LessonHistory } from './pages/LessonHistory';
+import { LessonDetail } from './pages/LessonDetail';
 import { CustomerProfile } from './pages/CustomerProfile';
 import { PostureList } from './pages/PostureList';
 import { PostureDetail } from './pages/PostureDetail';
@@ -35,7 +36,7 @@ const defaultMenuItems = [
 ];
 
 const PrivateRoute: React.FC<{ children: React.ReactElement }> = ({ children }) => {
-  const { authLoading, isAuthenticated } = useAuth();
+  const { authLoading } = useAuth();
 
   if (authLoading) {
     return <Loading />;
@@ -52,6 +53,7 @@ const AppRoutes: React.FC = () => {
       <AuthProvider>
         <Routes>
           <Route path={ROUTES.LOGIN} element={<Login />} />
+          <Route path="/lesson-form" element={<Navigate to={ROUTES.CUSTOMER_SELECT} replace />} />
           <Route
             path={ROUTES.SHOP_MANAGEMENT}
             element={
@@ -88,6 +90,16 @@ const AppRoutes: React.FC = () => {
               <PrivateRoute>
                 <MainLayout menuItems={defaultMenuItems}>
                   <LessonHistory />
+                </MainLayout>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path={ROUTES.LESSON_DETAIL}
+            element={
+              <PrivateRoute>
+                <MainLayout menuItems={defaultMenuItems}>
+                  <LessonDetail />
                 </MainLayout>
               </PrivateRoute>
             }

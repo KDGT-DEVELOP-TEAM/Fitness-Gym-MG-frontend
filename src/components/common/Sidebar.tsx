@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 
 interface MenuItem {
@@ -14,16 +14,18 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ menuItems }) => {
   const location = useLocation();
-  const { logout } = useAuth();
+  const navigate = useNavigate();
+  const { logout, actionLoading } = useAuth();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const handleLogoutClick = () => {
     setShowLogoutModal(true);
   };
 
-  const handleConfirmLogout = () => {
+  const handleConfirmLogout = async () => {
     setShowLogoutModal(false);
-    logout();
+    await logout();
+    navigate('/login');
   };
 
   const handleCancelLogout = () => {
@@ -65,7 +67,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ menuItems }) => {
       <div className="p-4 pb-8 flex justify-center">
         <button
           onClick={handleLogoutClick}
-          className="text-center text-lg text-white px-6 py-2 rounded-xl bg-[rgba(122,183,122,0.4)] border border-[rgba(122,183,122,0.6)] hover:bg-[rgba(122,183,122,0.5)] transition-all"
+          type="button"
+          disabled={actionLoading}
+          className="text-center text-lg text-white px-6 py-2 rounded-xl bg-[rgba(122,183,122,0.4)] border border-[rgba(122,183,122,0.6)] hover:bg-[rgba(122,183,122,0.5)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Log out
         </button>
@@ -79,15 +83,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ menuItems }) => {
             <div className="flex gap-4 justify-end">
               <button
                 onClick={handleCancelLogout}
+                type="button"
                 className="px-6 py-2 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
               >
                 キャンセル
               </button>
               <button
                 onClick={handleConfirmLogout}
+                type="button"
+                disabled={actionLoading}
                 className="px-6 py-2 rounded-lg bg-[#FDB7B7] text-white hover:bg-red-600 transition-colors"
               >
-                ログアウト
+                {actionLoading ? '処理中...' : 'ログアウト'}
               </button>
             </div>
           </div>

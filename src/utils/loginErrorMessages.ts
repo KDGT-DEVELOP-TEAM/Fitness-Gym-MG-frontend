@@ -6,6 +6,19 @@ export const getErrorMessage = (error: unknown): string => {
     return '予期しないエラーが発生しました';
   }
 
+  // Supabase Auth エラー (status と message を持つ)
+  if ('status' in error && typeof (error as any).status === 'number' && 'message' in error) {
+    const status = (error as any).status as number;
+    const message = (error as any).message as string | undefined;
+    switch (status) {
+      case 400:
+      case 401:
+        return message || 'メールアドレスまたはパスワードが正しくありません';
+      default:
+        return message || 'サインインに失敗しました';
+    }
+  }
+
   if (error instanceof Error) {
     // ネットワークエラー
     if (error.message === 'Network Error' || !navigator.onLine) {

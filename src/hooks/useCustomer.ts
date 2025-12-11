@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Customer } from '../types/customer';
 import { customerApi } from '../api/customerApi';
 import { PaginationParams } from '../types/common';
@@ -35,11 +35,7 @@ export const useCustomers = (params?: PaginationParams) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  useEffect(() => {
-    fetchCustomers();
-  }, [params?.page, params?.limit]);
-
-  const fetchCustomers = async () => {
+  const fetchCustomers = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -50,7 +46,11 @@ export const useCustomers = (params?: PaginationParams) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [params?.page, params?.limit, params]);
+
+  useEffect(() => {
+    fetchCustomers();
+  }, [fetchCustomers]);
 
   return { customers, loading, error, refetch: fetchCustomers };
 };

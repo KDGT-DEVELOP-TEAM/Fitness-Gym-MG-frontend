@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Lesson } from '../types/lesson';
 import { lessonApi } from '../api/lessonApi';
 import { PaginationParams } from '../types/common';
@@ -35,11 +35,7 @@ export const useLessons = (params?: PaginationParams) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  useEffect(() => {
-    fetchLessons();
-  }, [params?.page, params?.limit]);
-
-  const fetchLessons = async () => {
+  const fetchLessons = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -50,7 +46,11 @@ export const useLessons = (params?: PaginationParams) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [params?.page, params?.limit, params]);
+
+  useEffect(() => {
+    fetchLessons();
+  }, [fetchLessons]);
 
   return { lessons, loading, error, refetch: fetchLessons };
 };
@@ -60,13 +60,7 @@ export const useLessonsByCustomer = (customerId: string) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  useEffect(() => {
-    if (customerId) {
-      fetchLessons();
-    }
-  }, [customerId]);
-
-  const fetchLessons = async () => {
+  const fetchLessons = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -77,7 +71,13 @@ export const useLessonsByCustomer = (customerId: string) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [customerId]);
+
+  useEffect(() => {
+    if (customerId) {
+      fetchLessons();
+    }
+  }, [customerId, fetchLessons]);
 
   return { lessons, loading, error, refetch: fetchLessons };
 };

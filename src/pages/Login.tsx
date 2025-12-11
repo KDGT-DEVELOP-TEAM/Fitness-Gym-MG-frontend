@@ -19,6 +19,7 @@ export const Login: React.FC = () => {
       await login(email, password);
       navigate(ROUTES.SHOP_MANAGEMENT);
     } catch (err) {
+      console.error('Login failed:', err);
       setError(getErrorMessage(err));
     }
   };
@@ -55,9 +56,13 @@ export const Login: React.FC = () => {
               className="w-full px-4 py-3 rounded-lg border-none focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed"
             />
             <div className="text-right mt-2">
-              <a href="#" className="text-white text-sm hover:underline">
+              <button
+                type="button"
+                className="text-white text-sm hover:underline"
+                onClick={() => setError('パスワードリセットは未実装です')}
+              >
                 Forgot Password?
-              </a>
+              </button>
             </div>
           </div>
           <div className="pt-8">

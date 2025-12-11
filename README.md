@@ -133,6 +133,121 @@ fitnessgym-mg-frontend/
 └── README.md
 ```
 
+## データベース構造
+
+### Stores（店舗）
+| カラム名 | 型 | 主キー | NOT NULL | UNIQUE | INDEX | 備考 |
+| --- | --- | --- | --- | --- | --- | --- |
+| id | uuid | ○ | ○ | ○ | ○ | 主キー |
+| name | varchar |  | ○ | ○ |  | 店舗名 |
+
+### Users（ユーザー）
+| カラム名 | 型 | 主キー | NOT NULL | UNIQUE | INDEX | 備考 |
+| --- | --- | --- | --- | --- | --- | --- |
+| id | uuid | ○ | ○ | ○ | ○ | 主キー |
+| email | varchar |  | ○ | ○ | ○ | メールアドレス（CHECK制約あり） |
+| kana | varchar |  | ○ |  |  | フリガナ |
+| name | varchar |  | ○ |  |  | 氏名 |
+| pass | varchar(255) |  | ○ |  |  | ハッシュ化パスワード（bcrypt、60文字） |
+| role | user_role |  | ○ |  |  | 権限区分 |
+| is_active | boolean |  | ○ |  |  | 有効／無効 |
+| created_at | timestamptz |  | ○ |  |  | 登録日時 |
+
+### Customers（顧客）
+| カラム名 | 型 | 主キー | NOT NULL | UNIQUE | INDEX | 備考 |
+| --- | --- | --- | --- | --- | --- | --- |
+| id | uuid | ○ | ○ | ○ | ○ | 主キー |
+| kana | varchar |  | ○ |  |  | フリガナ |
+| name | varchar |  | ○ |  |  | 氏名 |
+| gender | gender |  | ○ |  |  | 性別 |
+| birthday | date |  | ○ |  |  | 生年月日 |
+| height | numeric |  | ○ |  |  | 身長 |
+| email | varchar |  | ○ | ○ |  | メールアドレス |
+| phone | varchar |  | ○ |  |  | 電話番号 |
+| address | varchar |  | ○ |  |  | 住所 |
+| medical | varchar |  |  |  |  | 医療・既往歴 |
+| taboo | varchar |  |  |  |  | 禁忌事項 |
+| first_posture_group_id | uuid |  |  |  |  | FK → `posture_groups`（初回姿勢画像） |
+| memo | varchar |  |  |  |  | 自由記入メモ |
+| created_at | timestamptz |  | ○ |  |  | 登録日時 |
+| is_active | boolean |  | ○ |  |  | 有効／無効 |
+
+### Lessons（レッスン）
+| カラム名 | 型 | 主キー | NOT NULL | UNIQUE | INDEX | 備考 |
+| --- | --- | --- | --- | --- | --- | --- |
+| id | uuid | ○ | ○ | ○ | ○ | 主キー |
+| store_id | uuid |  | ○ |  |  | FK → `stores` |
+| user_id | uuid |  | ○ |  |  | FK → `users`（担当トレーナー） |
+| customer_id | uuid |  | ○ |  |  | FK → `customers` |
+| posture_group_id | uuid |  |  |  |  | FK → `posture_groups`（レッスン時姿勢） |
+| condition | varchar |  |  |  |  | 体調メモ |
+| weight | numeric |  |  |  |  | 体重 |
+| meal | varchar |  |  |  |  | 食事内容 |
+| memo | varchar |  |  |  |  | レッスンメモ |
+| start_date | timestamptz |  |  |  |  | レッスン開始日時 |
+| end_date | timestamptz |  |  |  |  | レッスン終了日時 |
+| next_date | timestamptz |  |  |  |  | 次回予約日時 |
+| next_store_id | uuid |  |  |  |  | FK → `stores`（次回予定店舗） |
+| next_user_id | uuid |  |  |  |  | FK → `users`（次回担当） |
+| created_at | timestamptz |  | ○ |  |  | 追加日時 |
+
+### Trainings（トレーニング）
+| カラム名 | 型 | 主キー | NOT NULL | UNIQUE | INDEX | 備考 |
+| --- | --- | --- | --- | --- | --- | --- |
+| lesson_id | uuid | ○ | ○ |  |  | 複合PK（lesson_id + order_no）、FK → `lessons` |
+| order_no | int | ○ | ○ |  |  | 複合PK（lesson_id + order_no） |
+| name | varchar |  | ○ |  |  | 種目名 |
+| reps | int |  | ○ |  |  | 回数 |
+
+### Logs（監査ログ）
+| カラム名 | 型 | 主キー | NOT NULL | UNIQUE | INDEX | 備考 |
+| --- | --- | --- | --- | --- | --- | --- |
+| id | uuid | ○ | ○ | ○ | ○ | 主キー |
+| user_id | uuid |  | ○ |  |  | FK → `users` |
+| action | varchar |  | ○ |  |  | 操作内容 |
+| target_table | varchar |  | ○ |  |  | 対象テーブル |
+| target_id | uuid |  | ○ |  |  | 対象レコードID |
+| created_at | timestamptz |  | ○ |  |  | 操作日時 |
+
+### Store_Customers（店舗×顧客）
+| カラム名 | 型 | 主キー | NOT NULL | UNIQUE | INDEX | 備考 |
+| --- | --- | --- | --- | --- | --- | --- |
+| store_id | uuid | ○ | ○ |  |  | 複合PK（store_id + customer_id）、FK → `stores` |
+| customer_id | uuid | ○ | ○ |  |  | 複合PK（store_id + customer_id）、FK → `customers` |
+
+### User_Stores（ユーザー×店舗）
+| カラム名 | 型 | 主キー | NOT NULL | UNIQUE | INDEX | 備考 |
+| --- | --- | --- | --- | --- | --- | --- |
+| user_id | uuid | ○ | ○ |  |  | 複合PK（user_id + store_id）、FK → `users` |
+| store_id | uuid | ○ | ○ |  |  | 複合PK（user_id + store_id）、FK → `stores` |
+
+### User_Customers（ユーザー×顧客）
+| カラム名 | 型 | 主キー | NOT NULL | UNIQUE | INDEX | 備考 |
+| --- | --- | --- | --- | --- | --- | --- |
+| user_id | uuid | ○ | ○ |  |  | 複合PK（user_id + customer_id）、FK → `users` |
+| customer_id | uuid | ○ | ○ |  |  | 複合PK（user_id + customer_id）、FK → `customers` |
+
+### posture_groups（姿勢画像グループ）
+| カラム名 | 型 | 主キー | NOT NULL | UNIQUE | INDEX | 備考 |
+| --- | --- | --- | --- | --- | --- | --- |
+| id | uuid | ○ | ○ | ○ | ○ | 主キー |
+| customer_id | uuid |  | ○ |  |  | FK → `customers` |
+| lesson_id | uuid |  | ○ |  |  | FK → `lessons` |
+| captured_at | timestamptz |  | ○ |  |  | 撮影日時 |
+| created_at | timestamptz |  | ○ |  |  | 追加日時 |
+
+### posture_images（姿勢画像）
+| カラム名 | 型 | 主キー | NOT NULL | UNIQUE | INDEX | 備考 |
+| --- | --- | --- | --- | --- | --- | --- |
+| id | uuid | ○ | ○ | ○ | ○ | 主キー |
+| posture_group_id | uuid |  | ○ |  |  | FK → `posture_groups` |
+| storage_key | varchar |  | ○ | ○ |  | ストレージ上のパス |
+| consent_publication | boolean |  | ○ |  |  | 公開同意フラグ |
+| taken_at | timestamptz |  | ○ |  |  | 撮影日時 |
+| created_at | timestamptz |  | ○ |  |  | 追加日時 |
+| position | posture_image_position |  | ○ |  |  | 撮影方向 |
+
+
 ## 主な機能
 
 ### 認証機能
