@@ -19,21 +19,39 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [actionLoading, setActionLoading] = useState(false); // アクション実行中（login/logoutなど）
 
   useEffect(() => {
-    const raw = localStorage.getItem('user');
-    if (raw) {
-      setUser(JSON.parse(raw) as User);
-    } else {
+    const init = async () => {
+      try {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          setUser(JSON.parse(storedUser) as User);
+          return;
+        }
+
+        const token = localStorage.getItem('token');
+        if (!token) {
       setUser(null);
-    }
+          return;
+        }
+
+        const userData = await authApi.getCurrentUser();
+        setUser(userData);
+      } catch (error) {
+        console.error('Failed to initialize auth:', error);
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setUser(null);
+      } finally {
     setAuthLoading(false);
+      }
+    };
+
+    init();
   }, []);
 
   const login = async (email: string, password: string) => {
     setActionLoading(true);
     try {
       const response = await authApi.login({ email, password });
-      localStorage.setItem('token', response.token);
-      localStorage.setItem('user', JSON.stringify(response.user));
       setUser(response.user);
     } finally {
       setActionLoading(false);
@@ -44,13 +62,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setActionLoading(true);
     try {
       await authApi.logout();
-    } catch (error) {
-      // ログアウトAPIが失敗してもローカルの状態はクリア
-      console.error('Logout API failed:', error);
-    } finally {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
       setUser(null);
+    } catch (error) {
+      console.error('Logout failed:', error);
+      setUser(null);
+    } finally {
       setActionLoading(false);
     }
   };

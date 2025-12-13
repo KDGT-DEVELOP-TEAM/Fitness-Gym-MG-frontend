@@ -4,10 +4,12 @@ import { ROUTES } from '../constants/routes';
 import { lessonApi } from '../api/lessonApi';
 import { Lesson } from '../types/lesson';
 import { supabase } from '../lib/supabase';
+import { formatDateTime } from '../utils/dateFormatter';
 
 type Option = { id: string; name: string };
 type PosturePosition = 'front' | 'right' | 'back' | 'left';
 type PosturePreview = { position: PosturePosition; url: string; storageKey: string };
+type Training = { name: string; reps: number };
 
 export const LessonDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -17,6 +19,7 @@ export const LessonDetail: React.FC = () => {
   const [users, setUsers] = useState<Option[]>([]);
   const [customers, setCustomers] = useState<Option[]>([]);
   const [posturePreviews, setPosturePreviews] = useState<PosturePreview[]>([]);
+  const [trainings, setTrainings] = useState<Training[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
 
@@ -75,25 +78,93 @@ export const LessonDetail: React.FC = () => {
       try {
         const data = await lessonApi.getById(id);
         setLesson(data);
-        // fetch posture images if any
         const client = supabase;
-        if (client && data.postureGroupId) {
-          const { data: imgs, error: imgErr } = await client
-            .from('posture_images')
-            .select('storage_key, position')
-            .eq('posture_group_id', data.postureGroupId);
-          if (!imgErr && imgs) {
-            const previews: PosturePreview[] = imgs.map((img: any) => {
-              const { data: publicUrl } = client.storage
-                .from('postures')
-                .getPublicUrl(img.storage_key);
-              return {
-                position: img.position as PosturePosition,
-                url: publicUrl.publicUrl,
-                storageKey: img.storage_key as string,
-              };
-            });
-            setPosturePreviews(previews);
+        
+        // fetch posture images if any
+        if (client) {
+          let postureGroupIdToUse = data.postureGroupId;
+          
+          // postureGroupIdがnullの場合、lesson_idからposture_groupsを検索
+          if (!postureGroupIdToUse) {
+            console.log('postureGroupId is null, searching by lesson_id:', id);
+            const { data: pgData, error: pgError } = await client
+              .from('posture_groups')
+              .select('id')
+              .eq('lesson_id', id)
+              .single();
+            
+            if (!pgError && pgData) {
+              postureGroupIdToUse = pgData.id;
+              console.log('Found posture_group by lesson_id:', postureGroupIdToUse);
+            } else {
+              console.log('No posture_group found for lesson_id:', id, pgError);
+            }
+          }
+          
+          if (postureGroupIdToUse) {
+            console.log('Fetching posture images for postureGroupId:', postureGroupIdToUse);
+            const { data: imgs, error: imgErr } = await client
+              .from('posture_images')
+              .select('storage_key, position')
+              .eq('posture_group_id', postureGroupIdToUse);
+            
+            if (imgErr) {
+              console.error('Error fetching posture images:', imgErr);
+            } else if (imgs && imgs.length > 0) {
+              console.log('Found posture images:', imgs);
+              const previewResults = await Promise.all(
+                imgs.map(async (img: any): Promise<PosturePreview | null> => {
+                  if (!img.storage_key) {
+                    console.warn('Missing storage_key for image:', img);
+                    return null;
+                  }
+                  console.log('Getting signed URL for storage_key:', img.storage_key, 'position:', img.position);
+                  // プライベートバケットの場合は署名付きURLを使用
+                  const { data: signedUrlData, error: signedUrlError } = await client.storage
+                    .from('postures')
+                    .createSignedUrl(img.storage_key, 3600); // 1時間有効
+                  
+                  if (signedUrlError) {
+                    console.error('Error creating signed URL for', img.position, ':', signedUrlError);
+                    // フォールバック: パブリックURLを試す
+                    const { data: publicUrl } = client.storage
+                      .from('postures')
+                      .getPublicUrl(img.storage_key);
+                    console.log('Using public URL as fallback for', img.position, ':', publicUrl.publicUrl);
+                    return {
+                      position: img.position as PosturePosition,
+                      url: publicUrl.publicUrl,
+                      storageKey: img.storage_key as string,
+                    };
+                  }
+                  
+                  console.log('Generated signed URL for', img.position, ':', signedUrlData?.signedUrl);
+                  return {
+                    position: img.position as PosturePosition,
+                    url: signedUrlData?.signedUrl || '',
+                    storageKey: img.storage_key as string,
+                  };
+                })
+              );
+              const validPreviews: PosturePreview[] = previewResults.filter((p): p is PosturePreview => p !== null);
+              setPosturePreviews(validPreviews);
+            } else {
+              console.log('No posture images found for postureGroupId:', postureGroupIdToUse);
+            }
+          } else {
+            console.log('No postureGroupId available for lesson:', id);
+          }
+        }
+
+        // fetch trainings
+        if (client) {
+          const { data: trainingsData, error: trainingsErr } = await client
+            .from('trainings')
+            .select('name, reps')
+            .eq('lesson_id', id)
+            .order('order_no');
+          if (!trainingsErr && trainingsData) {
+            setTrainings(trainingsData.map((t: any) => ({ name: t.name, reps: t.reps })));
           }
         }
       } catch (err) {
@@ -134,15 +205,8 @@ export const LessonDetail: React.FC = () => {
 
   if (error) {
     return (
-      <div className="p-6 space-y-4">
+      <div className="p-6">
         <p className="text-red-600">{error}</p>
-        <button
-          type="button"
-          className="px-4 py-2 bg-gray-200 rounded"
-          onClick={() => navigate(ROUTES.LESSON_HISTORY)}
-        >
-          履歴に戻る
-        </button>
       </div>
     );
   }
@@ -215,11 +279,11 @@ export const LessonDetail: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-y-3 md:gap-x-12 md:gap-y-4">
             <div className="flex flex-col gap-1">
               <label className="text-2xl font-semibold text-gray-800">開始時間：</label>
-              <input className={inputClass} value={lesson.startDate ?? ''} readOnly />
+              <input className={inputClass} value={lesson.startDate ? formatDateTime(lesson.startDate) : ''} readOnly />
             </div>
             <div className="flex flex-col gap-1">
               <label className="text-2xl font-semibold text-gray-800">終了時間：</label>
-              <input className={inputClass} value={lesson.endDate ?? ''} readOnly />
+              <input className={inputClass} value={lesson.endDate ? formatDateTime(lesson.endDate) : ''} readOnly />
             </div>
           </div>
         </div>
@@ -228,7 +292,7 @@ export const LessonDetail: React.FC = () => {
           <h2 className={sectionHeadingClass}>次回予約</h2>
           <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
             <span className="text-2xl font-semibold text-gray-800 whitespace-nowrap">日にち/時刻：</span>
-            <input className={`${inputClass} md:flex-1`} value={lesson.nextDate ?? ''} readOnly />
+            <input className={`${inputClass} md:flex-1`} value={lesson.nextDate ? formatDateTime(lesson.nextDate) : ''} readOnly />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6">
@@ -241,6 +305,45 @@ export const LessonDetail: React.FC = () => {
               <input className={`${inputClass} md:flex-1`} value={findName(users, lesson.nextUserId)} readOnly />
             </div>
           </div>
+        </div>
+
+        <div className="border-2 border-gray-300 rounded-lg p-4 space-y-3 bg-white">
+          <div className="text-lg font-medium text-gray-800">トレーニング内容</div>
+
+          {trainings.length === 0 && (
+            <p className="text-sm text-gray-500">トレーニング内容は登録されていません。</p>
+          )}
+
+          {trainings.map((t, idx) => (
+            <div
+              key={idx}
+              className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4 border border-gray-200 rounded-lg p-3 bg-gray-50"
+            >
+              <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3 flex-1">
+                <div className="flex items-center gap-2 md:min-w-[100px]">
+                  <span className="text-lg font-semibold text-gray-800">名称：</span>
+                </div>
+                <input
+                  type="text"
+                  className={`${inputClass} flex-1`}
+                  value={t.name}
+                  readOnly
+                />
+              </div>
+
+              <div className="flex items-center gap-2 md:gap-3">
+                <span className="text-lg font-semibold text-gray-800">回数：</span>
+                <div className="flex items-center gap-2 border-2 border-gray-300 rounded-lg px-2 py-1 bg-white">
+                  <input
+                    type="number"
+                    className="w-16 text-center border-none focus:outline-none text-lg bg-white"
+                    value={t.reps}
+                    readOnly
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
 
         <div className="space-y-2">
@@ -258,38 +361,38 @@ export const LessonDetail: React.FC = () => {
             <h2 className="text-lg font-semibold text-gray-800">姿勢（正面/右/背面/左）</h2>
             <span className="text-sm text-gray-500">閲覧専用</span>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="grid grid-cols-2 gap-3">
-              {(['front', 'right', 'back', 'left'] as PosturePosition[]).map((pos) => {
-                const preview = posturePreviews.find((p) => p.position === pos);
-                return (
-                  <div
-                    key={pos}
-                    className="border border-gray-200 rounded-lg p-2 flex flex-col space-y-2 bg-white"
-                  >
-                    <div className="text-sm font-medium text-gray-800">{labelMap[pos]}</div>
-                    <div className="h-24 bg-white flex items-center justify-center border border-dashed border-gray-200 rounded">
-                      {preview ? (
-                        <img src={preview.url} alt={pos} className="max-h-24 object-contain" />
-                      ) : (
-                        <span className="text-xs text-gray-500">なし</span>
-                      )}
-                    </div>
+          <div className="grid grid-cols-4 gap-3">
+            {(['front', 'right', 'back', 'left'] as PosturePosition[]).map((pos) => {
+              const preview = posturePreviews.find((p) => p.position === pos);
+              return (
+                <div
+                  key={pos}
+                  className="border border-gray-200 rounded-lg p-2 flex flex-col space-y-2 bg-white"
+                >
+                  <div className="text-sm font-medium text-gray-800">{labelMap[pos]}</div>
+                  <div className="h-24 bg-white flex items-center justify-center border border-dashed border-gray-200 rounded">
+                    {preview ? (
+                      <img 
+                        src={preview.url} 
+                        alt={pos} 
+                        className="max-h-24 object-contain" 
+                        onError={(e) => {
+                          console.error('Image load error for', pos, ':', preview.url);
+                          console.error('Storage key:', preview.storageKey);
+                          e.currentTarget.style.display = 'none';
+                        }}
+                        onLoad={() => {
+                          console.log('Image loaded successfully for', pos, ':', preview.url);
+                        }}
+                      />
+                    ) : (
+                      <span className="text-xs text-gray-500">なし</span>
+                    )}
                   </div>
-                );
-              })}
-            </div>
+                </div>
+              );
+            })}
           </div>
-        </div>
-
-        <div className="pt-4 flex gap-3 justify-end">
-          <button
-            type="button"
-            className="px-6 py-3 bg-gray-200 text-gray-800 rounded-lg shadow-sm hover:bg-gray-300"
-            onClick={() => navigate(ROUTES.LESSON_HISTORY)}
-          >
-            履歴に戻る
-          </button>
         </div>
       </div>
     </div>

@@ -5,7 +5,6 @@ import { MainLayout } from './components/common/MainLayout';
 import { Loading } from './components/common/Loading';
 import { ROUTES } from './constants/routes';
 import { Login } from './pages/Login';
-import { ShopManagement } from './pages/ShopManagement';
 import { CustomerSelect } from './pages/CustomerSelect';
 import { LessonForm } from './pages/LessonForm';
 import { LessonHistory } from './pages/LessonHistory';
@@ -27,12 +26,8 @@ const HomeIcon = (props: { className?: string }) => {
 };
 
 // ページごとのメニュー項目
-const shopManagementMenuItems = [
-  { path: ROUTES.SHOP_MANAGEMENT, label: 'Home', icon: <HomeIcon className="w-5 h-5" /> },
-];
-
 const defaultMenuItems = [
-  { path: ROUTES.SHOP_MANAGEMENT, label: 'Home', icon: <HomeIcon className="w-5 h-5" /> },
+  { path: ROUTES.LESSON_HISTORY, label: 'Home', icon: <HomeIcon className="w-5 h-5" /> },
 ];
 
 const PrivateRoute: React.FC<{ children: React.ReactElement }> = ({ children }) => {
@@ -54,16 +49,6 @@ const AppRoutes: React.FC = () => {
         <Routes>
           <Route path={ROUTES.LOGIN} element={<Login />} />
           <Route path="/lesson-form" element={<Navigate to={ROUTES.CUSTOMER_SELECT} replace />} />
-          <Route
-            path={ROUTES.SHOP_MANAGEMENT}
-            element={
-              <PrivateRoute>
-                <MainLayout menuItems={shopManagementMenuItems}>
-                  <ShopManagement />
-                </MainLayout>
-              </PrivateRoute>
-            }
-          />
           <Route
             path={ROUTES.CUSTOMER_SELECT}
             element={
@@ -184,7 +169,7 @@ const AppRoutes: React.FC = () => {
               </PrivateRoute>
             }
           />
-          <Route path="/" element={<Navigate to={ROUTES.SHOP_MANAGEMENT} replace />} />
+          <Route path="/" element={<Navigate to={ROUTES.LESSON_HISTORY} replace />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

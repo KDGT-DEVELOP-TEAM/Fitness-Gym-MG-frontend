@@ -1,6 +1,5 @@
 export const ROUTES = {
   LOGIN: '/login',
-  SHOP_MANAGEMENT: '/shop',
   CUSTOMER_SELECT: '/customers/select',
   LESSON_FORM: '/lessons/new',
   LESSON_HISTORY: '/lessons/history',

@@ -224,31 +224,48 @@ export const LessonForm: React.FC = () => {
 
         const fileName = `${position}.jpg`;
         const path = `postures/${formData.customerId}/${groupId}/${fileName}`;
-        const { error: uploadError } = await client.storage
+        console.log('Uploading image to path:', path, 'groupId:', groupId, 'position:', position, 'blob size:', blob.size);
+        const { data: uploadData, error: uploadError } = await client.storage
           .from('postures')
           .upload(path, blob, { contentType: 'image/jpeg', upsert: true });
         if (uploadError) {
-          console.error(uploadError);
-          setError('画像のアップロードに失敗しました');
+          console.error('Upload error:', uploadError);
+          console.error('Upload error details:', JSON.stringify(uploadError, null, 2));
+          setError(`画像のアップロードに失敗しました: ${uploadError.message || '不明なエラー'}`);
           updatePreview('');
           resolve();
           return;
         }
-        const { error: insertError } = await client.from('posture_images').upsert({
+        console.log('Upload successful:', uploadData);
+        console.log('Uploaded file path:', uploadData?.path);
+        // 同じポジションの既存レコードを削除
+        const { error: deleteError } = await client
+          .from('posture_images')
+          .delete()
+          .eq('posture_group_id', groupId)
+          .eq('position', position);
+        if (deleteError) {
+          console.error(deleteError);
+          // 削除エラーは警告として記録するが、続行する
+        }
+        // 新しいレコードを挿入
+        console.log('Inserting posture_image record with storage_key:', path);
+        const { data: insertData, error: insertError } = await client.from('posture_images').insert({
           posture_group_id: groupId,
           storage_key: path,
           position,
           consent_publication: false,
           taken_at: new Date().toISOString(),
           created_at: new Date().toISOString(),
-        });
+        }).select();
         if (insertError) {
-          console.error(insertError);
+          console.error('Insert error:', insertError);
           setError('画像情報の保存に失敗しました');
           updatePreview('');
           resolve();
           return;
         }
+        console.log('Insert successful:', insertData);
 
         updatePreview(path);
         resolve();
@@ -312,7 +329,11 @@ export const LessonForm: React.FC = () => {
 
     setLoading(true);
     try {
-      const created = await lessonApi.create({ ...formData, trainings: mergedTrainings });
+      const created = await lessonApi.create({ 
+        ...formData, 
+        postureGroupId: postureGroupId ?? undefined,
+        trainings: mergedTrainings 
+      });
       if (created?.id) {
         await linkPostureGroupToLesson(created.id);
       }
@@ -347,20 +368,20 @@ export const LessonForm: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 md:gap-y-5 md:gap-x-12">
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
               <label className={labelClass}>顧客：</label>
-              <select
+            <select
                 className={`${inputClass} sm:flex-1`}
                 value={formData.customerId}
                 onChange={(e) => setFormData({ ...formData, customerId: e.target.value })}
-                required
-              >
-                <option value="">選択してください</option>
+              required
+            >
+              <option value="">選択してください</option>
                 {customers.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+                </option>
+              ))}
+            </select>
+          </div>
 
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
               <label className={labelClass}>体重 (kg)：</label>
@@ -382,66 +403,66 @@ export const LessonForm: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 md:gap-y-5 md:gap-x-12">
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
               <label className={labelClass}>担当：</label>
-              <select
+            <select
                 className={`${inputClass} sm:flex-1`}
-                value={formData.userId}
-                onChange={(e) => setFormData({ ...formData, userId: e.target.value })}
-                required
-              >
-                <option value="">選択してください</option>
-                {users.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+              value={formData.userId}
+              onChange={(e) => setFormData({ ...formData, userId: e.target.value })}
+              required
+            >
+              <option value="">選択してください</option>
+              {users.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
               <label className={labelClass}>店舗：</label>
-              <select
+            <select
                 className={`${inputClass} sm:flex-1`}
                 value={formData.storeId}
                 onChange={(e) => setFormData({ ...formData, storeId: e.target.value })}
-                required
-              >
-                <option value="">選択してください</option>
+              required
+            >
+              <option value="">選択してください</option>
                 {stores.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.name}
-                  </option>
-                ))}
-              </select>
+                </option>
+              ))}
+            </select>
             </div>
           </div>
-        </div>
+          </div>
 
         <div className="space-y-4">
           <h2 className={sectionHeadingClass}>体調・食事</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 md:gap-y-5 md:gap-x-12">
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
               <label className={labelClass}>体調：</label>
-              <input
-                type="text"
+            <input
+              type="text"
                 className={`${inputClass} sm:flex-1`}
-                value={formData.condition ?? ''}
-                onChange={(e) => setFormData({ ...formData, condition: e.target.value })}
+              value={formData.condition ?? ''}
+              onChange={(e) => setFormData({ ...formData, condition: e.target.value })}
                 placeholder="体調メモ (condition)"
-              />
-            </div>
+            />
+          </div>
 
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
               <label className={labelClass}>食事：</label>
-              <input
-                type="text"
+            <input
+              type="text"
                 className={`${inputClass} sm:flex-1`}
-                value={formData.meal ?? ''}
-                onChange={(e) => setFormData({ ...formData, meal: e.target.value })}
+              value={formData.meal ?? ''}
+              onChange={(e) => setFormData({ ...formData, meal: e.target.value })}
                 placeholder="食事内容 (meal)"
-              />
+            />
             </div>
           </div>
-        </div>
+          </div>
 
         <div className="space-y-4">
           <div className="space-y-3">
@@ -449,23 +470,23 @@ export const LessonForm: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-y-3 md:gap-x-12 md:gap-y-4">
               <div className="flex flex-row items-center gap-3 md:gap-4">
                 <label className="text-2xl font-semibold text-gray-800 whitespace-nowrap">開始時間：</label>
-                <input
-                  type="datetime-local"
+            <input
+              type="datetime-local"
                   className={`${inputClass} flex-1`}
-                  value={formData.startDate ?? ''}
-                  onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                  required
-                />
-              </div>
+              value={formData.startDate ?? ''}
+              onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+              required
+            />
+          </div>
 
               <div className="flex flex-row items-center gap-3 md:gap-4">
                 <label className="text-2xl font-semibold text-gray-800 whitespace-nowrap">終了時間：</label>
-                <input
-                  type="datetime-local"
+            <input
+              type="datetime-local"
                   className={`${inputClass} flex-1`}
-                  value={formData.endDate ?? ''}
-                  onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                />
+              value={formData.endDate ?? ''}
+              onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+            />
               </div>
             </div>
           </div>
@@ -474,47 +495,47 @@ export const LessonForm: React.FC = () => {
             <h2 className={sectionHeadingClass}>次回予約</h2>
             <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
               <span className="text-2xl font-semibold text-gray-800 whitespace-nowrap">日にち/時刻：</span>
-              <input
-                type="datetime-local"
+            <input
+              type="datetime-local"
                 className={`${inputClass} md:flex-1`}
-                value={formData.nextDate ?? ''}
-                onChange={(e) => setFormData({ ...formData, nextDate: e.target.value })}
-              />
-            </div>
+              value={formData.nextDate ?? ''}
+              onChange={(e) => setFormData({ ...formData, nextDate: e.target.value })}
+            />
+          </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6">
               <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
                 <label className={labelClass}>次回店舗：</label>
-                <select
+            <select
                   className={`${inputClass} md:flex-1`}
-                  value={formData.nextStoreId ?? ''}
-                  onChange={(e) => setFormData({ ...formData, nextStoreId: e.target.value })}
-                >
-                  <option value="">未定</option>
-                  {stores.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              value={formData.nextStoreId ?? ''}
+              onChange={(e) => setFormData({ ...formData, nextStoreId: e.target.value })}
+            >
+              <option value="">未定</option>
+              {stores.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
               <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
                 <label className={labelClass}>次回トレーナー：</label>
-                <select
+            <select
                   className={`${inputClass} md:flex-1`}
-                  value={formData.nextUserId ?? ''}
-                  onChange={(e) => setFormData({ ...formData, nextUserId: e.target.value })}
-                >
-                  <option value="">未定</option>
-                  {users.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
+              value={formData.nextUserId ?? ''}
+              onChange={(e) => setFormData({ ...formData, nextUserId: e.target.value })}
+            >
+              <option value="">未定</option>
+              {users.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
           </div>
         </div>
 
@@ -534,14 +555,14 @@ export const LessonForm: React.FC = () => {
                 <div className="flex items-center gap-2 md:min-w-[100px]">
                   <span className="text-lg font-semibold text-gray-800">名称：</span>
                 </div>
-                <input
-                  type="text"
+              <input
+                type="text"
                   placeholder="例：スクワット、腹筋"
                   className={`${inputClass} flex-1`}
-                  value={t.name}
-                  onChange={(e) => handleTrainingChange(idx, 'name', e.target.value)}
-                  required
-                />
+                value={t.name}
+                onChange={(e) => handleTrainingChange(idx, 'name', e.target.value)}
+                required
+              />
               </div>
 
               <div className="flex items-center gap-2 md:gap-3">
@@ -556,15 +577,15 @@ export const LessonForm: React.FC = () => {
                   >
                     −
                   </button>
-                  <input
-                    type="number"
+              <input
+                type="number"
                     className="w-16 text-center border-none focus:outline-none text-lg"
-                    value={t.reps}
-                    onChange={(e) => handleTrainingChange(idx, 'reps', e.target.value)}
-                    required
-                  />
-                  <button
-                    type="button"
+                value={t.reps}
+                onChange={(e) => handleTrainingChange(idx, 'reps', e.target.value)}
+                required
+              />
+              <button
+                type="button"
                     className="px-2 py-1 text-lg font-semibold text-gray-700 hover:text-gray-900"
                     onClick={() => handleTrainingChange(idx, 'reps', String((t.reps || 0) + 1))}
                   >
