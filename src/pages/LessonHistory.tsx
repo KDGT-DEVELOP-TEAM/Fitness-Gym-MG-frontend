@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { FiChevronRight, FiUser } from 'react-icons/fi';
+import { FiChevronRight, FiUser, FiClock } from 'react-icons/fi';
 import { lessonApi } from '../api/lessonApi';
 import { getErrorMessage } from '../utils/errorMessages';
 import {
@@ -27,68 +27,22 @@ const UserIcon = (props: { className?: string }) => {
   return <Icon {...props} />;
 };
 
-// 仮データ - BMI/体重データ
-const mockBMIData = [
-  { date: '10/01', weight: 67, bmi: 21.5 },
-  { date: '10/08', weight: 67, bmi: 22.0 },
-  { date: '10/15', weight: 67, bmi: 22.0 },
-  { date: '10/22', weight: 67, bmi: 22.5 },
-];
+const ClockIcon = (props: { className?: string }) => {
+  const Icon = FiClock as any;
+  return <Icon {...props} />;
+};
 
 // 初期BMI（基準点）
 const initialBMI = 23.5;
-
-// 仮データ - レッスン履歴
-const mockLessonHistory = [
-  {
-    id: '1',
-    date: '2024-10-99',
-    dayOfWeek: '火',
-    startTime: '10:00',
-    endTime: '11:00',
-    customerName: '色黄猛介',
-    shopName: '新宿店',
-    status: '済み',
-  },
-  {
-    id: '2',
-    date: '2024-10-99',
-    dayOfWeek: '火',
-    startTime: '10:00',
-    endTime: '11:00',
-    customerName: '色黄猛介',
-    shopName: '新宿店',
-    status: '済み',
-  },
-  {
-    id: '3',
-    date: '2024-11-01',
-    dayOfWeek: '日',
-    startTime: '10:00',
-    endTime: '11:00',
-    customerName: '色黄猛介',
-    shopName: '新宿店',
-    status: '済み',
-  },
-  {
-    id: '4',
-    date: '2024-11-01',
-    dayOfWeek: '日',
-    startTime: '10:00',
-    endTime: '11:00',
-    customerName: '色黄猛介',
-    shopName: '新宿店',
-    status: '済み',
-  },
-];
 
 export const LessonHistory: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [lessonHistory, setLessonHistory] = useState(mockLessonHistory);
-  const [bmiData, setBmiData] = useState(mockBMIData);
+  const [lessonHistory, setLessonHistory] = useState<any[]>([]);
+  const [bmiData, setBmiData] = useState<any[]>([]);
+  const [selectedDataPoint, setSelectedDataPoint] = useState<string | null>(null);
   const itemsPerPage = 10;
 
   // データ取得
@@ -112,10 +66,7 @@ export const LessonHistory: React.FC = () => {
         // const bmiHistory = await customerApi.getBMIHistory(id);
         // setBmiData(bmiHistory);
 
-        // 開発中はモックデータを使用
         await new Promise(resolve => setTimeout(resolve, 500)); // API呼び出しをシミュレート
-        setLessonHistory(mockLessonHistory);
-        setBmiData(mockBMIData);
       } catch (err) {
         setError(getErrorMessage(err));
       } finally {
@@ -140,7 +91,7 @@ export const LessonHistory: React.FC = () => {
     }
     acc[date].push(lesson);
     return acc;
-  }, {} as Record<string, typeof mockLessonHistory>);
+  }, {} as Record<string, any[]>);
 
   const formatDate = (dateStr: string) => {
     const [, month, day] = dateStr.split('-');
@@ -221,37 +172,7 @@ export const LessonHistory: React.FC = () => {
               domain={[18, 40]}
               style={{ fontSize: '14px' }}
             />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: '#68BE6B',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '8px 12px',
-                color: 'white',
-                whiteSpace: 'pre-line'
-              }}
-              labelStyle={{ color: 'white', fontWeight: 'bold' }}
-              itemStyle={{ color: 'white' }}
-              content={({ active, payload }) => {
-                if (active && payload && payload.length > 0) {
-                  const data = payload[0].payload;
-                  return (
-                    <div style={{
-                      backgroundColor: '#68BE6B',
-                      border: 'none',
-                      borderRadius: '8px',
-                      padding: '8px 12px',
-                      color: 'white'
-                    }}>
-                      <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>{data.date}</div>
-                      <div>BMI: {data.bmi}</div>
-                      <div>体重: {data.weight}kg</div>
-                    </div>
-                  );
-                }
-                return null;
-              }}
-            />
+            <Tooltip content={() => null} cursor={false} />
             <Legend
               wrapperStyle={{ paddingTop: '20px' }}
               iconType="circle"
@@ -283,9 +204,54 @@ export const LessonHistory: React.FC = () => {
               dataKey="bmi"
               stroke="#ED7D95"
               strokeWidth={2}
-              dot={{ fill: '#ED7D95', r: 4 }}
-              activeDot={{ r: 6 }}
+              isAnimationActive={false}
+              dot={(props: any) => {
+                const { cx, cy, payload } = props;
+                const isSelected = selectedDataPoint === payload?.date;
+                return (
+                  <circle
+                    cx={cx}
+                    cy={cy}
+                    r={isSelected ? 12 : 10}
+                    fill="#ED7D95"
+                    stroke={isSelected ? '#fff' : 'none'}
+                    strokeWidth={isSelected ? 3 : 0}
+                    style={{ cursor: 'pointer', transition: 'all 0.2s ease' }}
+                    onClick={() => {
+                      if (payload && payload.date) {
+                        setSelectedDataPoint(prev => prev === payload.date ? null : payload.date);
+                      }
+                    }}
+                  />
+                );
+              }}
+              activeDot={false}
               name="BMI"
+              label={(props: any) => {
+                const { x, y, index } = props;
+                const dataPoint = bmiData[index];
+                if (!dataPoint || !dataPoint.date) return null;
+                if (selectedDataPoint === dataPoint.date) {
+                  return (
+                    <g className="pointer-events-none">
+                      {/* 吹き出しの三角形 */}
+                      <polygon
+                        points={`${x},${y - 10} ${x - 8},${y - 20} ${x + 8},${y - 20}`}
+                        fill="#68BE6B"
+                        filter="drop-shadow(0 2px 4px rgba(0,0,0,0.1))"
+                      />
+                      <foreignObject x={x - 65} y={y - 100} width="130" height="80">
+                        <div className="bg-[#68BE6B] rounded-xl px-3.5 py-2.5 text-white text-[13px] shadow-lg text-center pointer-events-none flex flex-col justify-center items-center h-full w-full box-border">
+                          <div className="font-semibold mb-1 text-sm">{dataPoint.date}</div>
+                          <div className="mb-0.5 text-sm">BMI: {dataPoint.bmi}</div>
+                          <div className="text-sm">体重: {dataPoint.weight}kg</div>
+                        </div>
+                      </foreignObject>
+                    </g>
+                  );
+                }
+                return null;
+              }}
             />
           </ComposedChart>
         </ResponsiveContainer>
@@ -303,7 +269,7 @@ export const LessonHistory: React.FC = () => {
       ) : (
         <>
           <div className="space-y-6">
-            {Object.entries(groupedLessons).map(([date, lessonsForDate]) => (
+            {(Object.entries(groupedLessons) as [string, any[]][]).map(([date, lessonsForDate]) => (
           <div key={date} className="space-y-3">
             {/* 日付セパレーター */}
             <div className="flex items-center gap-3 mb-4">
@@ -346,11 +312,10 @@ export const LessonHistory: React.FC = () => {
                       <span>•</span>
                       <span>チェスト</span>
                       <span>•</span>
-                      <span>
-                        {lesson.startTime} - {lesson.endTime}
-                      </span>
-                      <span>•</span>
-                      <span>120分</span>
+                      <div className="flex items-center gap-1 text-[#D3D3D3]">
+                        <ClockIcon className="w-4 h-4" />
+                        <span>120分</span>
+                      </div>
                     </div>
                   </div>
                 </div>

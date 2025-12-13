@@ -43,6 +43,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ menuItems }) => {
           {menuItems.map((item) => {
             const isActive = location.pathname === item.path;
             const hasSubItems = item.subItems && item.subItems.length > 0;
+            const isSubItemActive = hasSubItems && item.subItems?.some(subItem => location.pathname === subItem.path);
+            const isActiveOrSubActive = isActive || isSubItemActive;
 
             return (
               <li key={item.path}>
@@ -50,7 +52,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ menuItems }) => {
                   <>
                     <div
                       className={`rounded-20 px-6 pt-5 pb-[0.5px] transition-colors duration-200 ${
-                        isActive
+                        isActiveOrSubActive
                           ? 'bg-sidebar-hover shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)]'
                           : 'bg-transparent hover:bg-[rgba(122,183,122,0.4)]'
                       }`}
@@ -71,10 +73,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ menuItems }) => {
                             <li key={subItem.path}>
                               <Link
                                 to={subItem.path}
-                                className={`block py-1 text-base transition-colors ${
+                                className={`block py-1 px-3 rounded-lg text-base transition-all ${
                                   isSubActive
-                                    ? 'text-white font-medium'
-                                    : 'text-white/90 hover:text-white'
+                                    ? 'text-white font-medium bg-[rgba(255,255,255,0.15)]'
+                                    : 'text-white/90 hover:text-white hover:bg-[rgba(255,255,255,0.1)]'
                                 }`}
                               >
                                 {subItem.label}

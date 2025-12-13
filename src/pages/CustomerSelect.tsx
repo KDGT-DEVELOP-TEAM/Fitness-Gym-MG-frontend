@@ -37,67 +37,20 @@ const ClockIcon = (props: { className?: string; style?: React.CSSProperties }) =
   return <Icon {...props} />;
 };
 
-// 仮データ
-const mockAppointments: AppointmentWithDetails[] = [
-  {
-    id: '1',
-    customerId: 'c1',
-    instructorId: 'i1',
-    date: '2024-01-15',
-    startTime: '10:00:00',
-    endTime: '11:00:00',
-    createdAt: '2024-01-10T10:00:00Z',
-    updatedAt: '2024-01-10T10:00:00Z',
-    status: 'scheduled',
-    customer: { id: 'c1', name: '山田太郎', phone: '090-1234-5678' },
-    shop: { id: 's1', name: '渋谷店' },
-    lessonType: 'チェスト',
-  },
-  {
-    id: '2',
-    customerId: 'c2',
-    instructorId: 'i1',
-    date: '2024-01-15',
-    startTime: '14:00:00',
-    endTime: '15:00:00',
-    createdAt: '2024-01-10T10:00:00Z',
-    updatedAt: '2024-01-10T10:00:00Z',
-    status: 'scheduled',
-    customer: { id: 'c2', name: '佐藤花子', phone: '090-2345-6789' },
-    shop: { id: 's1', name: '新宿店' },
-    lessonType: 'レッグ',
-  },
-  {
-    id: '3',
-    customerId: 'c3',
-    instructorId: 'i1',
-    date: '2024-01-14',
-    startTime: '09:00:00',
-    endTime: '10:00:00',
-    createdAt: '2024-01-10T10:00:00Z',
-    updatedAt: '2024-01-10T10:00:00Z',
-    status: 'completed',
-    customer: { id: 'c3', name: '鈴木一郎', phone: '090-2345-6789'  },
-    shop: { id: 's2', name: '池袋店' },
-    lessonType: 'バック',
-  },
-];
-
 export const CustomerSelect: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [appointments, setAppointments] = useState<AppointmentWithDetails[]>(mockAppointments);
-  const [displayedAppointments, setDisplayedAppointments] = useState<AppointmentWithDetails[]>(mockAppointments.slice(0, 10));
+  const [appointments, setAppointments] = useState<AppointmentWithDetails[]>([]);
+  const [displayedAppointments, setDisplayedAppointments] = useState<AppointmentWithDetails[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [visibleCount, setVisibleCount] = useState(10); // 初期表示件数
 
   useEffect(() => {
-    // 仮データを使用するため、コメントアウト
-    // if (user?.id) {
-    //   fetchAppointments();
-    // }
+    if (user?.id) {
+      fetchAppointments();
+    }
   }, [user]);
 
   useEffect(() => {
