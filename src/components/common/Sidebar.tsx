@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import React, { useState, useMemo } from 'react';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { ROUTES } from '../../constants/routes';
+import { HiPlus, HiPhotograph } from 'react-icons/hi';
 
 interface MenuItem {
   path: string;
@@ -12,11 +14,58 @@ interface SidebarProps {
   menuItems: MenuItem[];
 }
 
+const PlusIcon = (props: { className?: string }) => {
+  const Icon = HiPlus as any;
+  return <Icon {...props} />;
+};
+
+const ImageIcon = (props: { className?: string }) => {
+  const Icon = HiPhotograph as any;
+  return <Icon {...props} />;
+};
+
 export const Sidebar: React.FC<SidebarProps> = ({ menuItems }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { logout, actionLoading } = useAuth();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+  // 顧客IDを取得（URLクエリパラメータまたはパスから）
+  const customerId = useMemo(() => {
+    // クエリパラメータから取得
+    const queryCustomerId = searchParams.get('customerId');
+    if (queryCustomerId) return queryCustomerId;
+
+    // URLパスから取得（例: /postures/images/:customerId）
+    const imageListMatch = location.pathname.match(/\/postures\/images\/([^/]+)/);
+    if (imageListMatch) return imageListMatch[1];
+
+    return null;
+  }, [location.pathname, searchParams]);
+
+  // 顧客が選択されている場合の追加メニュー項目
+  const customerMenuItems = useMemo<MenuItem[]>(() => {
+    if (!customerId) return [];
+
+    return [
+      {
+        path: `${ROUTES.LESSON_FORM}?customerId=${customerId}`,
+        label: '新規レッスン入力',
+        icon: <PlusIcon className="w-5 h-5" />,
+      },
+      {
+        path: ROUTES.POSTURE_IMAGE_LIST.replace(':customerId', customerId),
+        label: '姿勢画像一覧',
+        icon: <ImageIcon className="w-5 h-5" />,
+      },
+    ];
+  }, [customerId]);
+
+  // メニュー項目を結合
+  const allMenuItems = useMemo(() => {
+    return [...menuItems, ...customerMenuItems];
+  }, [menuItems, customerMenuItems]);
 
   const handleLogoutClick = () => {
     setShowLogoutModal(true);
@@ -36,8 +85,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ menuItems }) => {
     <aside className="w-64 bg-sidebar text-white min-h-screen flex flex-col font-poppins">
       <nav className="flex-1 p-4">
         <ul className="space-y-2">
-          {menuItems.map((item) => {
-            const isActive = location.pathname === item.path;
+          {allMenuItems.map((item) => {
+            // パスがクエリパラメータを含む場合のアクティブ判定
+            const isActive = item.path.includes('?')
+              ? location.pathname === item.path.split('?')[0] && location.search === `?${item.path.split('?')[1]}`
+              : location.pathname === item.path;
             return (
               <li key={item.path}>
                 <Link

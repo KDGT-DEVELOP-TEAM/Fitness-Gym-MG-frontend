@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ROUTES } from '../constants/routes';
 import { lessonApi } from '../api/lessonApi';
 import { LessonFormData, TrainingInput } from '../types/lesson';
@@ -15,6 +15,7 @@ type PosturePreview = {
 
 export const LessonForm: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [stores, setStores] = useState<Option[]>([]);
   const [users, setUsers] = useState<Option[]>([]);
   const [customers, setCustomers] = useState<Option[]>([]);
@@ -86,6 +87,21 @@ export const LessonForm: React.FC = () => {
 
     fetchOptions();
   }, []);
+
+  // URLクエリパラメータから顧客IDを取得して自動選択
+  useEffect(() => {
+    const customerIdFromUrl = searchParams.get('customerId');
+    if (customerIdFromUrl && customers.length > 0) {
+      // 顧客リストに該当する顧客が存在するか確認
+      const customerExists = customers.some((c) => c.id === customerIdFromUrl);
+      if (customerExists) {
+        setFormData((prev) => ({
+          ...prev,
+          customerId: customerIdFromUrl,
+        }));
+      }
+    }
+  }, [searchParams, customers]);
 
   const handleTrainingChange = (index: number, key: keyof TrainingInput, value: string) => {
     setTrainings((prev) => {
@@ -337,7 +353,12 @@ export const LessonForm: React.FC = () => {
       if (created?.id) {
         await linkPostureGroupToLesson(created.id);
       }
-      navigate(ROUTES.LESSON_HISTORY);
+      // 姿勢画像一覧ページに遷移
+      if (formData.customerId) {
+        navigate(ROUTES.POSTURE_IMAGE_LIST.replace(':customerId', formData.customerId));
+      } else {
+        navigate(ROUTES.CUSTOMER_SELECT);
+      }
     } catch (err) {
       console.error('Error creating lesson:', err);
       setError('レッスン作成に失敗しました');
