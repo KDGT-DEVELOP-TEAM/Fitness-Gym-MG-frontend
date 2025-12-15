@@ -56,61 +56,8 @@ interface PostureImageListHeaderProps {
   onExitSelectionMode: () => void;
 }
 
-export const PostureImageListHeader: React.FC<PostureImageListHeaderProps> = ({
-  isSelectionMode,
-  setIsSelectionMode,
-  selectedImageIds,
-  onDelete,
-  onCompare,
-  onExitSelectionMode,
-}) => {
-  return (
-    <div className="pt-6 px-6 pb-4">
-      <div className="flex justify-end items-center">
-        <div className="flex gap-2">
-          {!isSelectionMode ? (
-            <button
-              onClick={() => setIsSelectionMode(true)}
-              className="px-4 py-2 bg-[#F2AFAF] text-black rounded hover:bg-[#E89A9A]"
-            >
-              選択
-            </button>
-          ) : (
-            <div className="flex gap-2 items-center">
-              <button
-                onClick={onDelete}
-                disabled={selectedImageIds.size === 0}
-                className={`px-4 py-2 rounded ${
-                  selectedImageIds.size > 0
-                    ? 'bg-red-500 text-white hover:bg-red-600'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                }`}
-              >
-                削除
-              </button>
-              <button
-                onClick={onCompare}
-                disabled={selectedImageIds.size !== 2}
-                className={`px-4 py-2 rounded ${
-                  selectedImageIds.size === 2
-                    ? 'bg-blue-500 text-white hover:bg-blue-600'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                }`}
-              >
-                比較
-              </button>
-              <button
-                onClick={onExitSelectionMode}
-                className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
-              >
-                キャンセル
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
+export const PostureImageListHeader: React.FC<PostureImageListHeaderProps> = () => {
+  return null;
 };
 
 // 内部コンポーネント（コンテンツのみ）
@@ -122,6 +69,10 @@ const PostureImageListContent: React.FC<{
   showCompareModal: boolean;
   compareImages: PostureImage[];
   onCloseCompareModal: () => void;
+  setIsSelectionMode: (value: boolean) => void;
+  onDelete: () => void;
+  onCompare: () => void;
+  onExitSelectionMode: () => void;
 }> = ({
   images,
   isSelectionMode,
@@ -130,6 +81,10 @@ const PostureImageListContent: React.FC<{
   showCompareModal,
   compareImages,
   onCloseCompareModal,
+  setIsSelectionMode,
+  onDelete,
+  onCompare,
+  onExitSelectionMode,
 }) => {
   const groupedImages = useMemo(() => {
     return groupByDate(images);
@@ -268,6 +223,49 @@ const PostureImageListContent: React.FC<{
             </div>
           </div>
         )}
+
+        {/* フローティングボタン */}
+        <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3">
+          {!isSelectionMode ? (
+            <button
+              onClick={() => setIsSelectionMode(true)}
+              className="min-w-[140px] px-6 py-3 text-lg bg-[#F2AFAF] text-black rounded-lg shadow-lg hover:bg-[#E89A9A] transition-colors"
+            >
+              選択
+            </button>
+          ) : (
+            <>
+              <div className="flex gap-3 w-[292px] justify-end">
+                <button
+                  onClick={onCompare}
+                  disabled={selectedImageIds.size !== 2}
+                  className="w-[140px] px-6 py-3 text-lg rounded-lg shadow-lg transition-colors bg-[#68BE6B] text-white hover:bg-[#5AA85A] disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
+                >
+                  比較
+                </button>
+              </div>
+              <div className="flex gap-3 w-[292px]">
+                <button
+                  onClick={onDelete}
+                  disabled={selectedImageIds.size === 0}
+                  className={`flex-1 px-6 py-3 text-lg rounded-lg shadow-lg transition-colors ${
+                    selectedImageIds.size > 0
+                      ? 'bg-red-500 text-white hover:bg-red-600'
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }`}
+                >
+                  削除
+                </button>
+                <button
+                  onClick={onExitSelectionMode}
+                  className="flex-1 px-6 py-3 text-lg bg-gray-500 text-white rounded-lg shadow-lg hover:bg-gray-600 transition-colors"
+                >
+                  キャンセル
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </>
   );
@@ -513,6 +511,10 @@ export const usePostureImageList = () => {
       showCompareModal={showCompareModal}
       compareImages={compareImages}
       onCloseCompareModal={() => setShowCompareModal(false)}
+      setIsSelectionMode={setIsSelectionMode}
+      onDelete={handleDelete}
+      onCompare={handleCompare}
+      onExitSelectionMode={exitSelectionMode}
     />
   );
 
