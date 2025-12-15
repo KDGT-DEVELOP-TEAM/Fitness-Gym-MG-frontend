@@ -17,7 +17,7 @@ export const CustomerSelect: React.FC = () => {
         {customers.map((customer) => (
           <div
             key={customer.id}
-            onClick={() => navigate(`${ROUTES.LESSON_FORM}?customerId=${customer.id}`)}
+            onClick={() => navigate(ROUTES.CUSTOMER_PROFILE.replace(':id', customer.id))}
             className="p-4 border rounded-lg cursor-pointer hover:bg-gray-50"
           >
             <h3 className="font-semibold">{customer.name}</h3>

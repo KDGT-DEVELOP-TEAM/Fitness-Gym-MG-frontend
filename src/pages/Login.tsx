@@ -17,7 +17,7 @@ export const Login: React.FC = () => {
 
     try {
       await login(email, password);
-      navigate(ROUTES.CUSTOMER_SELECT);
+      navigate(ROUTES.LESSON_FORM);
     } catch (err) {
       console.error('Login failed:', err);
       setError(getErrorMessage(err));

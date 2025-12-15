@@ -357,7 +357,7 @@ export const LessonForm: React.FC = () => {
       if (formData.customerId) {
         navigate(ROUTES.POSTURE_IMAGE_LIST.replace(':customerId', formData.customerId));
       } else {
-        navigate(ROUTES.CUSTOMER_SELECT);
+        navigate(ROUTES.LESSON_FORM);
       }
     } catch (err) {
       console.error('Error creating lesson:', err);
