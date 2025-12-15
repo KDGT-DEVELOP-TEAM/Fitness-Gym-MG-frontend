@@ -1,131 +1,178 @@
-import { supabase } from '../lib/supabase';
 import axiosInstance from './axiosConfig';
 import { LoginCredentials, AuthResponse } from '../types/auth';
 import { User } from '../types/user';
+import { storage } from '../utils/storage';
+import { handleApiError, logError } from '../utils/errorHandler';
+import { logger } from '../utils/logger';
 
-const mapUser = (raw: any): User => ({
-  id: raw?.id ?? '',
-  email: raw?.email ?? '',
-  name: raw?.name ?? raw?.email ?? '',
-  role: (raw?.role as User['role']) ?? 'trainer',
-  shopId: raw?.shopId ?? raw?.shop_id,
-  createdAt: raw?.createdAt ?? raw?.created_at,
-  updatedAt: raw?.updatedAt ?? raw?.updated_at,
-});
+interface UserRawData {
+  id?: string;
+  email?: string;
+  name?: string;
+  role?: User['role'];
+  shopId?: string;
+  shop_id?: string;
+  createdAt?: string;
+  created_at?: string;
+  updatedAt?: string;
+  updated_at?: string;
+}
 
+const mapUser = (raw: UserRawData | null | undefined): User => {
+  if (!raw) {
+    throw new Error('User data is required');
+  }
+
+  return {
+    id: raw.id ?? '',
+    email: raw.email ?? '',
+    name: raw.name ?? raw.email ?? '',
+    role: (raw.role as User['role']) ?? 'trainer',
+    shopId: 'shopId' in raw ? raw.shopId : 'shop_id' in raw ? raw.shop_id : undefined,
+    createdAt: 'createdAt' in raw ? raw.createdAt : 'created_at' in raw ? raw.created_at : undefined,
+    updatedAt: 'updatedAt' in raw ? raw.updatedAt : ('updated_at' in raw && raw.updated_at ? raw.updated_at : undefined),
+  };
+};
+
+/**
+ * 認証API
+ * ユーザー認証、ログイン、ログアウト、現在のユーザー情報取得を処理
+ */
 export const authApi = {
+  /**
+   * メールアドレスとパスワードでユーザーを認証
+   * REST APIでJWTトークンを取得し、ユーザーデータを取得
+   * 
+   * @param credentials - ログイン認証情報（メールアドレスとパスワード）
+   * @returns ユーザーとトークンを含む認証レスポンス
+   * @throws 認証に失敗した場合にエラーを投げる
+   */
   login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
-    if (!supabase) {
-      throw new Error('Supabaseが設定されていません。');
-    }
-
-    // 1) Supabase Authでログインし、アクセストークンを取得
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-      email: credentials.email,
-      password: credentials.password,
-    });
-
-    if (authError || !authData.session?.access_token) {
-      throw new Error('メールアドレスまたはパスワードが正しくありません');
-    }
-
-    const accessToken = authData.session.access_token;
-    const authUserId = authData.user.id;
-    localStorage.setItem('token', accessToken);
-
-    // 2) バックエンド経由でユーザー情報取得を試み、失敗したらSupabase直叩きでフォールバック
-    let userData: any | null = null;
     try {
-      const res = await axiosInstance.post('/auth/login', { email: credentials.email });
-      userData = res.data;
-    } catch (err) {
-      // /auth/login が失敗したら /auth/me を試す
-      try {
-        const res = await axiosInstance.get('/auth/me');
-        userData = res.data;
-      } catch (err2) {
-        // バックエンドが起動していない場合は Supabase の users テーブルを直接参照
-        try {
-          const { data: directUser } = await supabase
-            .from('users')
-            .select('*')
-            .eq('auth_user_id', authUserId)
-            .single();
-          if (directUser) {
-            userData = directUser;
-    }
-        } catch (err3) {
-          // 最終フォールバック: auth.user の情報のみで返す
-          userData = {
-            id: authData.user.id,
-            email: authData.user.email,
-            name: authData.user.email,
-            role: 'trainer',
-          };
-        }
+      // REST APIでログイン
+      const response = await axiosInstance.post<AuthResponse>('/auth/login', {
+        email: credentials.email,
+        password: credentials.password,
+      });
+
+      if (!response.data || !response.data.token || !response.data.user) {
+        throw new Error('メールアドレスまたはパスワードが正しくありません');
       }
+
+      const { token, user: userData } = response.data;
+
+      // トークンを保存
+      storage.setToken(token);
+
+      // ユーザーデータをマッピングして保存
+      const mappedUser = mapUser(userData);
+      storage.setUser(mappedUser);
+
+      logger.info('Login successful', { email: credentials.email }, 'authApi');
+      return { user: mappedUser, token };
+    } catch (error) {
+      const appError = handleApiError(error);
+      logError(appError, 'authApi.login');
+      
+      // 認証エラーの場合は統一メッセージを返す
+      if (appError.statusCode === 401) {
+        throw new Error('メールアドレスまたはパスワードが正しくありません');
+      }
+      
+      throw new Error(appError.message || 'ログインに失敗しました');
     }
-
-    const mappedUser = mapUser(userData);
-    localStorage.setItem('user', JSON.stringify(mappedUser));
-
-    return { user: mappedUser, token: accessToken };
   },
 
+  /**
+   * 現在のユーザーをログアウト
+   * REST APIにログアウトリクエストを送信し、ローカルストレージをクリア
+   */
   logout: async (): Promise<void> => {
     try {
-      if (supabase) {
-        await supabase.auth.signOut();
-      }
+      // REST APIにログアウトリクエストを送信（オプション）
+      await axiosInstance.post('/auth/logout').catch(() => {
+        // ログアウトAPIが失敗しても続行（トークン削除は必須）
+        logger.warn('Logout API call failed, but continuing with token removal', undefined, 'authApi');
+      });
     } finally {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+      storage.clear();
+      logger.info('User logged out', undefined, 'authApi');
     }
   },
 
+  /**
+   * パスワードリセット用のメールを送信
+   * 
+   * @param email - パスワードリセット対象のメールアドレス
+   * @throws Error if email sending fails
+   */
+  resetPassword: async (email: string): Promise<void> => {
+    try {
+      const redirectUrl = process.env.REACT_APP_PASSWORD_RESET_URL || `${window.location.origin}/reset-password`;
+      
+      await axiosInstance.post('/auth/reset-password', {
+        email,
+        redirectUrl,
+      });
+
+      logger.info('Password reset email sent', { email }, 'authApi');
+    } catch (error) {
+      const appError = handleApiError(error);
+      logError(appError, 'authApi.resetPassword');
+      throw new Error('パスワードリセットメールの送信に失敗しました');
+    }
+  },
+
+  /**
+   * パスワードを更新
+   * 
+   * @param newPassword - 新しいパスワード
+   * @throws Error if password update fails
+   */
+  updatePassword: async (newPassword: string): Promise<void> => {
+    try {
+      await axiosInstance.put('/auth/password', {
+        password: newPassword,
+      });
+
+      logger.info('Password updated successfully', undefined, 'authApi');
+    } catch (error) {
+      const appError = handleApiError(error);
+      logError(appError, 'authApi.updatePassword');
+      throw new Error('パスワードの更新に失敗しました');
+    }
+  },
+
+  /**
+   * 現在認証されているユーザーを取得
+   * REST API `/auth/me`からユーザーデータを取得
+   * 
+   * @returns 現在のユーザーデータ
+   * @throws 有効なトークンまたはユーザーデータが見つからない場合にエラーを投げる
+   */
   getCurrentUser: async (): Promise<AuthResponse['user']> => {
-    const token = localStorage.getItem('token');
+    const token = storage.getToken();
     if (!token) {
       throw new Error('No token');
     }
 
-    // 1) バックエンド経由を試す
     try {
-      const { data } = await axiosInstance.get('/auth/me');
+      const { data } = await axiosInstance.get<UserRawData>('/auth/me');
       const mappedUser = mapUser(data);
-      localStorage.setItem('user', JSON.stringify(mappedUser));
+      storage.setUser(mappedUser);
+      logger.debug('Current user fetched from /auth/me', undefined, 'authApi');
       return mappedUser;
-    } catch {
-      // 2) Supabaseセッションから直接取得（バックエンド停止時のフォールバック）
-      if (!supabase) throw new Error('Supabaseが設定されていません。');
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) {
-      throw new Error('No user');
-    }
-      // usersテーブルを優先して参照
-      try {
-        const { data: directUser } = await supabase
-          .from('users')
-          .select('*')
-          .eq('auth_user_id', session.user.id)
-          .single();
-        if (directUser) {
-          const mappedUser = mapUser(directUser);
-          localStorage.setItem('user', JSON.stringify(mappedUser));
-          return mappedUser;
-        }
-      } catch {
-        // 最終フォールバック: セッションユーザーだけで組み立て
-        const fallback = mapUser({
-          id: session.user.id,
-          email: session.user.email,
-          name: session.user.email,
-          role: 'trainer',
-        });
-        localStorage.setItem('user', JSON.stringify(fallback));
-        return fallback;
+    } catch (error) {
+      const appError = handleApiError(error);
+      logError(appError, 'authApi.getCurrentUser');
+      
+      // 401エラーの場合はトークンをクリア
+      if (appError.statusCode === 401) {
+        storage.clear();
+        throw new Error('認証が無効です。再度ログインしてください');
       }
-      throw new Error('ユーザー情報が見つかりません');
+      
+      throw new Error(appError.message || 'ユーザー情報の取得に失敗しました');
     }
   },
 };

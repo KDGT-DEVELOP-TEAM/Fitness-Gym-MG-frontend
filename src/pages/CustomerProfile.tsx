@@ -21,4 +21,3 @@ export const CustomerProfile: React.FC = () => {
     </div>
   );
 };
-

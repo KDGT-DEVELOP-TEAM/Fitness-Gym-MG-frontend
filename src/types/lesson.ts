@@ -1,3 +1,6 @@
+// PosturePosition型をインポート（ファイルの先頭でインポート）
+import type { PosturePosition } from '../constants/posture';
+
 export interface Lesson {
   id: string;
   storeId: string;
@@ -39,4 +42,14 @@ export interface LessonFormData {
   nextUserId?: string | null;
   trainings?: TrainingInput[];
 }
+
+// PosturePreview型を追加
+export interface PosturePreview {
+  position: PosturePosition;
+  url: string;
+  storageKey: string;
+}
+
+// PosturePosition型を再エクスポート
+export type { PosturePosition } from '../constants/posture';
 

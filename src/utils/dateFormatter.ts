@@ -64,3 +64,12 @@ export const groupByDate = <T extends { taken_at: string }>(items: T[]): Map<str
   return grouped;
 };
 
+/**
+ * Format date as YYYY.M.D (e.g., "2025.12.14")
+ * Used for displaying dates on image cards
+ */
+export const formatDateForDisplay = (date: string | Date): string => {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  return `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}`;
+};
+

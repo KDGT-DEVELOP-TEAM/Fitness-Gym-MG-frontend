@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '../types/auth';
 import { authApi } from '../api/authApi';
+import { storage } from '../utils/storage';
+import { logger } from '../utils/logger';
 
 interface AuthContextType {
   user: User | null;
@@ -21,27 +23,26 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     const init = async () => {
       try {
-        const storedUser = localStorage.getItem('user');
+        const storedUser = storage.getUser();
         if (storedUser) {
-          setUser(JSON.parse(storedUser) as User);
+          setUser(storedUser as User);
           return;
         }
 
-        const token = localStorage.getItem('token');
+        const token = storage.getToken();
         if (!token) {
-      setUser(null);
+          setUser(null);
           return;
         }
 
         const userData = await authApi.getCurrentUser();
         setUser(userData);
       } catch (error) {
-        console.error('Failed to initialize auth:', error);
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        logger.error('Failed to initialize auth', error, 'AuthContext');
+        storage.clear();
         setUser(null);
       } finally {
-    setAuthLoading(false);
+        setAuthLoading(false);
       }
     };
 
@@ -64,7 +65,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       await authApi.logout();
       setUser(null);
     } catch (error) {
-      console.error('Logout failed:', error);
+      logger.error('Logout failed', error, 'AuthContext');
       setUser(null);
     } finally {
       setActionLoading(false);

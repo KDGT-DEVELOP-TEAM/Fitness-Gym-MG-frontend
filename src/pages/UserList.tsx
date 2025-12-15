@@ -52,4 +52,3 @@ export const UserList: React.FC = () => {
     </div>
   );
 };
-

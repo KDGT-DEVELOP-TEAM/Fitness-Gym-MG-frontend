@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../context/AuthContext';
 import { ROUTES } from '../../constants/routes';
 import { HiPlus, HiPhotograph } from 'react-icons/hi';
+import { COLOR_CLASSES } from '../../constants/colors';
 
 interface MenuItem {
   path: string;
@@ -14,15 +15,9 @@ interface SidebarProps {
   menuItems: MenuItem[];
 }
 
-const PlusIcon = (props: { className?: string }) => {
-  const Icon = HiPlus as any;
-  return <Icon {...props} />;
-};
-
-const ImageIcon = (props: { className?: string }) => {
-  const Icon = HiPhotograph as any;
-  return <Icon {...props} />;
-};
+// React Icons workaround for TypeScript strict mode
+const PlusIcon = HiPlus as React.ComponentType<{ className?: string }>;
+const ImageIcon = HiPhotograph as React.ComponentType<{ className?: string }>;
 
 export const Sidebar: React.FC<SidebarProps> = ({ menuItems }) => {
   const location = useLocation();
@@ -129,7 +124,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ menuItems }) => {
 
       {showLogoutModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-[#FAF8F3] border border-[#DFDFDF] rounded-2xl p-8 max-w-md w-full mx-4 font-poppins">
+          <div className={`${COLOR_CLASSES.BACKGROUND_LIGHT} border border-[#DFDFDF] rounded-2xl p-8 max-w-md w-full mx-4 font-poppins`}>
             <h3 className="text-2xl font-medium text-gray-800 mb-4">ログアウトしますか？</h3>
             <p className="text-gray-600 mb-6">本当にログアウトしますか？</p>
             <div className="flex gap-4 justify-end">

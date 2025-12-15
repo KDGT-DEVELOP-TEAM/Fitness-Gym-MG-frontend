@@ -4,9 +4,16 @@ import { ROUTES } from '../constants/routes';
 import { lessonApi } from '../api/lessonApi';
 import { LessonFormData, TrainingInput } from '../types/lesson';
 import { supabase } from '../lib/supabase';
-
-type Option = { id: string; name: string };
-type PosturePosition = 'front' | 'right' | 'back' | 'left';
+import { logger } from '../utils/logger';
+import { PosturePosition, getPosturePositionLabel, ALL_POSTURE_POSITIONS } from '../constants/posture';
+import { useOptions } from '../hooks/useOptions';
+import { IMAGE_QUALITY, CANVAS_DIMENSIONS } from '../constants/image';
+import { STORAGE_CONSTANTS, IMAGE_CONSTANTS } from '../constants/storage';
+import { FORM_STYLES } from '../styles/formStyles';
+import { useErrorHandler } from '../hooks/useErrorHandler';
+import { validateRequired, validateDateRange, validateNumericRange } from '../utils/validators';
+import { ERROR_MESSAGES } from '../constants/errorMessages';
+import axiosInstance from '../api/axiosConfig';
 type PosturePreview = {
   position: PosturePosition;
   url: string;
@@ -16,9 +23,7 @@ type PosturePreview = {
 export const LessonForm: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [stores, setStores] = useState<Option[]>([]);
-  const [users, setUsers] = useState<Option[]>([]);
-  const [customers, setCustomers] = useState<Option[]>([]);
+  const { stores, users, customers } = useOptions();
   const [trainings, setTrainings] = useState<TrainingInput[]>([]);
   const [posturePreviews, setPosturePreviews] = useState<PosturePreview[]>([]);
   const [postureGroupId, setPostureGroupId] = useState<string | null>(null);
@@ -26,6 +31,7 @@ export const LessonForm: React.FC = () => {
   const videoRef = React.useRef<HTMLVideoElement | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
+  const { handleError } = useErrorHandler();
 
   const [formData, setFormData] = useState<LessonFormData>({
     storeId: '',
@@ -42,51 +48,6 @@ export const LessonForm: React.FC = () => {
     nextUserId: '',
     trainings: [],
   });
-
-  useEffect(() => {
-    const fetchOptions = async () => {
-      // Stores
-      try {
-        if (supabase) {
-          const { data, error } = await supabase.from('stores').select('id,name');
-          if (error) throw error;
-          setStores((data as any[])?.map((d) => ({ id: d.id, name: d.name })) ?? []);
-        } else {
-          setStores([]);
-        }
-      } catch {
-        setStores([]);
-      }
-
-      // Users (担当)
-      try {
-        if (supabase) {
-          const { data, error } = await supabase.from('users').select('id,name');
-          if (error) throw error;
-          setUsers((data as any[])?.map((d) => ({ id: d.id, name: d.name })) ?? []);
-        } else {
-          setUsers([]);
-        }
-      } catch {
-        setUsers([]);
-      }
-
-      // Customers
-      try {
-        if (supabase) {
-          const { data, error } = await supabase.from('customers').select('id,name');
-          if (error) throw error;
-          setCustomers((data as any[])?.map((d) => ({ id: d.id, name: d.name })) ?? []);
-        } else {
-          setCustomers([]);
-        }
-      } catch {
-        setCustomers([]);
-      }
-    };
-
-    fetchOptions();
-  }, []);
 
   // URLクエリパラメータから顧客IDを取得して自動選択
   useEffect(() => {
@@ -118,8 +79,6 @@ export const LessonForm: React.FC = () => {
   const removeTraining = (index: number) =>
     setTrainings((prev) => prev.filter((_, i) => i !== index));
 
-  const mergedTrainings = useMemo(() => trainings, [trainings]);
-
   // カメラ開始
   const startCamera = async () => {
     try {
@@ -134,8 +93,7 @@ export const LessonForm: React.FC = () => {
       }
       setError('');
     } catch (err) {
-      console.error('Camera start error', err);
-      setError('カメラを起動できませんでした。権限やHTTPS環境を確認してください。');
+      setError(handleError(err, 'LessonForm'));
     }
   };
 
@@ -148,43 +106,41 @@ export const LessonForm: React.FC = () => {
 
   useEffect(() => {
     return () => {
-      stopCamera();
+      if (stream) {
+        stream.getTracks().forEach((t) => t.stop());
+      }
     };
   }, [stream]);
 
   // posture_group を作成（まだ無ければ）
   const ensurePostureGroup = async (): Promise<string | null> => {
-    const client = supabase;
-    if (!client) {
-      setError('Supabase未設定のため姿勢画像を保存できません');
-      return null;
-    }
     if (postureGroupId) return postureGroupId;
     if (!formData.customerId) {
       setError('顧客を選択してください');
       return null;
     }
-    const now = new Date().toISOString();
-    const { data, error: pgError } = await client
-      .from('posture_groups')
-      .insert([
-        {
-          customer_id: formData.customerId,
-          lesson_id: null,
-          captured_at: now,
-          created_at: now,
-        },
-      ])
-      .select()
-      .single();
-    if (pgError) {
-      console.error(pgError);
-      setError('姿勢グループの作成に失敗しました');
+    
+    try {
+      const response = await axiosInstance.post<{ id: string }>('/posture-groups', {
+        customerId: formData.customerId,
+        lessonId: null,
+        capturedAt: new Date().toISOString(),
+      });
+      
+      if (!response.data || !response.data.id) {
+        setError('姿勢グループの作成に失敗しました');
+        return null;
+      }
+      
+      const newId = response.data.id;
+      setPostureGroupId(newId);
+      logger.debug('Posture group created', { id: newId }, 'LessonForm');
+      return newId;
+    } catch (error) {
+      logger.error('Failed to create posture group', error, 'LessonForm');
+      setError(handleError(error, 'LessonForm'));
       return null;
     }
-    const newId = (data as any).id as string;
-    setPostureGroupId(newId);
-    return newId;
   };
 
   const captureAndUpload = async (position: PosturePosition) => {
@@ -197,8 +153,8 @@ export const LessonForm: React.FC = () => {
     }
 
     const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth || 640;
-    canvas.height = video.videoHeight || 480;
+    canvas.width = video.videoWidth || CANVAS_DIMENSIONS.WIDTH;
+    canvas.height = video.videoHeight || CANVAS_DIMENSIONS.HEIGHT;
     const ctx = canvas.getContext('2d');
     if (!ctx) {
       setError('キャンバス生成に失敗しました');
@@ -240,62 +196,62 @@ export const LessonForm: React.FC = () => {
 
         const fileName = `${position}.jpg`;
         const path = `postures/${formData.customerId}/${groupId}/${fileName}`;
-        console.log('Uploading image to path:', path, 'groupId:', groupId, 'position:', position, 'blob size:', blob.size);
+        logger.debug('Uploading image', { path, groupId, position, blobSize: blob.size }, 'LessonForm');
         const { data: uploadData, error: uploadError } = await client.storage
-          .from('postures')
-          .upload(path, blob, { contentType: 'image/jpeg', upsert: true });
+          .from(STORAGE_CONSTANTS.POSTURES_BUCKET)
+          .upload(path, blob, { contentType: IMAGE_CONSTANTS.JPEG_MIME_TYPE, upsert: true });
         if (uploadError) {
-          console.error('Upload error:', uploadError);
-          console.error('Upload error details:', JSON.stringify(uploadError, null, 2));
-          setError(`画像のアップロードに失敗しました: ${uploadError.message || '不明なエラー'}`);
+          setError(handleError(uploadError, 'LessonForm'));
           updatePreview('');
           resolve();
           return;
         }
-        console.log('Upload successful:', uploadData);
-        console.log('Uploaded file path:', uploadData?.path);
-        // 同じポジションの既存レコードを削除
-        const { error: deleteError } = await client
-          .from('posture_images')
-          .delete()
-          .eq('posture_group_id', groupId)
-          .eq('position', position);
-        if (deleteError) {
-          console.error(deleteError);
+        logger.debug('Upload successful', { path: uploadData?.path }, 'LessonForm');
+        
+        // 同じポジションの既存レコードを削除（REST API）
+        try {
+          await axiosInstance.delete('/posture-images', {
+            params: {
+              postureGroupId: groupId,
+              position,
+            },
+          });
+        } catch (deleteError) {
+          logger.warn('Failed to delete existing posture_image record', deleteError, 'LessonForm');
           // 削除エラーは警告として記録するが、続行する
         }
-        // 新しいレコードを挿入
-        console.log('Inserting posture_image record with storage_key:', path);
-        const { data: insertData, error: insertError } = await client.from('posture_images').insert({
-          posture_group_id: groupId,
-          storage_key: path,
-          position,
-          consent_publication: false,
-          taken_at: new Date().toISOString(),
-          created_at: new Date().toISOString(),
-        }).select();
-        if (insertError) {
-          console.error('Insert error:', insertError);
-          setError('画像情報の保存に失敗しました');
+        
+        // 新しいレコードを挿入（REST API）
+        logger.debug('Inserting posture_image record', { storageKey: path }, 'LessonForm');
+        try {
+          await axiosInstance.post('/posture-images', {
+            postureGroupId: groupId,
+            storageKey: path,
+            position,
+            consentPublication: false,
+            takenAt: new Date().toISOString(),
+          });
+          logger.debug('Insert successful', { storageKey: path }, 'LessonForm');
+        } catch (insertError) {
+          setError(handleError(insertError, 'LessonForm'));
           updatePreview('');
           resolve();
           return;
         }
-        console.log('Insert successful:', insertData);
 
         updatePreview(path);
         resolve();
-      }, 'image/jpeg', 0.92)
+      }, IMAGE_CONSTANTS.JPEG_MIME_TYPE, IMAGE_QUALITY.JPEG)
     );
   };
 
-  const postureSlots: PosturePosition[] = ['front', 'right', 'back', 'left'];
+  const postureSlots = useMemo(() => ALL_POSTURE_POSITIONS, []);
   const [selectedPosture, setSelectedPosture] = useState<PosturePosition>('front');
   const nextPostureSlot = useMemo<PosturePosition>(() => {
     const taken = posturePreviews.map((p) => p.position);
     const firstEmpty = postureSlots.find((p) => !taken.includes(p));
     return firstEmpty ?? postureSlots[0];
-  }, [posturePreviews]);
+  }, [posturePreviews, postureSlots]);
 
   useEffect(() => {
     // デフォルトの選択を未撮影枠に合わせる
@@ -312,35 +268,55 @@ export const LessonForm: React.FC = () => {
 
   // レッスン作成後に posture_group をレッスンIDと紐づける
   const linkPostureGroupToLesson = async (lessonId: string) => {
-    if (!supabase || !postureGroupId) return;
-    const { error } = await supabase
-      .from('posture_groups')
-      .update({ lesson_id: lessonId })
-      .eq('id', postureGroupId);
-    if (error) {
-      console.error('Failed to link posture_group to lesson', error);
+    if (!postureGroupId) return;
+    try {
+      await axiosInstance.put(`/posture-groups/${postureGroupId}`, {
+        lessonId,
+      });
+    } catch (error) {
       // 画面遷移は続行するが、エラーは表示
-      setError('姿勢データの紐付けに失敗しました');
+      logger.warn('Failed to update posture group with lesson ID', error, 'LessonForm');
+      setError(handleError(error, 'LessonForm'));
     }
   };
-  const labelClass =
-    'inline-block text-2xl font-semibold text-gray-800 whitespace-nowrap leading-tight';
-  const inputClass =
-    'block w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-xl focus:outline-none focus:ring-2 focus:ring-green-300 focus:border-green-300';
-  const sectionHeadingClass = 'text-lg font-medium text-gray-700';
   const displayStartDate = formData.startDate ? formData.startDate.replace('T', ' ') : '';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    if (!formData.storeId || !formData.userId || !formData.customerId) {
-      setError('店舗・担当・顧客は必須です');
+    // Validate required fields
+    if (!validateRequired(formData.storeId) || !validateRequired(formData.userId) || !validateRequired(formData.customerId)) {
+      setError(ERROR_MESSAGES.REQUIRED_FIELD);
       return;
     }
-    if (formData.startDate && formData.endDate && formData.endDate < formData.startDate) {
-      setError('終了日時は開始日時より後にしてください');
+
+    // Validate date range
+    if (formData.startDate && formData.endDate && !validateDateRange(formData.startDate, formData.endDate)) {
+      setError(ERROR_MESSAGES.DATE_RANGE_ERROR);
       return;
+    }
+
+    // Validate weight if provided
+    if (formData.weight !== null && formData.weight !== undefined) {
+      if (!validateNumericRange(formData.weight, 0, 500)) {
+        setError('体重は0kg以上500kg以下で入力してください');
+        return;
+      }
+    }
+
+    // Validate trainings
+    if (trainings.length > 0) {
+      for (const training of trainings) {
+        if (!validateRequired(training.name)) {
+          setError('トレーニング種目名は必須です');
+          return;
+        }
+        if (!validateNumericRange(training.reps, 1, 10000)) {
+          setError('回数は1回以上10000回以下で入力してください');
+          return;
+        }
+      }
     }
 
     setLoading(true);
@@ -348,7 +324,7 @@ export const LessonForm: React.FC = () => {
       const created = await lessonApi.create({ 
         ...formData, 
         postureGroupId: postureGroupId ?? undefined,
-        trainings: mergedTrainings 
+        trainings: trainings 
       });
       if (created?.id) {
         await linkPostureGroupToLesson(created.id);
@@ -360,8 +336,7 @@ export const LessonForm: React.FC = () => {
         navigate(ROUTES.LESSON_FORM);
       }
     } catch (err) {
-      console.error('Error creating lesson:', err);
-      setError('レッスン作成に失敗しました');
+      setError(handleError(err, 'LessonForm'));
     } finally {
       setLoading(false);
     }
@@ -385,12 +360,12 @@ export const LessonForm: React.FC = () => {
         {error && <div className="text-red-600 text-sm">{error}</div>}
 
         <div className="space-y-4">
-          <h2 className={sectionHeadingClass}>顧客・体重</h2>
+          <h2 className={FORM_STYLES.sectionHeading}>顧客・体重</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 md:gap-y-5 md:gap-x-12">
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-              <label className={labelClass}>顧客：</label>
+              <label className={FORM_STYLES.label}>顧客：</label>
             <select
-                className={`${inputClass} sm:flex-1`}
+                className={`${FORM_STYLES.input} sm:flex-1`}
                 value={formData.customerId}
                 onChange={(e) => setFormData({ ...formData, customerId: e.target.value })}
               required
@@ -405,11 +380,11 @@ export const LessonForm: React.FC = () => {
           </div>
 
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-              <label className={labelClass}>体重 (kg)：</label>
+              <label className={FORM_STYLES.label}>体重 (kg)：</label>
               <input
                 type="number"
                 step="0.1"
-                className={`${inputClass} sm:flex-1`}
+                className={`${FORM_STYLES.input} sm:flex-1`}
                 value={formData.weight ?? ''}
                 onChange={(e) =>
                   setFormData({ ...formData, weight: e.target.value ? Number(e.target.value) : null })
@@ -420,12 +395,12 @@ export const LessonForm: React.FC = () => {
         </div>
 
         <div className="space-y-4">
-          <h2 className={sectionHeadingClass}>担当・店舗</h2>
+          <h2 className={FORM_STYLES.sectionHeading}>担当・店舗</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 md:gap-y-5 md:gap-x-12">
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-              <label className={labelClass}>担当：</label>
+              <label className={FORM_STYLES.label}>担当：</label>
             <select
-                className={`${inputClass} sm:flex-1`}
+                className={`${FORM_STYLES.input} sm:flex-1`}
               value={formData.userId}
               onChange={(e) => setFormData({ ...formData, userId: e.target.value })}
               required
@@ -440,9 +415,9 @@ export const LessonForm: React.FC = () => {
           </div>
 
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-              <label className={labelClass}>店舗：</label>
+              <label className={FORM_STYLES.label}>店舗：</label>
             <select
-                className={`${inputClass} sm:flex-1`}
+                className={`${FORM_STYLES.input} sm:flex-1`}
                 value={formData.storeId}
                 onChange={(e) => setFormData({ ...formData, storeId: e.target.value })}
               required
@@ -459,13 +434,13 @@ export const LessonForm: React.FC = () => {
           </div>
 
         <div className="space-y-4">
-          <h2 className={sectionHeadingClass}>体調・食事</h2>
+          <h2 className={FORM_STYLES.sectionHeading}>体調・食事</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 md:gap-y-5 md:gap-x-12">
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-              <label className={labelClass}>体調：</label>
+              <label className={FORM_STYLES.label}>体調：</label>
             <input
               type="text"
-                className={`${inputClass} sm:flex-1`}
+                className={`${FORM_STYLES.input} sm:flex-1`}
               value={formData.condition ?? ''}
               onChange={(e) => setFormData({ ...formData, condition: e.target.value })}
                 placeholder="体調メモ (condition)"
@@ -473,10 +448,10 @@ export const LessonForm: React.FC = () => {
           </div>
 
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-              <label className={labelClass}>食事：</label>
+              <label className={FORM_STYLES.label}>食事：</label>
             <input
               type="text"
-                className={`${inputClass} sm:flex-1`}
+                className={`${FORM_STYLES.input} sm:flex-1`}
               value={formData.meal ?? ''}
               onChange={(e) => setFormData({ ...formData, meal: e.target.value })}
                 placeholder="食事内容 (meal)"
@@ -487,13 +462,13 @@ export const LessonForm: React.FC = () => {
 
         <div className="space-y-4">
           <div className="space-y-3">
-            <h2 className={sectionHeadingClass}>開始時間・終了時間</h2>
+            <h2 className={FORM_STYLES.sectionHeading}>開始時間・終了時間</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-y-3 md:gap-x-12 md:gap-y-4">
               <div className="flex flex-row items-center gap-3 md:gap-4">
                 <label className="text-2xl font-semibold text-gray-800 whitespace-nowrap">開始時間：</label>
             <input
               type="datetime-local"
-                  className={`${inputClass} flex-1`}
+                  className={`${FORM_STYLES.input} flex-1`}
               value={formData.startDate ?? ''}
               onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
               required
@@ -504,7 +479,7 @@ export const LessonForm: React.FC = () => {
                 <label className="text-2xl font-semibold text-gray-800 whitespace-nowrap">終了時間：</label>
             <input
               type="datetime-local"
-                  className={`${inputClass} flex-1`}
+                  className={`${FORM_STYLES.input} flex-1`}
               value={formData.endDate ?? ''}
               onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
             />
@@ -513,12 +488,12 @@ export const LessonForm: React.FC = () => {
           </div>
 
           <div className="space-y-3">
-            <h2 className={sectionHeadingClass}>次回予約</h2>
+            <h2 className={FORM_STYLES.sectionHeading}>次回予約</h2>
             <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
               <span className="text-2xl font-semibold text-gray-800 whitespace-nowrap">日にち/時刻：</span>
             <input
               type="datetime-local"
-                className={`${inputClass} md:flex-1`}
+                className={`${FORM_STYLES.input} md:flex-1`}
               value={formData.nextDate ?? ''}
               onChange={(e) => setFormData({ ...formData, nextDate: e.target.value })}
             />
@@ -526,9 +501,9 @@ export const LessonForm: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6">
               <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
-                <label className={labelClass}>次回店舗：</label>
+                <label className={FORM_STYLES.label}>次回店舗：</label>
             <select
-                  className={`${inputClass} md:flex-1`}
+                  className={`${FORM_STYLES.input} md:flex-1`}
               value={formData.nextStoreId ?? ''}
               onChange={(e) => setFormData({ ...formData, nextStoreId: e.target.value })}
             >
@@ -542,9 +517,9 @@ export const LessonForm: React.FC = () => {
           </div>
 
               <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
-                <label className={labelClass}>次回トレーナー：</label>
+                <label className={FORM_STYLES.label}>次回トレーナー：</label>
             <select
-                  className={`${inputClass} md:flex-1`}
+                  className={`${FORM_STYLES.input} md:flex-1`}
               value={formData.nextUserId ?? ''}
               onChange={(e) => setFormData({ ...formData, nextUserId: e.target.value })}
             >
@@ -579,7 +554,7 @@ export const LessonForm: React.FC = () => {
               <input
                 type="text"
                   placeholder="例：スクワット、腹筋"
-                  className={`${inputClass} flex-1`}
+                  className={`${FORM_STYLES.input} flex-1`}
                 value={t.name}
                 onChange={(e) => handleTrainingChange(idx, 'name', e.target.value)}
                 required
@@ -663,12 +638,6 @@ export const LessonForm: React.FC = () => {
             <div className="grid grid-cols-2 gap-3">
               {postureSlots.map((pos) => {
                 const preview = posturePreviews.find((p) => p.position === pos);
-                const labelMap: Record<PosturePosition, string> = {
-                  front: '正面',
-                  right: '右',
-                  back: '背面',
-                  left: '左',
-                };
                 const isSelected = selectedPosture === pos;
                 return (
                   <div
@@ -678,7 +647,7 @@ export const LessonForm: React.FC = () => {
                     }`}
                   >
                     <div className="text-sm font-medium text-gray-800 flex items-center justify-between">
-                      <span>{labelMap[pos]}</span>
+                      <span>{getPosturePositionLabel(pos)}</span>
                       {preview && (
                         <button
                           type="button"
@@ -705,7 +674,7 @@ export const LessonForm: React.FC = () => {
                       }`}
                       onClick={() => setSelectedPosture(pos)}
                     >
-                      {isSelected ? '選択中' : '選択'}（{labelMap[pos]}）
+                      {isSelected ? '選択中' : '選択'}（{getPosturePositionLabel(pos)}）
                     </button>
                   </div>
                 );
@@ -720,15 +689,7 @@ export const LessonForm: React.FC = () => {
               className="w-full md:w-auto px-16 py-4 bg-green-500 text-white rounded-full text-lg font-semibold hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={captureSelectedPosture}
             >
-              撮影する（{(() => {
-                const labelMap: Record<PosturePosition, string> = {
-                  front: '正面',
-                  right: '右',
-                  back: '背面',
-                  left: '左',
-                };
-                return labelMap[selectedPosture];
-              })()}）
+              撮影する（{getPosturePositionLabel(selectedPosture)}）
             </button>
           </div>
           <p className="text-xs text-gray-500">
@@ -737,9 +698,9 @@ export const LessonForm: React.FC = () => {
         </div>
 
         <div className="space-y-2">
-          <label className={labelClass}>備考欄</label>
+          <label className={FORM_STYLES.label}>備考欄</label>
           <textarea
-            className={`${inputClass} min-h-[180px]`}
+            className={`${FORM_STYLES.input} min-h-[180px]`}
             value={formData.memo ?? ''}
             onChange={(e) => setFormData({ ...formData, memo: e.target.value })}
             rows={5}

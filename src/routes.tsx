@@ -8,14 +8,11 @@ import { Login } from './pages/Login';
 import { LessonForm } from './pages/LessonForm';
 import { LessonDetail } from './pages/LessonDetail';
 import { PostureCompare } from './pages/PostureCompare';
-import { PostureImageList, usePostureImageList } from './pages/PostureImageList';
+import { usePostureImageList } from './pages/PostureImageList';
 import { HiHome } from 'react-icons/hi';
 
-// アイコンコンポーネント
-const HomeIcon = (props: { className?: string }) => {
-  const Icon = HiHome as any;
-  return <Icon {...props} />;
-};
+// React Icons workaround for TypeScript strict mode
+const HomeIcon = HiHome as React.ComponentType<{ className?: string }>;
 
 // ページごとのメニュー項目（顧客未選択時）
 const defaultMenuItems = [
@@ -23,15 +20,18 @@ const defaultMenuItems = [
 ];
 
 const PrivateRoute: React.FC<{ children: React.ReactElement }> = ({ children }) => {
-  const { authLoading } = useAuth();
+  const { authLoading, isAuthenticated } = useAuth();
 
   if (authLoading) {
     return <Loading />;
   }
 
-  // 開発中: 認証をスキップ
+  // 認証チェック: 常に有効化（セキュリティのため）
+  if (!isAuthenticated) {
+    return <Navigate to={ROUTES.LOGIN} replace />;
+  }
+
   return children;
-  // return isAuthenticated ? children : <Navigate to={ROUTES.LOGIN} replace />;
 };
 
 // PostureImageList用のラッパーコンポーネント

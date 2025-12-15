@@ -1,130 +1,182 @@
-import { supabase } from '../lib/supabase';
+import axiosInstance from './axiosConfig';
 import { Lesson, LessonFormData, TrainingInput } from '../types/lesson';
 import { PaginatedResponse, PaginationParams } from '../types/common';
+import { handleApiError, logError } from '../utils/errorHandler';
+import { DEFAULT_PAGE, DEFAULT_PAGE_LIMIT } from '../constants/pagination';
+import { toNull } from '../utils/dataTransformers';
 
-const mapLesson = (row: any): Lesson => ({
-  id: row.id,
-  storeId: row.store_id,
-  userId: row.user_id,
-  customerId: row.customer_id,
-  postureGroupId: row.posture_group_id,
-  condition: row.condition,
-  weight: row.weight,
-  meal: row.meal,
-  memo: row.memo,
-  startDate: row.start_date,
-  endDate: row.end_date,
-  nextDate: row.next_date,
-  nextStoreId: row.next_store_id,
-  nextUserId: row.next_user_id,
-  createdAt: row.created_at,
-  updatedAt: row.updated_at,
-});
+/**
+ * Map API response to Lesson type
+ * Handles both camelCase and snake_case responses
+ */
+const mapLesson = (row: Lesson | any): Lesson => {
+  // If already in correct format, return as is
+  if (row.id && row.storeId !== undefined) {
+    return row as Lesson;
+  }
+  
+  // Map from snake_case if needed
+  return {
+    id: row.id,
+    storeId: row.store_id ?? row.storeId,
+    userId: row.user_id ?? row.userId,
+    customerId: row.customer_id ?? row.customerId,
+    postureGroupId: row.posture_group_id ?? row.postureGroupId,
+    condition: row.condition,
+    weight: row.weight,
+    meal: row.meal,
+    memo: row.memo,
+    startDate: row.start_date ?? row.startDate,
+    endDate: row.end_date ?? row.endDate,
+    nextDate: row.next_date ?? row.nextDate,
+    nextStoreId: row.next_store_id ?? row.nextStoreId,
+    nextUserId: row.next_user_id ?? row.nextUserId,
+    createdAt: row.created_at ?? row.createdAt,
+  };
+};
 
+/**
+ * レッスンAPI
+ * レッスンのCRUD操作を処理
+ */
 export const lessonApi = {
+  /**
+   * ページネーション付きで全レッスンを取得
+   * 
+   * @param params - ページネーションパラメータ（page, limit）
+   * @returns レッスンを含むページネーション付きレスポンス
+   */
   getAll: async (params?: PaginationParams): Promise<PaginatedResponse<Lesson>> => {
-    if (!supabase) throw new Error('Supabase未設定');
-    const page = params?.page ?? 1;
-    const limit = params?.limit ?? 100;
-    const from = (page - 1) * limit;
-    const to = from + limit - 1;
-    const { data, error, count } = await supabase
-      .from('lessons')
-      .select('*', { count: 'exact' })
-      .range(from, to);
-    if (error) throw error;
-    const mapped = (data as any[])?.map(mapLesson) ?? [];
-    return {
-      data: mapped,
-      total: count ?? data?.length ?? 0,
-      page,
-      limit,
-    };
+    try {
+      const page = params?.page ?? DEFAULT_PAGE;
+      const limit = params?.limit ?? DEFAULT_PAGE_LIMIT;
+      
+      const response = await axiosInstance.get<PaginatedResponse<Lesson>>('/lessons', {
+        params: { page, limit },
+      });
+      
+      if (!response.data || !Array.isArray(response.data.data)) {
+        throw new Error('Invalid response format from /lessons');
+      }
+      
+      const mapped = response.data.data.map(mapLesson);
+      return {
+        data: mapped,
+        total: response.data.total ?? mapped.length,
+        page: response.data.page ?? page,
+        limit: response.data.limit ?? limit,
+      };
+    } catch (error) {
+      const appError = handleApiError(error);
+      logError(appError, 'lessonApi.getAll');
+      throw appError;
+    }
   },
 
+  /**
+   * IDでレッスンを取得
+   * 
+   * @param id - レッスンID
+   * @returns レッスンデータ
+   */
   getById: async (id: string): Promise<Lesson> => {
-    if (!supabase) throw new Error('Supabase未設定');
-    const { data, error } = await supabase.from('lessons').select('*').eq('id', id).single();
-    if (error) throw error;
-    return mapLesson(data);
+    try {
+      const response = await axiosInstance.get<Lesson>(`/lessons/${id}`);
+      return mapLesson(response.data);
+    } catch (error) {
+      const appError = handleApiError(error);
+      logError(appError, 'lessonApi.getById');
+      throw appError;
+    }
   },
 
   getByCustomerId: async (customerId: string): Promise<Lesson[]> => {
-    if (!supabase) throw new Error('Supabase未設定');
-    const { data, error } = await supabase.from('lessons').select('*').eq('customer_id', customerId);
-    if (error) throw error;
-    return ((data as any[]) ?? []).map(mapLesson);
-  },
-
-  create: async (data: LessonFormData): Promise<Lesson> => {
-    if (!supabase) throw new Error('Supabase未設定');
-    const now = new Date().toISOString();
-    const toNull = (v: string | null | undefined) => (v && v.trim() !== '' ? v : null);
-    const insertData = {
-      store_id: toNull(data.storeId), // requiredだが念のため空文字をnull化
-      user_id: toNull(data.userId),
-      customer_id: toNull(data.customerId),
-      posture_group_id: toNull(data.postureGroupId ?? null),
-      condition: data.condition ?? null,
-      weight: data.weight ?? null,
-      meal: data.meal ?? null,
-      memo: data.memo ?? null,
-      start_date: data.startDate && data.startDate !== '' ? data.startDate : null,
-      end_date: data.endDate && data.endDate !== '' ? data.endDate : null,
-      next_date: data.nextDate && data.nextDate !== '' ? data.nextDate : null,
-      next_store_id: toNull(data.nextStoreId ?? null),
-      next_user_id: toNull(data.nextUserId ?? null),
-      created_at: now,
-    };
-    const { data: inserted, error } = await supabase.from('lessons').insert([insertData]).select().single();
-    if (error) throw error;
-
-    // trainings があれば一括登録
-    if (data.trainings && data.trainings.length > 0 && inserted?.id) {
-      const trainingsToInsert = data.trainings.map((t: TrainingInput, idx) => ({
-        lesson_id: inserted.id,
-        order_no: t.orderNo ?? idx + 1,
-        name: t.name,
-        reps: t.reps,
-      }));
-      const { error: trainingError } = await supabase.from('trainings').insert(trainingsToInsert);
-      if (trainingError) throw trainingError;
+    try {
+      const response = await axiosInstance.get<Lesson[]>(`/customers/${customerId}/lessons`);
+      if (!Array.isArray(response.data)) {
+        throw new Error('Invalid response format from /customers/:customerId/lessons');
+      }
+      return response.data.map(mapLesson);
+    } catch (error) {
+      const appError = handleApiError(error);
+      logError(appError, 'lessonApi.getByCustomerId');
+      throw appError;
     }
-
-    return mapLesson(inserted);
   },
 
-  update: async (id: string, data: Partial<LessonFormData>): Promise<Lesson> => {
-    if (!supabase) throw new Error('Supabase未設定');
-    const toNull = (v: string | null | undefined) => (v && v.trim() !== '' ? v : null);
-    const { data: updated, error } = await supabase
-      .from('lessons')
-      .update({
-        store_id: toNull(data.storeId),
-        user_id: toNull(data.userId),
-        customer_id: toNull(data.customerId),
-        posture_group_id: toNull(data.postureGroupId ?? null),
+  /**
+   * 新しいレッスンを作成
+   * 提供された場合は関連するトレーニングも作成
+   * 
+   * @param data - レッスンフォームデータ
+   * @returns 作成されたレッスン
+   */
+  create: async (data: LessonFormData): Promise<Lesson> => {
+    try {
+      const requestData = {
+        storeId: toNull(data.storeId),
+        userId: toNull(data.userId),
+        customerId: toNull(data.customerId),
+        postureGroupId: toNull(data.postureGroupId ?? null),
         condition: data.condition ?? null,
         weight: data.weight ?? null,
         meal: data.meal ?? null,
         memo: data.memo ?? null,
-        start_date: data.startDate && data.startDate !== '' ? data.startDate : null,
-        end_date: data.endDate && data.endDate !== '' ? data.endDate : null,
-        next_date: data.nextDate && data.nextDate !== '' ? data.nextDate : null,
-        next_store_id: toNull(data.nextStoreId ?? null),
-        next_user_id: toNull(data.nextUserId ?? null),
-      })
-      .eq('id', id)
-      .select()
-      .single();
-    if (error) throw error;
-    return mapLesson(updated);
+        startDate: data.startDate && data.startDate !== '' ? data.startDate : null,
+        endDate: data.endDate && data.endDate !== '' ? data.endDate : null,
+        nextDate: data.nextDate && data.nextDate !== '' ? data.nextDate : null,
+        nextStoreId: toNull(data.nextStoreId ?? null),
+        nextUserId: toNull(data.nextUserId ?? null),
+        trainings: data.trainings?.map((t: TrainingInput, idx) => ({
+          orderNo: t.orderNo ?? idx + 1,
+          name: t.name,
+          reps: t.reps,
+        })) ?? [],
+      };
+      
+      const response = await axiosInstance.post<Lesson>('/lessons', requestData);
+      return mapLesson(response.data);
+    } catch (error) {
+      const appError = handleApiError(error);
+      logError(appError, 'lessonApi.create');
+      throw appError;
+    }
+  },
+
+  update: async (id: string, data: Partial<LessonFormData>): Promise<Lesson> => {
+    try {
+      const updateData: any = {};
+      if (data.storeId !== undefined) updateData.storeId = toNull(data.storeId);
+      if (data.userId !== undefined) updateData.userId = toNull(data.userId);
+      if (data.customerId !== undefined) updateData.customerId = toNull(data.customerId);
+      if (data.postureGroupId !== undefined) updateData.postureGroupId = toNull(data.postureGroupId ?? null);
+      if (data.condition !== undefined) updateData.condition = data.condition ?? null;
+      if (data.weight !== undefined) updateData.weight = data.weight ?? null;
+      if (data.meal !== undefined) updateData.meal = data.meal ?? null;
+      if (data.memo !== undefined) updateData.memo = data.memo ?? null;
+      if (data.startDate !== undefined) updateData.startDate = data.startDate && data.startDate !== '' ? data.startDate : null;
+      if (data.endDate !== undefined) updateData.endDate = data.endDate && data.endDate !== '' ? data.endDate : null;
+      if (data.nextDate !== undefined) updateData.nextDate = data.nextDate && data.nextDate !== '' ? data.nextDate : null;
+      if (data.nextStoreId !== undefined) updateData.nextStoreId = toNull(data.nextStoreId ?? null);
+      if (data.nextUserId !== undefined) updateData.nextUserId = toNull(data.nextUserId ?? null);
+      
+      const response = await axiosInstance.put<Lesson>(`/lessons/${id}`, updateData);
+      return mapLesson(response.data);
+    } catch (error) {
+      const appError = handleApiError(error);
+      logError(appError, 'lessonApi.update');
+      throw appError;
+    }
   },
 
   delete: async (id: string): Promise<void> => {
-    if (!supabase) throw new Error('Supabase未設定');
-    const { error } = await supabase.from('lessons').delete().eq('id', id);
-    if (error) throw error;
+    try {
+      await axiosInstance.delete(`/lessons/${id}`);
+    } catch (error) {
+      const appError = handleApiError(error);
+      logError(appError, 'lessonApi.delete');
+      throw appError;
+    }
   },
 };
 

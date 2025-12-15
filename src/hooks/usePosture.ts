@@ -2,38 +2,24 @@ import { useState, useEffect, useCallback } from 'react';
 import { Posture } from '../types/posture';
 import { postureApi } from '../api/postureApi';
 import { PaginationParams } from '../types/common';
+import { useErrorHandler } from './useErrorHandler';
+import { useResource } from './useResource';
 
 export const usePosture = (id?: string) => {
-  const [posture, setPosture] = useState<Posture | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+  const { resource, loading, error, refetch } = useResource<Posture>({
+    fetchFn: postureApi.getById,
+    id,
+    context: 'usePosture.fetchPosture',
+  });
 
-  useEffect(() => {
-    if (id) {
-      fetchPosture(id);
-    }
-  }, [id]);
-
-  const fetchPosture = async (postureId: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await postureApi.getById(postureId);
-      setPosture(data);
-    } catch (err) {
-      setError(err as Error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return { posture, loading, error, refetch: () => id && fetchPosture(id) };
+  return { posture: resource, loading, error, refetch };
 };
 
 export const usePostures = (params?: PaginationParams) => {
   const [postures, setPostures] = useState<Posture[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const { handleError } = useErrorHandler();
 
   const fetchPostures = useCallback(async () => {
     setLoading(true);
@@ -42,11 +28,12 @@ export const usePostures = (params?: PaginationParams) => {
       const data = await postureApi.getAll(params);
       setPostures(data.data);
     } catch (err) {
-      setError(err as Error);
+      const errorMessage = handleError(err, 'usePostures.fetchPostures');
+      setError(new Error(errorMessage));
     } finally {
       setLoading(false);
     }
-  }, [params]);
+  }, [params, handleError]);
 
   useEffect(() => {
     fetchPostures();
@@ -59,6 +46,7 @@ export const usePosturesByCustomer = (customerId: string) => {
   const [postures, setPostures] = useState<Posture[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const { handleError } = useErrorHandler();
 
   const fetchPostures = useCallback(async () => {
     setLoading(true);
@@ -67,11 +55,12 @@ export const usePosturesByCustomer = (customerId: string) => {
       const data = await postureApi.getByCustomerId(customerId);
       setPostures(data);
     } catch (err) {
-      setError(err as Error);
+      const errorMessage = handleError(err, 'usePosturesByCustomer.fetchPostures');
+      setError(new Error(errorMessage));
     } finally {
       setLoading(false);
     }
-  }, [customerId]);
+  }, [customerId, handleError]);
 
   useEffect(() => {
     if (customerId) {

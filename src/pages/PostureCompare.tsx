@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { postureApi } from '../api/postureApi';
 import { PostureComparison } from '../types/posture';
+import { logger } from '../utils/logger';
 
 export const PostureCompare: React.FC = () => {
   const [beforeId, setBeforeId] = useState('');
@@ -15,7 +16,7 @@ export const PostureCompare: React.FC = () => {
       const result = await postureApi.compare(beforeId, afterId);
       setComparison(result);
     } catch (error) {
-      console.error('Error comparing postures:', error);
+      logger.error('Error comparing postures', error, 'PostureCompare');
     } finally {
       setLoading(false);
     }

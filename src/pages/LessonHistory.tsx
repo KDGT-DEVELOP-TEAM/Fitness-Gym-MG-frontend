@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLessons } from '../hooks/useLesson';
-import { formatDate, formatTime } from '../utils/dateFormatter';
+import { formatDate } from '../utils/dateFormatter';
 
 export const LessonHistory: React.FC = () => {
   const { lessons, loading, error } = useLessons();
@@ -16,12 +16,12 @@ export const LessonHistory: React.FC = () => {
           <div key={lesson.id} className="p-4 border rounded-lg">
             <div className="flex justify-between">
               <div>
-                <p className="font-semibold">{formatDate(lesson.date)}</p>
+                <p className="font-semibold">{lesson.startDate ? formatDate(lesson.startDate) : '日付なし'}</p>
                 <p className="text-sm text-gray-600">
-                  {formatTime(lesson.startTime)} - {formatTime(lesson.endTime)}
+                  {lesson.startDate && lesson.endDate ? `${lesson.startDate.substring(11, 16)} - ${lesson.endDate.substring(11, 16)}` : '時間なし'}
                 </p>
               </div>
-              {lesson.notes && <p className="text-sm">{lesson.notes}</p>}
+              {lesson.memo && <p className="text-sm">{lesson.memo}</p>}
             </div>
           </div>
         ))}
@@ -29,4 +29,3 @@ export const LessonHistory: React.FC = () => {
     </div>
   );
 };
-

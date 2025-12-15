@@ -1,11 +1,9 @@
 import React from 'react';
 import { useCustomers } from '../hooks/useCustomer';
-import { useNavigate } from 'react-router-dom';
-import { ROUTES } from '../constants/routes';
+import { logger } from '../utils/logger';
 
 export const CustomerSelect: React.FC = () => {
   const { customers, loading, error } = useCustomers();
-  const navigate = useNavigate();
 
   if (loading) return <div>読み込み中...</div>;
   if (error) return <div>エラー: {error.message}</div>;
@@ -17,7 +15,11 @@ export const CustomerSelect: React.FC = () => {
         {customers.map((customer) => (
           <div
             key={customer.id}
-            onClick={() => navigate(ROUTES.CUSTOMER_PROFILE.replace(':id', customer.id))}
+            onClick={() => {
+              // 統合後顧客プロフィールページへのルートを追加予定
+              // Issue: 顧客プロフィール機能の実装が必要
+              logger.debug('Customer profile not implemented', { customerId: customer.id }, 'CustomerSelect');
+            }}
             className="p-4 border rounded-lg cursor-pointer hover:bg-gray-50"
           >
             <h3 className="font-semibold">{customer.name}</h3>
@@ -28,4 +30,3 @@ export const CustomerSelect: React.FC = () => {
     </div>
   );
 };
-
