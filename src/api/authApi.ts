@@ -2,15 +2,16 @@ import axiosInstance from './axiosConfig';
 import { LoginCredentials, AuthResponse } from '../types/auth';
 
 export const authApi = {
-  login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
+  login: async (credentials: LoginCredentials): Promise<void> => {
     const response = await axiosInstance.post<AuthResponse>('/auth/login', credentials);
-    return response.data;
+    // token保存はauthApi内で完結
+    localStorage.setItem('token', response.data.token);
   },
 
   logout: async (): Promise<void> => {
     await axiosInstance.post('/auth/logout');
+    // token削除のみ
     localStorage.removeItem('token');
-    localStorage.removeItem('user');
   },
 
   getCurrentUser: async (): Promise<AuthResponse['user']> => {

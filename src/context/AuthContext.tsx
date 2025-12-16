@@ -20,21 +20,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   useEffect(() => {
     const initAuth = async () => {
-      const token = localStorage.getItem('token');
-
-      if (token) {
-        try {
-          // getCurrentUser()が成功して初めて認証済みと判断
-          const currentUser = await authApi.getCurrentUser();
-          setUser(currentUser);
-        } catch (error) {
-          // トークンがあっても getCurrentUser() が失敗したら未認証
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          setUser(null);
-        }
+      try {
+        // getCurrentUser()の成否のみで認証状態を判断
+        const currentUser = await authApi.getCurrentUser();
+        setUser(currentUser);
+      } catch (error) {
+        // 認証失敗時はnullに設定
+        setUser(null);
+      } finally {
+        setAuthLoading(false);
       }
-      setAuthLoading(false);
     };
 
     initAuth();
@@ -43,19 +38,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const login = async (email: string, password: string): Promise<User> => {
     setActionLoading(true);
     try {
-      // ログイン実行
-      const response = await authApi.login({ email, password });
-      localStorage.setItem('token', response.token);
+      // authApi側でtoken保存まで完結
+      await authApi.login({ email, password });
 
       // getCurrentUser()で認証を確定
       const currentUser = await authApi.getCurrentUser();
       setUser(currentUser);
-      localStorage.setItem('user', JSON.stringify(currentUser));
 
       return currentUser;
     } catch (error) {
       console.error('ログインに失敗しました:', error);
-      throw error; // UI側がハンドリングできるように返す
+      throw error;
     } finally {
       setActionLoading(false);
     }
@@ -69,8 +62,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // ログアウトAPIが失敗してもローカルの状態はクリア
       console.error('Logout API failed:', error);
     } finally {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
       setUser(null);
       setActionLoading(false);
     }

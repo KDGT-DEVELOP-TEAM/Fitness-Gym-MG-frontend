@@ -1,47 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../context/AuthContext';
 import { lessonApi } from '../api/lessonApi';
 import { AppointmentWithDetails } from '../types/lesson';
 import { ROUTES } from '../constants/routes';
 import { FiChevronRight, FiSearch, FiCalendar, FiUser, FiPhone, FiClock } from 'react-icons/fi';
 
-// アイコンコンポーネント
-const SearchIcon = (props: { className?: string; style?: React.CSSProperties }) => {
-  const Icon = FiSearch as any;
-  return <Icon {...props} />;
-};
-
-const ChevronRightIcon = (props: { className?: string; style?: React.CSSProperties }) => {
-  const Icon = FiChevronRight as any;
-  return <Icon {...props} />;
-};
-
-const CalendarIcon = (props: { className?: string; style?: React.CSSProperties }) => {
-  const Icon = FiCalendar as any;
-  return <Icon {...props} />;
-};
-
-const UserIcon = (props: { className?: string; style?: React.CSSProperties }) => {
-  const Icon = FiUser as any;
-  return <Icon {...props} />;
-};
-
-const PhoneIcon = (props: { className?: string; style?: React.CSSProperties }) => {
-  const Icon = FiPhone as any;
-  return <Icon {...props} />;
-};
-
-const ClockIcon = (props: { className?: string; style?: React.CSSProperties }) => {
-  const Icon = FiClock as any;
-  return <Icon {...props} />;
-};
-
 export const CustomerSelect: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [appointments, setAppointments] = useState<AppointmentWithDetails[]>([]);
-  const [displayedAppointments, setDisplayedAppointments] = useState<AppointmentWithDetails[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -53,17 +21,18 @@ export const CustomerSelect: React.FC = () => {
     }
   }, [user]);
 
-  useEffect(() => {
-    // 検索フィルタリング
+  // useMemoで検索フィルタリングとスライスを最適化
+  const displayedAppointments = useMemo(() => {
     if (searchQuery.trim() === '') {
-      setDisplayedAppointments(appointments.slice(0, visibleCount));
+      return appointments.slice(0, visibleCount);
     } else {
+      const normalizedQuery = searchQuery.toLowerCase();
       const filtered = appointments.filter((apt) =>
-        apt.customer.name.includes(searchQuery)
+        apt.customer.name.toLowerCase().includes(normalizedQuery)
       );
-      setDisplayedAppointments(filtered.slice(0, visibleCount));
+      return filtered.slice(0, visibleCount);
     }
-  }, [searchQuery, appointments, visibleCount]);
+  }, [appointments, searchQuery, visibleCount]);
 
   const fetchAppointments = async () => {
     if (!user?.id) return;
@@ -73,7 +42,6 @@ export const CustomerSelect: React.FC = () => {
     try {
       const data = await lessonApi.getInstructorAppointments(user.id);
       setAppointments(data);
-      setDisplayedAppointments(data.slice(0, visibleCount));
     } catch (err) {
       setError('予約情報の取得に失敗しました');
       console.error(err);
@@ -167,7 +135,7 @@ export const CustomerSelect: React.FC = () => {
       {/* これからの予約件数 */}
       <div className="mb-6">
         <div className="border border-[#DFDFDF] bg-white rounded-[10px] flex items-center px-6 h-[65px]">
-          <CalendarIcon className="text-[#68BE6B] mr-3 w-[29px] h-[29px]" />
+          <FiCalendar className="text-[#68BE6B] mr-3 w-[29px] h-[29px]" />
           <p className="text-gray-700 text-[23px]">
             これからの予約: <span className="font-semibold text-[#68BE6B]">{upcomingCount}</span>件
           </p>
@@ -177,7 +145,7 @@ export const CustomerSelect: React.FC = () => {
       {/* 検索バー */}
       <div className="mb-6 flex justify-center">
         <div className="relative border border-[#DFDFDF] rounded-[35px] h-[70px] max-w-[95%] w-full">
-          <SearchIcon className="absolute left-6 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <FiSearch className="absolute left-6 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
           <input
             type="text"
             placeholder="名前を入力"
@@ -220,7 +188,7 @@ export const CustomerSelect: React.FC = () => {
                 >
                   {/* 右側の緑のアクセントバーと矢印 */}
                   <div className="absolute right-4 top-4 bottom-4 bg-[#68BE6B] rounded-full w-[30px] transition-transform group-hover:scale-105">
-                    <ChevronRightIcon className="text-white absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex-shrink-0 w-7 h-7" />
+                    <FiChevronRight className="text-white absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex-shrink-0 w-7 h-7" />
                   </div>
 
                   <div className="flex-1">
@@ -238,28 +206,22 @@ export const CustomerSelect: React.FC = () => {
                     </div>
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
-                        <UserIcon className="text-[#FAB7B7] w-[18px] h-[18px]" />
+                        <FiUser className="text-[#FAB7B7] w-[18px] h-[18px]" />
                         <p className="text-lg font-bold text-gray-900">
                           {appointment.customer.name}
                         </p>
                       </div>
                       {appointment.customer.phone && (
                         <div className="flex items-center gap-2">
-                          <PhoneIcon className="text-[#FAB7B7] w-4 h-4" />
+                          <FiPhone className="text-[#FAB7B7] w-4 h-4" />
                           <p className="text-sm text-gray-600">
                             {appointment.customer.phone}
                           </p>
                         </div>
                       )}
                       <div className="flex items-center gap-3 text-sm text-gray-600">
-                        {appointment.lessonType && (
-                          <span className="font-medium">{appointment.lessonType}</span>
-                        )}
-                        {appointment.lessonType && (
-                          <span>•</span>
-                        )}
                         <div className="flex items-center gap-1 text-[#D3D3D3]">
-                          <ClockIcon className="w-4 h-4" />
+                          <FiClock className="w-4 h-4" />
                           <span>
                             {calculateDuration(appointment.startTime, appointment.endTime)}分
                           </span>
@@ -275,7 +237,7 @@ export const CustomerSelect: React.FC = () => {
       </div>
 
       {/* もっと見るボタン */}
-      {displayedAppointments.length < (searchQuery ? appointments.filter(apt => apt.customer.name.includes(searchQuery)).length : appointments.length) && (
+      {displayedAppointments.length < (searchQuery ? appointments.filter(apt => apt.customer.name.toLowerCase().includes(searchQuery.toLowerCase())).length : appointments.length) && (
         <div className="mt-6 text-center">
           <button
             onClick={handleLoadMore}

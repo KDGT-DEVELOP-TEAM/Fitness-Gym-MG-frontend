@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { FiChevronRight, FiUser, FiClock } from 'react-icons/fi';
 import { lessonApi } from '../api/lessonApi';
@@ -16,21 +16,22 @@ import {
   ReferenceLine,
 } from 'recharts';
 
-// アイコンコンポーネント
-const ChevronRightIcon = (props: { className?: string }) => {
-  const Icon = FiChevronRight as any;
-  return <Icon {...props} />;
-};
+// 型定義
+interface LessonHistoryItem {
+  id: string;
+  date: string;
+  dayOfWeek: string;
+  startTime: string;
+  status: string;
+  customerName: string;
+  shopName: string;
+}
 
-const UserIcon = (props: { className?: string }) => {
-  const Icon = FiUser as any;
-  return <Icon {...props} />;
-};
-
-const ClockIcon = (props: { className?: string }) => {
-  const Icon = FiClock as any;
-  return <Icon {...props} />;
-};
+interface BMIHistoryItem {
+  date: string;
+  bmi: number;
+  weight: number;
+}
 
 // 初期BMI（基準点）
 const initialBMI = 23.5;
@@ -40,8 +41,8 @@ export const LessonHistory: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [lessonHistory, setLessonHistory] = useState<any[]>([]);
-  const [bmiData, setBmiData] = useState<any[]>([]);
+  const [lessonHistory, setLessonHistory] = useState<LessonHistoryItem[]>([]);
+  const [bmiData, setBmiData] = useState<BMIHistoryItem[]>([]);
   const [selectedDataPoint, setSelectedDataPoint] = useState<string | null>(null);
   const itemsPerPage = 10;
 
@@ -60,11 +61,12 @@ export const LessonHistory: React.FC = () => {
 
         // TODO: 実際のAPIからデータを取得
         // const lessons = await lessonApi.getByCustomerId(id);
-        // setLessonHistory(lessons);
+        // 一時的にモックデータを設定
+        setLessonHistory([]);
 
         // TODO: BMIデータの取得APIを実装
         // const bmiHistory = await customerApi.getBMIHistory(id);
-        // setBmiData(bmiHistory);
+        setBmiData([]);
 
         await new Promise(resolve => setTimeout(resolve, 500)); // API呼び出しをシミュレート
       } catch (err) {
@@ -83,19 +85,23 @@ export const LessonHistory: React.FC = () => {
   const currentLessons = lessonHistory.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(lessonHistory.length / itemsPerPage);
 
-  // 日付ごとにグループ化
-  const groupedLessons = currentLessons.reduce((acc, lesson) => {
-    const date = lesson.date;
-    if (!acc[date]) {
-      acc[date] = [];
-    }
-    acc[date].push(lesson);
-    return acc;
-  }, {} as Record<string, any[]>);
+  // 日付ごとにグループ化（useMemoで最適化）
+  const groupedLessons = useMemo(() => {
+    return currentLessons.reduce((acc, lesson) => {
+      const date = lesson.date;
+      if (!acc[date]) {
+        acc[date] = [];
+      }
+      acc[date].push(lesson);
+      return acc;
+    }, {} as Record<string, LessonHistoryItem[]>);
+  }, [currentLessons]);
 
   const formatDate = (dateStr: string) => {
-    const [, month, day] = dateStr.split('-');
-    return `一昨日 ${month}月${day}日`;
+    const date = new Date(dateStr);
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    return `${month}月${day}日`;
   };
 
   const handleLessonClick = (lessonId: string) => {
@@ -288,7 +294,7 @@ export const LessonHistory: React.FC = () => {
               >
                 {/* 右側の緑のアクセントバーと矢印 */}
                 <div className="absolute right-4 top-4 bottom-4 bg-[#68BE6B] rounded-full w-[30px] transition-transform group-hover:scale-105">
-                  <ChevronRightIcon className="text-white absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex-shrink-0 w-7 h-7" />
+                  <FiChevronRight className="text-white absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex-shrink-0 w-7 h-7" />
                 </div>
 
                 <div className="flex-1">
@@ -302,7 +308,7 @@ export const LessonHistory: React.FC = () => {
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <UserIcon className="text-[#FAB7B7] w-[18px] h-[18px]" />
+                      <FiUser className="text-[#FAB7B7] w-[18px] h-[18px]" />
                       <p className="text-lg font-bold text-gray-900">
                         {lesson.customerName}
                       </p>
@@ -313,7 +319,7 @@ export const LessonHistory: React.FC = () => {
                       <span>チェスト</span>
                       <span>•</span>
                       <div className="flex items-center gap-1 text-[#D3D3D3]">
-                        <ClockIcon className="w-4 h-4" />
+                        <FiClock className="w-4 h-4" />
                         <span>120分</span>
                       </div>
                     </div>

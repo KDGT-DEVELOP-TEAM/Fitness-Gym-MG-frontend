@@ -1,36 +1,62 @@
 export interface Lesson {
   id: string;
+  storeId: string;
+  userId: string;
   customerId: string;
-  instructorId: string;
-  date: string;
-  startTime: string;
-  endTime: string;
-  notes?: string;
-  createdAt: string;
-  updatedAt: string;
+  postureGroupId?: string | null;
+  condition?: string | null;
+  weight?: number | null;
+  meal?: string | null;
+  memo?: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  nextDate?: string | null;
+  nextStoreId?: string | null;
+  nextUserId?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface TrainingInput {
+  name: string;
+  reps: number;
+  orderNo?: number;
 }
 
 export interface LessonFormData {
+  storeId: string;
+  userId: string;
   customerId: string;
-  instructorId: string;
+  postureGroupId?: string | null;
+  condition?: string | null;
+  weight?: number | null;
+  meal?: string | null;
+  memo?: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  nextDate?: string | null;
+  nextStoreId?: string | null;
+  nextUserId?: string | null;
+  trainings?: TrainingInput[];
+}
+
+export interface AppointmentWithDetails {
+  id: string;
   date: string;
   startTime: string;
   endTime: string;
-  notes?: string;
-}
-
-// 予約一覧表示用の拡張型
-export interface AppointmentWithDetails extends Lesson {
+  status: string;
   customer: {
     id: string;
     name: string;
     phone?: string;
   };
+  instructor: {
+    id: string;
+    name: string;
+  };
   shop: {
     id: string;
     name: string;
   };
-  lessonType?: string;
-  status: 'scheduled' | 'completed' | 'cancelled';
 }
-

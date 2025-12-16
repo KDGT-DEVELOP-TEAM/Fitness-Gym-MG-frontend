@@ -1,49 +1,59 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../context/AuthContext';
 import { ROUTES } from '../constants/routes';
-import { getErrorMessage } from '../utils/loginErrorMessages';
+import { getErrorMessage } from '../utils/errorMessages';
 
 export const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [loginError, setLoginError] = useState('');
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
-  const [resetMessage, setResetMessage] = useState('');
+  const [resetInfoMessage, setResetInfoMessage] = useState('');
   const { login, actionLoading } = useAuth();
   const navigate = useNavigate();
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    setResetMessage('');
+    setResetInfoMessage('');
 
     try {
       // TODO: パスワードリセットAPIを実装する必要
       // await authApi.resetPassword(resetEmail);
-      setResetMessage('パスワード再設定用のリンクをメールに送信しました。');
+      setResetInfoMessage('パスワード再設定用のリンクをメールに送信しました。');
     } catch (err) {
-      setResetMessage('メール送信に失敗しました。');
+      setResetInfoMessage('メール送信に失敗しました。');
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setLoginError('');
+
+    // 入力値のトリムと空文字チェック
+    const trimmedEmail = email.trim();
+    const trimmedPassword = password.trim();
+
+    if (!trimmedEmail || !trimmedPassword) {
+      setLoginError('メールアドレスとパスワードを入力してください');
+      return;
+    }
+
+    // メールアドレスのバリデーション
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      setLoginError('正しいメールアドレスを入力してください');
+      return;
+    }
 
     try {
-      const user = await login(email, password);
+      await login(trimmedEmail, trimmedPassword);
 
-      // ロール別の画面遷移
-      if (user.role === 'instructor') {
-        // トレーナー: 顧客選択画面へ
-        navigate(ROUTES.CUSTOMER_SELECT);
-      } else {
-        // 店長/本部管理者/その他: 店舗管理画面へ
-        navigate(ROUTES.SHOP_MANAGEMENT);
-      }
+      // すべてのユーザーを顧客選択画面へ
+      navigate(ROUTES.CUSTOMER_SELECT);
     } catch (err) {
-      setError(getErrorMessage(err));
+      setLoginError(getErrorMessage(err, 'login'));
     }
   };
 
@@ -52,9 +62,9 @@ export const Login: React.FC = () => {
       <div className="w-full max-w-md px-8 py-16 rounded-3xl bg-login-card font-poppins">
         <h2 className="text-5xl font-normal text-white text-center mb-12">Login</h2>
         <form onSubmit={handleSubmit} className="space-y-6">
-          {error && (
+          {loginError && (
             <div className="text-white bg-red-500 bg-opacity-20 px-4 py-2 rounded-md text-sm text-center">
-              {error}
+              {loginError}
             </div>
           )}
           <div>
@@ -108,9 +118,9 @@ export const Login: React.FC = () => {
             <p className="text-gray-600 mb-6">
               登録されたメールアドレスを入力してください。パスワード再設定用のリンクを送信します。
             </p>
-            {resetMessage && (
+            {resetInfoMessage && (
               <div className="mb-4 text-sm text-green-600 bg-green-50 px-4 py-2 rounded-md">
-                {resetMessage}
+                {resetInfoMessage}
               </div>
             )}
             <form onSubmit={handleForgotPassword} className="space-y-4">
@@ -130,7 +140,7 @@ export const Login: React.FC = () => {
                   onClick={() => {
                     setShowForgotPassword(false);
                     setResetEmail('');
-                    setResetMessage('');
+                    setResetInfoMessage('');
                   }}
                   className="px-6 py-2 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
                 >

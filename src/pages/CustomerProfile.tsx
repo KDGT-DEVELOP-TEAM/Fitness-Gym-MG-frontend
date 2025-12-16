@@ -1,334 +1,33 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useParams } from 'react-router-dom';
-import { HiUser, HiIdentification, HiCalendar, HiCake, HiArrowsExpand, HiLocationMarker, HiMail, HiDocumentText, HiExclamation, HiAnnotation } from 'react-icons/hi';
-
-// アイコンコンポーネント
-const UserIcon = (props: { className?: string }) => {
-  const Icon = HiUser as any;
-  return <Icon {...props} />;
-};
-
-const IdentificationIcon = (props: { className?: string }) => {
-  const Icon = HiIdentification as any;
-  return <Icon {...props} />;
-};
-
-const CalendarIcon = (props: { className?: string }) => {
-  const Icon = HiCalendar as any;
-  return <Icon {...props} />;
-};
-
-const CakeIcon = (props: { className?: string }) => {
-  const Icon = HiCake as any;
-  return <Icon {...props} />;
-};
-
-const ArrowsExpandIcon = (props: { className?: string }) => {
-  const Icon = HiArrowsExpand as any;
-  return <Icon {...props} />;
-};
-
-const LocationIcon = (props: { className?: string }) => {
-  const Icon = HiLocationMarker as any;
-  return <Icon {...props} />;
-};
-
-const MailIcon = (props: { className?: string }) => {
-  const Icon = HiMail as any;
-  return <Icon {...props} />;
-};
-
-const DocumentIcon = (props: { className?: string }) => {
-  const Icon = HiDocumentText as any;
-  return <Icon {...props} />;
-};
-
-const ExclamationIcon = (props: { className?: string }) => {
-  const Icon = HiExclamation as any;
-  return <Icon {...props} />;
-};
-
-const AnnotationIcon = (props: { className?: string }) => {
-  const Icon = HiAnnotation as any;
-  return <Icon {...props} />;
-};
-
-interface CustomerProfileData {
-  id: string;
-  furigana: string;
-  name: string;
-  gender: '男性' | '女性' | 'その他' | '';
-  birthDate: string;
-  age: number;
-  height: string;
-  address: string;
-  email: string;
-  medicalHistory: string;
-  contraindications: string;
-  memo: string;
-  postureImages: {
-    front?: string;
-    back?: string;
-    left?: string;
-    right?: string;
-  };
-}
-
-interface EditableFieldProps {
-  label: string;
-  value: string;
-  isRequired?: boolean;
-  isEditing: boolean;
-  fieldName: keyof CustomerProfileData;
-  onEdit: (fieldName: keyof CustomerProfileData) => void;
-  onChange: (value: string) => void;
-  onBlur: () => void;
-  type?: 'text' | 'date' | 'select' | 'textarea';
-  options?: { value: string; label: string }[];
-  disabled?: boolean;
-  icon?: React.ReactNode;
-}
-
-const EditableField: React.FC<EditableFieldProps> = ({
-  label,
-  value,
-  isRequired = false,
-  isEditing,
-  fieldName,
-  onEdit,
-  onChange,
-  onBlur,
-  type = 'text',
-  options = [],
-  disabled = false,
-  icon,
-}) => {
-  const showValidationError = isRequired && !value && !isEditing;
-
-  return (
-    <div className="mb-4">
-      <div className="flex items-center gap-2 mb-2">
-        <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-          {icon && <span className="text-[#68BE6B]">{icon}</span>}
-          {label}
-        </label>
-      </div>
-
-      {isEditing ? (
-        <>
-          {type === 'select' ? (
-            <select
-              value={value}
-              onChange={(e) => onChange(e.target.value)}
-              onBlur={onBlur}
-              autoFocus
-              className="w-full px-3 py-2 border border-[#68BE6B] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#68BE6B] focus:border-transparent appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 fill=%22none%22 viewBox=%220 0 20 20%22%3E%3Cpath stroke=%22%236B7280%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22 stroke-width=%221.5%22 d=%22m6 8 4 4 4-4%22/%3E%3C/svg%3E')] bg-[length:1.5em_1.5em] bg-[right_0.5rem_center] bg-no-repeat pr-10"
-              style={{
-                backgroundPosition: `calc(100% - ${value ? value.length * 0.6 : 6}ch) center`,
-              }}
-            >
-              <option value="">選択してください</option>
-              {options.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          ) : type === 'textarea' ? (
-            <textarea
-              value={value}
-              onChange={(e) => onChange(e.target.value)}
-              onBlur={onBlur}
-              autoFocus
-              rows={4}
-              className="w-full px-3 py-2 border border-[#68BE6B] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#68BE6B] focus:border-transparent resize-none"
-            />
-          ) : type === 'date' ? (
-            <div
-              className="flex items-center gap-2"
-              onBlur={(e) => {
-                // フォーカスが日付入力グループの外に移動した場合のみ保存
-                if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-                  onBlur();
-                }
-              }}
-            >
-              <input
-                type="text"
-                value={value.split('-')[0] || ''}
-                onChange={(e) => {
-                  const year = e.target.value;
-                  const parts = value.split('-');
-                  onChange(`${year}-${parts[1] || '01'}-${parts[2] || '01'}`);
-                }}
-                autoFocus
-                placeholder="年"
-                maxLength={4}
-                className="w-20 px-3 py-2 border border-[#68BE6B] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#68BE6B] focus:border-transparent text-center"
-              />
-              <span className="text-gray-700">年</span>
-              <input
-                type="text"
-                value={value.split('-')[1] || ''}
-                onChange={(e) => {
-                  const month = e.target.value;
-                  const parts = value.split('-');
-                  onChange(`${parts[0] || '2000'}-${month}-${parts[2] || '01'}`);
-                }}
-                placeholder="月"
-                maxLength={2}
-                className="w-16 px-3 py-2 border border-[#68BE6B] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#68BE6B] focus:border-transparent text-center"
-              />
-              <span className="text-gray-700">月</span>
-              <input
-                type="text"
-                value={value.split('-')[2] || ''}
-                onChange={(e) => {
-                  const day = e.target.value;
-                  const parts = value.split('-');
-                  onChange(`${parts[0] || '2000'}-${parts[1] || '01'}-${day}`);
-                }}
-                placeholder="日"
-                maxLength={2}
-                className="w-16 px-3 py-2 border border-[#68BE6B] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#68BE6B] focus:border-transparent text-center"
-              />
-              <span className="text-gray-700">日</span>
-            </div>
-          ) : (
-            <input
-              type={type}
-              value={value}
-              onChange={(e) => onChange(e.target.value)}
-              onBlur={onBlur}
-              autoFocus
-              className="w-full px-3 py-2 border border-[#68BE6B] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#68BE6B] focus:border-transparent"
-            />
-          )}
-        </>
-      ) : (
-        <div className="relative">
-          <div className={`px-3 py-2 bg-gray-50 rounded-lg ${disabled ? 'text-gray-500' : 'text-gray-900'} pr-16`}>
-            {value || (
-              <span className="text-gray-400">
-                {showValidationError ? '必須項目を入力してください' : '未入力'}
-              </span>
-            )}
-          </div>
-          {!disabled && (
-            <button
-              onClick={() => onEdit(fieldName)}
-              className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 text-sm text-white bg-[#68BE6B] hover:bg-[#5aa85e] rounded border border-[#68BE6B] transition-colors"
-              aria-label={`${label}を編集`}
-            >
-              編集
-            </button>
-          )}
-        </div>
-      )}
-      {showValidationError && (
-        <p className="mt-1 text-sm text-red-500">必須項目を入力してください</p>
-      )}
-    </div>
-  );
-};
+import {
+  HiUser,
+  HiIdentification,
+  HiCalendar,
+  HiCake,
+  HiArrowsExpand,
+  HiLocationMarker,
+  HiMail,
+  HiDocumentText,
+  HiExclamation,
+  HiAnnotation,
+} from 'react-icons/hi';
+import { EditableField } from '../components/profile/EditableField';
+import { useCustomerProfile } from '../hooks/useCustomerProfile';
 
 export const CustomerProfile: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [editingField, setEditingField] = useState<keyof CustomerProfileData | null>(null);
-  const [profileData, setProfileData] = useState<CustomerProfileData>({
-    id: id || '',
-    furigana: '',
-    name: '',
-    gender: '',
-    birthDate: '',
-    age: 0,
-    height: '',
-    address: '',
-    email: '',
-    medicalHistory: '',
-    contraindications: '',
-    memo: '',
-    postureImages: {
-      front: undefined,
-      back: undefined,
-      left: undefined,
-      right: undefined,
-    },
-  });
-
-  // 年齢を計算する関数
-  const calculateAge = (birthDate: string): number => {
-    if (!birthDate) return 0;
-    const today = new Date();
-    const birth = new Date(birthDate);
-    let age = today.getFullYear() - birth.getFullYear();
-    const monthDiff = today.getMonth() - birth.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-      age--;
-    }
-    return age;
-  };
-
-  useEffect(() => {
-    // Mock data loading
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        // Data is already set in state
-        // TODO: Call actual API here
-        // const data = await fetchCustomerProfile(id);
-        // setProfileData(data);
-      } catch (error) {
-        console.error('Failed to load profile:', error);
-        setError('プロフィールの読み込みに失敗しました。');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, [id]);
-
-  // 生年月日が変更された時に年齢を自動更新
-  useEffect(() => {
-    if (profileData.birthDate) {
-      const newAge = calculateAge(profileData.birthDate);
-      setProfileData((prev) => ({ ...prev, age: newAge }));
-    }
-  }, [profileData.birthDate]);
-
-  const handleEdit = (fieldName: keyof CustomerProfileData) => {
-    setEditingField(fieldName);
-  };
-
-  const handleChange = (fieldName: keyof CustomerProfileData, value: string) => {
-    setProfileData((prev) => ({ ...prev, [fieldName]: value }));
-  };
-
-  const handleBlur = async () => {
-    if (!editingField) return;
-
-    try {
-      setSaving(true);
-      setError(null);
-      // Simulate API call to save data
-      await new Promise((resolve) => setTimeout(resolve, 300));
-      console.log('Saved:', editingField, profileData[editingField]);
-      // TODO: Call actual API here
-      // await updateCustomerProfile(id, { [editingField]: profileData[editingField] });
-    } catch (error) {
-      console.error('Failed to save:', error);
-      setError('保存に失敗しました。もう一度お試しください。');
-    } finally {
-      setSaving(false);
-      setEditingField(null);
-    }
-  };
+  const {
+    profileData,
+    loading,
+    saving,
+    error,
+    editingField,
+    handleEdit,
+    handleChange,
+    handleBlur,
+    dismissError,
+  } = useCustomerProfile(id || '');
 
   if (loading) {
     return (
@@ -345,13 +44,13 @@ export const CustomerProfile: React.FC = () => {
       {/* エラーメッセージ */}
       {error && (
         <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
-          <ExclamationIcon className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+          <HiExclamation className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
           <div className="flex-1">
             <p className="text-red-800 font-medium">エラー</p>
             <p className="text-red-600 text-sm">{error}</p>
           </div>
           <button
-            onClick={() => setError(null)}
+            onClick={dismissError}
             className="text-red-400 hover:text-red-600 transition-colors"
             aria-label="エラーを閉じる"
           >
@@ -378,7 +77,7 @@ export const CustomerProfile: React.FC = () => {
               onEdit={handleEdit}
               onChange={(value) => handleChange('furigana', value)}
               onBlur={handleBlur}
-              icon={<IdentificationIcon className="w-4 h-4" />}
+              icon={<HiIdentification className="w-4 h-4" />}
             />
             <EditableField
               label="名前"
@@ -389,7 +88,7 @@ export const CustomerProfile: React.FC = () => {
               onEdit={handleEdit}
               onChange={(value) => handleChange('name', value)}
               onBlur={handleBlur}
-              icon={<UserIcon className="w-4 h-4" />}
+              icon={<HiUser className="w-4 h-4" />}
             />
             <EditableField
               label="性別"
@@ -406,7 +105,7 @@ export const CustomerProfile: React.FC = () => {
                 { value: '女性', label: '女性' },
                 { value: 'その他', label: 'その他' },
               ]}
-              icon={<UserIcon className="w-4 h-4" />}
+              icon={<HiUser className="w-4 h-4" />}
             />
             <EditableField
               label="生年月日"
@@ -418,7 +117,7 @@ export const CustomerProfile: React.FC = () => {
               onChange={(value) => handleChange('birthDate', value)}
               onBlur={handleBlur}
               type="date"
-              icon={<CalendarIcon className="w-4 h-4" />}
+              icon={<HiCalendar className="w-4 h-4" />}
             />
             <EditableField
               label="年齢"
@@ -429,7 +128,7 @@ export const CustomerProfile: React.FC = () => {
               onChange={(value) => handleChange('age', value)}
               onBlur={handleBlur}
               disabled
-              icon={<CakeIcon className="w-4 h-4" />}
+              icon={<HiCake className="w-4 h-4" />}
             />
             <EditableField
               label="身長 (cm)"
@@ -440,7 +139,7 @@ export const CustomerProfile: React.FC = () => {
               onEdit={handleEdit}
               onChange={(value) => handleChange('height', value)}
               onBlur={handleBlur}
-              icon={<ArrowsExpandIcon className="w-4 h-4" />}
+              icon={<HiArrowsExpand className="w-4 h-4" />}
             />
           </div>
         </div>
@@ -460,7 +159,7 @@ export const CustomerProfile: React.FC = () => {
               onEdit={handleEdit}
               onChange={(value) => handleChange('address', value)}
               onBlur={handleBlur}
-              icon={<LocationIcon className="w-4 h-4" />}
+              icon={<HiLocationMarker className="w-4 h-4" />}
             />
             <EditableField
               label="メールアドレス"
@@ -472,7 +171,7 @@ export const CustomerProfile: React.FC = () => {
               onChange={(value) => handleChange('email', value)}
               onBlur={handleBlur}
               type="text"
-              icon={<MailIcon className="w-4 h-4" />}
+              icon={<HiMail className="w-4 h-4" />}
             />
           </div>
         </div>
@@ -492,7 +191,7 @@ export const CustomerProfile: React.FC = () => {
               onChange={(value) => handleChange('medicalHistory', value)}
               onBlur={handleBlur}
               type="textarea"
-              icon={<DocumentIcon className="w-4 h-4" />}
+              icon={<HiDocumentText className="w-4 h-4" />}
             />
             <EditableField
               label="禁忌"
@@ -503,7 +202,7 @@ export const CustomerProfile: React.FC = () => {
               onChange={(value) => handleChange('contraindications', value)}
               onBlur={handleBlur}
               type="textarea"
-              icon={<ExclamationIcon className="w-4 h-4" />}
+              icon={<HiExclamation className="w-4 h-4" />}
             />
           </div>
         </div>
@@ -552,7 +251,7 @@ export const CustomerProfile: React.FC = () => {
             onChange={(value) => handleChange('memo', value)}
             onBlur={handleBlur}
             type="textarea"
-            icon={<AnnotationIcon className="w-4 h-4" />}
+            icon={<HiAnnotation className="w-4 h-4" />}
           />
         </div>
 
