@@ -3,9 +3,8 @@ export interface User {
   email: string;
   name: string;
   role: 'admin' | 'manager' | 'trainer';
-  shopId?: string;
-  createdAt?: string;
-  updatedAt?: string;
+  createdAt: string; // DBスキーマでNOT NULL
+  // updatedAt: DBスキーマに存在しないため削除
 }
 
 export interface UserFormData {

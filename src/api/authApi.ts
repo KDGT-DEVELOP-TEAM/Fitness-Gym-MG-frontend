@@ -10,12 +10,10 @@ interface UserRawData {
   email?: string;
   name?: string;
   role?: User['role'];
-  shopId?: string;
-  shop_id?: string;
   createdAt?: string;
   created_at?: string;
-  updatedAt?: string;
-  updated_at?: string;
+  // updatedAt, updated_at: DBスキーマに存在しないため削除
+  // shopId, shop_id: Usersテーブルにはstore_idカラムが存在しない（User_Storesテーブルで多対多関係を管理）
 }
 
 const mapUser = (raw: UserRawData | null | undefined): User => {
@@ -23,14 +21,21 @@ const mapUser = (raw: UserRawData | null | undefined): User => {
     throw new Error('User data is required');
   }
 
+  // createdAtはDBでNOT NULLのため、必須
+  const createdAt = 'createdAt' in raw && raw.createdAt
+    ? raw.createdAt
+    : 'created_at' in raw && raw.created_at
+    ? raw.created_at
+    : new Date().toISOString(); // デフォルト値として現在時刻を使用
+
   return {
     id: raw.id ?? '',
     email: raw.email ?? '',
     name: raw.name ?? raw.email ?? '',
     role: (raw.role as User['role']) ?? 'trainer',
-    shopId: 'shopId' in raw ? raw.shopId : 'shop_id' in raw ? raw.shop_id : undefined,
-    createdAt: 'createdAt' in raw ? raw.createdAt : 'created_at' in raw ? raw.created_at : undefined,
-    updatedAt: 'updatedAt' in raw ? raw.updatedAt : ('updated_at' in raw && raw.updated_at ? raw.updated_at : undefined),
+    createdAt, // DBでNOT NULL
+    // updatedAt: DBスキーマに存在しないため削除
+    // shopId: Usersテーブルにはstore_idカラムが存在しない（User_Storesテーブルで多対多関係を管理）
   };
 };
 

@@ -23,7 +23,7 @@ export const CustomerSelect: React.FC = () => {
             className="p-4 border rounded-lg cursor-pointer hover:bg-gray-50"
           >
             <h3 className="font-semibold">{customer.name}</h3>
-            {customer.email && <p className="text-sm text-gray-600">{customer.email}</p>}
+            <p className="text-sm text-gray-600">{customer.email}</p>
           </div>
         ))}
       </div>

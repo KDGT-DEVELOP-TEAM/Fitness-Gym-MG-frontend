@@ -11,7 +11,7 @@ import { toNull } from '../utils/dataTransformers';
  */
 const mapLesson = (row: Lesson | any): Lesson => {
   // If already in correct format, return as is
-  if (row.id && row.storeId !== undefined) {
+  if (row.id && row.storeId !== undefined && row.createdAt) {
     return row as Lesson;
   }
   
@@ -31,7 +31,8 @@ const mapLesson = (row: Lesson | any): Lesson => {
     nextDate: row.next_date ?? row.nextDate,
     nextStoreId: row.next_store_id ?? row.nextStoreId,
     nextUserId: row.next_user_id ?? row.nextUserId,
-    createdAt: row.created_at ?? row.createdAt,
+    createdAt: row.created_at ?? row.createdAt ?? new Date().toISOString(), // DBでNOT NULL、デフォルト値として現在時刻を使用
+    // updatedAt: DBスキーマに存在しないため削除
   };
 };
 

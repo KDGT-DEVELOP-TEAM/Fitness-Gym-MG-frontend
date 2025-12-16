@@ -15,8 +15,8 @@ export const CustomerProfile: React.FC = () => {
       <h1 className="text-2xl font-bold mb-4">顧客プロフィール</h1>
       <div className="bg-white p-6 rounded-lg shadow">
         <h2 className="text-xl font-semibold mb-4">{customer.name}</h2>
-        {customer.email && <p className="text-gray-600">メール: {customer.email}</p>}
-        {customer.phone && <p className="text-gray-600">電話: {customer.phone}</p>}
+        <p className="text-gray-600">メール: {customer.email}</p>
+        <p className="text-gray-600">電話: {customer.phone}</p>
       </div>
     </div>
   );

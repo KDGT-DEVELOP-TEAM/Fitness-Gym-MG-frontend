@@ -92,11 +92,12 @@ export const isCustomer = (customer: unknown): customer is Customer => {
   return (
     typeof c.id === 'string' &&
     typeof c.name === 'string' &&
+    typeof c.email === 'string' && // DBスキーマでNOT NULL
+    typeof c.phone === 'string' && // DBスキーマでNOT NULL
     typeof c.shopId === 'string' &&
     typeof c.createdAt === 'string' &&
-    typeof c.updatedAt === 'string' &&
-    (c.email === undefined || typeof c.email === 'string') &&
-    (c.phone === undefined || typeof c.phone === 'string')
+    // updatedAt: DBスキーマに存在しないため削除
+    true
   );
 };
 
@@ -166,7 +167,7 @@ export const isPosture = (data: unknown): data is Posture => {
     typeof posture.customerId === 'string' &&
     typeof posture.imageUrl === 'string' &&
     typeof posture.createdAt === 'string' &&
-    typeof posture.updatedAt === 'string' &&
+    typeof posture.updatedAt === 'string' && // Posture型はDBテーブルに対応しない可能性があるため、現状維持
     (posture.lessonId === undefined || typeof posture.lessonId === 'string') &&
     (posture.analysis === undefined || isPostureAnalysis(posture.analysis))
   );

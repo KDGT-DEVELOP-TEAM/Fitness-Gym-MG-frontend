@@ -25,7 +25,7 @@ export interface SupabaseUser {
   role: UserRole;
   is_active: boolean;
   created_at: string;
-  updated_at?: string | null;
+  // updated_at: DBスキーマに存在しないため削除
 }
 
 // Customers table
@@ -75,10 +75,12 @@ export interface SupabaseTraining {
 }
 
 // Posture groups table
+// Note: README.mdではlesson_idがNOT NULLだが、実際の使用ではレッスン作成前に姿勢グループを作成する場合がある
+// そのため、DBスキーマと実際の使用が不一致の可能性がある
 export interface SupabasePostureGroup {
   id: string;
   customer_id: string;
-  lesson_id?: string | null;
+  lesson_id: string; // README.mdではNOT NULL（ただし、実際の使用ではnullが必要な場合がある可能性）
   captured_at: string; // timestamptz
   created_at: string;
 }

@@ -16,8 +16,8 @@ export interface Lesson {
   nextDate?: string | null;
   nextStoreId?: string | null;
   nextUserId?: string | null;
-  createdAt?: string;
-  updatedAt?: string;
+  createdAt: string; // DBスキーマでNOT NULL
+  // updatedAt: DBスキーマに存在しないため削除
 }
 
 export interface TrainingInput {
