@@ -1,7 +1,7 @@
 // src/components/customers/CustomerForm.tsx
 import React, { useState, useEffect } from 'react';
 import { Customer, CustomerFormData } from '../../types/customer';
-import { supabase } from '../../supabase/supabaseClient';
+// import { supabase } from '../../supabase/supabaseClient';
 
 interface CustomerFormProps {
   initialData?: Customer;
@@ -11,7 +11,7 @@ interface CustomerFormProps {
 }
 
 export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmit, onDelete, isSubmitting }) => {
-  const [postureImages, setPostureImages] = useState<{position: string, url: string}[]>([]);
+  // const [postureImages, setPostureImages] = useState<{position: string, url: string}[]>([]);
   const [formData, setFormData] = useState<CustomerFormData>({
     name: initialData?.name || '',
     kana: initialData?.kana || '',
