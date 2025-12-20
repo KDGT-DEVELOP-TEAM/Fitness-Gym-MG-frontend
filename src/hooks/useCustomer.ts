@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../supabase/supabaseClient';
 import { Customer } from '../types/customer';
 
+// フォームから送られてくるデータの型定義
 export type CustomerFormData = Omit<Customer, 'id' | 'createdAt'>;
 
 export const useCustomers = () => {
@@ -10,45 +11,23 @@ export const useCustomers = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // --- ヘルパー: 性別の変換 ---
-  const formatGenderForDB = (gender: string) => {
-    const genderMap: Record<string, string> = {
-      'male': '男',
-      'female': '女',
-      'other': 'その他'
-    };
-    return genderMap[gender] || gender;
-  };
-
-  // --- ヘルパー: 年齢計算 (追加) ---
-  const calculateAge = useCallback((birthday: string) => {
-    if (!birthday) return 0;
-    const birthDate = new Date(birthday);
-    const today = new Date();
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const m = today.getMonth() - birthDate.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    return age;
-  }, []);
-
   // --- 1. データ取得 ---
   const fetchCustomers = useCallback(async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      const { data, error: dbError } = await supabase
         .from('customers')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (dbError) throw dbError;
 
+      // DB(スネークケース) -> アプリ(キャメルケース)へのマッピング
       setAllCustomers(data.map((c: any) => ({
         id: c.id,
         kana: c.kana,
         name: c.name,
-        gender: c.gender,
+        gender: c.gender, // '男' or '女'
         birthday: c.birthday,
         height: c.height,
         email: c.email,
@@ -56,7 +35,7 @@ export const useCustomers = () => {
         address: c.address,
         medical: c.medical,
         taboo: c.taboo,
-        firstPostureGroupId: c.first_posture_group_id, // キャメルケースに統一
+        firstPostureGroupId: c.first_posture_group_id, 
         memo: c.memo,
         createdAt: c.created_at,
         isActive: c.is_active,
@@ -77,7 +56,7 @@ export const useCustomers = () => {
         .insert([{
           name: formData.name,
           kana: formData.kana,
-          gender: formatGenderForDB(formData.gender),
+          gender: formData.gender, // フォーム側で '男'/'女' を選択させている前提
           birthday: formData.birthday,
           height: formData.height,
           email: formData.email,
@@ -85,9 +64,9 @@ export const useCustomers = () => {
           address: formData.address,
           medical: formData.medical,
           taboo: formData.taboo,
-          is_active: formData.isActive,
           memo: formData.memo,
-          first_posture_group_id: formData.firstPostureGroupId // DB名に変換
+          is_active: formData.isActive,
+          first_posture_group_id: formData.firstPostureGroupId // キャメルからスネークへ
         }]);
 
       if (insertError) throw insertError;
@@ -104,12 +83,12 @@ export const useCustomers = () => {
   const updateCustomer = async (formData: CustomerFormData, customerId: string) => {
     setLoading(true);
     try {
-      const { data, error: updateError } = await supabase
+      const { error: updateError } = await supabase
         .from('customers')
         .update({
           name: formData.name,
           kana: formData.kana,
-          gender: formatGenderForDB(formData.gender),
+          gender: formData.gender,
           birthday: formData.birthday,
           height: formData.height,
           email: formData.email,
@@ -117,12 +96,11 @@ export const useCustomers = () => {
           address: formData.address,
           medical: formData.medical,
           taboo: formData.taboo,
-          is_active: formData.isActive,
           memo: formData.memo,
+          is_active: formData.isActive,
           first_posture_group_id: formData.firstPostureGroupId
         })
-        .eq('id', customerId)
-        .select();
+        .eq('id', customerId);
 
       if (updateError) throw updateError;
       await fetchCustomers();
@@ -138,6 +116,7 @@ export const useCustomers = () => {
   const deleteCustomer = async (customerId: string) => {
     setLoading(true);
     try {
+      // 外部キー制約がある場合（posture_groupsなど）、先にそれらを処理する必要があります
       const { error: deleteError } = await supabase
         .from('customers')
         .delete()
@@ -152,6 +131,19 @@ export const useCustomers = () => {
       setLoading(false);
     }
   };
+
+  // --- ヘルパー: 年齢計算 ---
+  const calculateAge = useCallback((birthday: string) => {
+    if (!birthday) return 0;
+    const birthDate = new Date(birthday);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  }, []);
 
   useEffect(() => {
     fetchCustomers();

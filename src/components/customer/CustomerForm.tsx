@@ -1,6 +1,7 @@
 // src/components/customers/CustomerForm.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Customer, CustomerFormData } from '../../types/customer';
+import { supabase } from '../../supabase/supabaseClient';
 
 interface CustomerFormProps {
   initialData?: Customer;
@@ -10,6 +11,7 @@ interface CustomerFormProps {
 }
 
 export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmit, onDelete, isSubmitting }) => {
+  const [postureImages, setPostureImages] = useState<{position: string, url: string}[]>([]);
   const [formData, setFormData] = useState<CustomerFormData>({
     name: initialData?.name || '',
     kana: initialData?.kana || '',
@@ -23,7 +25,31 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
     taboo: initialData?.taboo || '',
     memo: initialData?.memo || '',
     isActive: initialData?.isActive ?? true,
+    firstPostureGroupId: initialData?.firstPostureGroupId || null,
   });
+
+  useEffect(() => {
+    const fetchFirstPosture = async () => {
+      if (!initialData?.firstPostureGroupId) return;
+
+      const { data, error } = await supabase
+        .from('posture_images')
+        .select('position, storage_key')
+        .eq('posture_group_id', initialData.firstPostureGroupId)
+        .order('position'); // front, right, back, left の順
+
+      if (data) {
+        // storage_keyから公開URLを取得（Storageの設定に合わせて調整してください）
+        const imagesWithUrls = data.map(img => ({
+          position: img.position,
+          url: supabase.storage.from('postures').getPublicUrl(img.storage_key).data.publicUrl
+        }));
+        setPostureImages(imagesWithUrls);
+      }
+    };
+
+    fetchFirstPosture();
+  }, [initialData]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -36,31 +62,57 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
     onSubmit(formData);
   };
 
+  const RequiredBadge = () => (
+    <span className="ml-2 px-1 bg-red-500 text-white text-[10px] font-black rounded shadow-sm inline-block transform -translate-y-0.5">
+      必須
+    </span>
+  );
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-h-[70vh] overflow-y-auto px-2">
+      {/* 1. 初回姿勢画像セクション（更新時のみ表示） */}
+      {initialData && (
+        <section className="space-y-4">
+          <h3 className="text-lg font-medium border-b pb-2">初回姿勢画像</h3>
+          {postureImages.length > 0 ? (
+            <div className="grid grid-cols-4 gap-2 bg-gray-50 p-3 rounded-2xl border border-gray-100">
+              {postureImages.map((img, idx) => (
+                <div key={idx} className="space-y-1">
+                  <div className="aspect-[3/4] rounded-lg overflow-hidden border bg-white shadow-inner">
+                    <img src={img.url} alt={img.position} className="w-full h-full object-cover" />
+                  </div>
+                  <p className="text-[8px] font-black text-center text-gray-400 uppercase">{img.position}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="py-8 text-center bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+              <p className="text-xs font-bold text-gray-400">初回姿勢画像が登録されていません</p>
+            </div>
+          )}
+        </section>
+      )}
       {/* 基本情報セクション */}
       <section className="space-y-4">
         <h3 className="text-lg font-medium border-b pb-2">基本情報</h3>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium">氏名 *</label>
+            <label className="block text-sm font-medium">氏名 <RequiredBadge /></label>
             <input name="name" value={formData.name} onChange={handleChange} required className="w-full border p-2 rounded" />
           </div>
           <div>
-            <label className="block text-sm font-medium">ふりがな</label>
+            <label className="block text-sm font-medium">ふりがな <RequiredBadge /></label>
             <input name="kana" value={formData.kana || ''} onChange={handleChange} className="w-full border p-2 rounded" />
           </div>
           <div>
-            <label className="block text-sm font-medium">誕生日 *</label>
+            <label className="block text-sm font-medium">誕生日 <RequiredBadge /></label>
             <input type="date" name="birthday" value={formData.birthday} onChange={handleChange} required className="w-full border p-2 rounded" />
           </div>
           <div>
-            <label className="block text-sm font-medium">性別</label>
+            <label className="block text-sm font-medium">性別 <RequiredBadge /></label>
             <select name="gender" value={formData.gender} onChange={handleChange} className="w-full border p-2 rounded">
               <option value="male">男性</option>
               <option value="female">女性</option>
-              <option value="other">その他</option>
-              <option value="unknown">未回答</option>
             </select>
           </div>
         </div>
@@ -71,15 +123,19 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
         <h3 className="text-lg font-medium border-b pb-2">連絡先・詳細</h3>
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2">
-            <label className="block text-sm font-medium">メールアドレス</label>
+            <label className="block text-sm font-medium">住所 <RequiredBadge /></label>
+            <input type="text" name="address" value={formData.address || ''} onChange={handleChange} required className="w-full border p-2 rounded" />
+          </div>
+          <div className="col-span-2">
+            <label className="block text-sm font-medium">メールアドレス <RequiredBadge /></label>
             <input type="email" name="email" value={formData.email || ''} onChange={handleChange} className="w-full border p-2 rounded" />
           </div>
           <div>
-            <label className="block text-sm font-medium">電話番号</label>
+            <label className="block text-sm font-medium">電話番号 <RequiredBadge /></label>
             <input type="tel" name="phone" value={formData.phone || ''} onChange={handleChange} className="w-full border p-2 rounded" />
           </div>
           <div>
-            <label className="block text-sm font-medium">身長 (cm)</label>
+            <label className="block text-sm font-medium">身長 (cm) <RequiredBadge /></label>
             <input type="number" step="0.1" name="height" value={formData.height || ''} onChange={handleChange} className="w-full border p-2 rounded" />
           </div>
         </div>
@@ -87,15 +143,19 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
 
       {/* 健康情報セクション */}
       <section className="space-y-4">
-        <h3 className="text-lg font-medium border-b pb-2 text-red-600">健康情報・禁忌</h3>
+        <h3 className="text-lg font-medium border-b pb-2">健康情報・禁忌等</h3>
         <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-red-600 font-bold">禁忌事項 (Taboo)</label>
+            <textarea name="taboo" value={formData.taboo || ''} onChange={handleChange} rows={2} className="w-full border p-2 rounded border-red-200 bg-red-50" />
+          </div>
           <div>
             <label className="block text-sm font-medium">既往歴 (Medical History)</label>
             <textarea name="medical" value={formData.medical || ''} onChange={handleChange} rows={2} className="w-full border p-2 rounded" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-red-600 font-bold">禁忌事項 (Taboo)</label>
-            <textarea name="taboo" value={formData.taboo || ''} onChange={handleChange} rows={2} className="w-full border p-2 rounded border-red-200 bg-red-50" />
+            <label className="block text-sm font-medium">自由記入メモ (Memo)</label>
+            <textarea name="memo" value={formData.memo || ''} onChange={handleChange} rows={3} className="w-full border p-2 rounded" />
           </div>
         </div>
 

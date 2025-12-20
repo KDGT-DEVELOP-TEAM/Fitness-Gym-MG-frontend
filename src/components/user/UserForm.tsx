@@ -16,7 +16,7 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
         email: '',
         name: '',
         kana: null,
-        pass: '', // 🔑 新規登録時は必須、編集時は任意
+        pass: '',
         role: 'trainer',
         storeId: [],
       });
@@ -68,23 +68,29 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
         }
     };
 
+    const RequiredBadge = () => (
+        <span className="ml-2 px-1 bg-red-500 text-white text-[10px] font-black rounded shadow-sm inline-block transform -translate-y-0.5">
+          必須
+        </span>
+    );
+
     return (
         <form onSubmit={handleSubmit} className="space-y-8 max-h-[70vh] overflow-y-auto px-1 custom-scrollbar">
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Email */}
                 <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1">メールアドレス</label>
+                    <label className="block text-sm font-bold text-gray-700 mb-1">メールアドレス <RequiredBadge /></label>
                     <input type="email" name="email" value={formData.email} onChange={handleChange} required disabled={isEditMode} className="w-full border p-2 rounded disabled:bg-gray-100 shadow-sm" />
                 </div>
 
                 {/* Role */}
                 <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1">権限ロール</label>
+                    <label className="block text-sm font-bold text-gray-700 mb-1">権限ロール <RequiredBadge /></label>
                     <select name="role" value={formData.role} onChange={handleChange} required className="w-full border p-2 rounded shadow-sm">
-                        <option value="admin">管理者 (全店舗閲覧可)</option>
-                        <option value="manager">店長(指定店舗のみ)</option>
-                        <option value="trainer">トレーナー (一般)</option>
+                        <option value="admin">管理者</option>
+                        <option value="manager">店長</option>
+                        <option value="trainer">トレーナー</option>
                     </select>
                 </div>
             </div>
@@ -92,13 +98,13 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Name */}
                 <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1">氏名</label>
+                    <label className="block text-sm font-bold text-gray-700 mb-1">氏名 <RequiredBadge /></label>
                     <input type="text" name="name" value={formData.name} onChange={handleChange} required className="w-full border p-2 rounded shadow-sm" />
                 </div>
                 
                 {/* Kana */}
                 <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1">ふりがな</label>
+                    <label className="block text-sm font-bold text-gray-700 mb-1">ふりがな <RequiredBadge /></label>
                     <input type="text" name="kana" value={formData.kana || ''} onChange={handleChange} className="w-full border p-2 rounded shadow-sm" />
                 </div>
             </div>
@@ -116,7 +122,7 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-7h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                         </svg>
-                        担当店舗の設定 (店長権限)
+                        担当店舗の設定 (店長権限) <RequiredBadge />
                     </label>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto p-1">
