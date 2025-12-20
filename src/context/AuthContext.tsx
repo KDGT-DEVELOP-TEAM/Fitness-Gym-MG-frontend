@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User } from '../types/auth';
-import { authApi } from '../api/authApi';
+import { User } from '../types/user';
+// import { authApi } from '../api/authApi';
+import * as authApi from '../api/tempSupabaseAuthApi'; // 🔑 代替APIをインポート
+import { supabase } from '../supabase/supabaseClient';
 
 interface AuthContextType {
   user: User | null;

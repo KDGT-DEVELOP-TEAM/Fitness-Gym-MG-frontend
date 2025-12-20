@@ -15,7 +15,7 @@ export const LessonForm: React.FC<LessonFormProps> = ({
   const [formData, setFormData] = useState<LessonFormData>(
     initialData || {
       customerId: '',
-      instructorId: '',
+      trainerId: '',
       date: '',
       startTime: '',
       endTime: '',
@@ -50,8 +50,8 @@ export const LessonForm: React.FC<LessonFormProps> = ({
         <label className="block text-sm font-medium">インストラクターID</label>
         <input
           type="text"
-          value={formData.instructorId}
-          onChange={(e) => setFormData({ ...formData, instructorId: e.target.value })}
+          value={formData.trainerId}
+          onChange={(e) => setFormData({ ...formData, trainerId: e.target.value })}
           required
           className="mt-1 block w-full px-3 py-2 border rounded-md"
         />

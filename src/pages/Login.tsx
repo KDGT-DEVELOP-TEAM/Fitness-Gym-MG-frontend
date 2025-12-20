@@ -17,7 +17,7 @@ export const Login: React.FC = () => {
 
     try {
       await login(email, password);
-      navigate(ROUTES.SHOP_MANAGEMENT);
+      navigate(ROUTES.STORE_MANAGEMENT);
     } catch (err) {
       setError(getErrorMessage(err));
     }

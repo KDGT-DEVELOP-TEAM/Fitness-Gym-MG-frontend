@@ -1,48 +1,57 @@
 import React from 'react';
-import { Customer } from '../../types/customer';
+import { User } from '../../types/user';
 
-interface CustomerCardProps {
-  customer: Customer;
-  calculateAge: (birthday: string) => number;
-  onEdit: (customer: Customer) => void;
+interface UserCardProps {
+  user: User;
+  onEdit: (user: User) => void;
 }
 
-export const CustomerCard: React.FC<CustomerCardProps> = ({ customer, calculateAge, onEdit }) => {
+export const UserCard: React.FC<UserCardProps> = ({ user, onEdit }) => {
+  // ロール名の日本語マッピング
+  const roleLabels: { [key: string]: string } = {
+    admin: '管理者',
+    manager: '店長',
+    trainer: 'トレーナー',
+  };
+
   return (
     <tr className="hover:bg-green-50/30 transition-colors group">
-      {/* 氏名 */}
+      {/* 1. ユーザー名 */}
       <td className="px-8 py-6">
         <div className="flex flex-col items-center text-center">
           <span className="text-base font-bold text-gray-900 group-hover:text-green-600 transition-colors">
-            {customer.name}
+            {user.name}
           </span>
           <span className="text-[11px] font-bold text-gray-400 uppercase tracking-tight">
-            {customer.kana}
+            {user.kana}
           </span>
         </div>
       </td>
 
-      {/* 年齢 */}
+      {/* 2. 権限ロール */}
       <td className="px-8 py-6 text-center">
-        <span className="text-sm font-bold text-gray-600">
-          {calculateAge(customer.birthday)}歳
+        <span className={`px-4 py-1 text-xs font-black uppercase rounded-full tracking-widest ${
+          user.role === 'admin' ? 'bg-red-100 text-red-700' :
+          user.role === 'manager' ? 'bg-orange-100 text-orange-700' : 'bg-yellow-100 text-yellow-700'
+        }`}>
+          {roleLabels[user.role] || user.role}
         </span>
       </td>
 
-      {/* ステータス */}
+      {/* 3. ステータス */}
       <td className="px-8 py-6 text-center">
         <span className={`inline-flex items-center px-4 py-1 rounded-full text-xs font-black tracking-widest uppercase ${
-          customer.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'
+          user.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'
         }`}>
-          {customer.isActive ? '有効' : '無効'}
+          {user.isActive ? '有効' : '無効'}
         </span>
       </td>
 
-      {/* 編集ボタン */}
+      {/* 4. 編集ボタン */}
       <td className="px-8 py-6">
         <div className="flex justify-center">
           <button 
-            onClick={() => onEdit(customer)} 
+            onClick={() => onEdit(user)} 
             className="inline-flex items-center gap-2 px-5 py-2 text-green-600 hover:bg-green-600 hover:text-white rounded-xl transition-all font-bold text-sm border border-green-50 shadow-sm hover:shadow-green-100 active:scale-95"
           >
             <span>編集</span>

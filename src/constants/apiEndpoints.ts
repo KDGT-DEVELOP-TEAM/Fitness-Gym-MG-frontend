@@ -25,9 +25,9 @@ export const API_ENDPOINTS = {
     BASE: `${API_BASE_URL}/users`,
     BY_ID: (id: string) => `${API_BASE_URL}/users/${id}`,
   },
-  SHOPS: {
-    BASE: `${API_BASE_URL}/shops`,
-    BY_ID: (id: string) => `${API_BASE_URL}/shops/${id}`,
+  storeS: {
+    BASE: `${API_BASE_URL}/stores`,
+    BY_ID: (id: string) => `${API_BASE_URL}/stores/${id}`,
   },
 };
 
