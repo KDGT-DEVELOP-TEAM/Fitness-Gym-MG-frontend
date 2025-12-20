@@ -28,55 +28,62 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
     firstPostureGroupId: initialData?.firstPostureGroupId || null,
   });
 
-  useEffect(() => {
-    const fetchDirect = async () => {
-      // 💡 手動で書き換えた「正しいはずのフォルダID」を直接指定
-      const FOLDER_ID = "a0ed1875-7dd7-4379-bd12-b91d74069ef8";
-      const BUCKET_NAME = "postures"; // 💡 ここが小文字であることを再確認！
+  // useEffect(() => {
+  //   const fetchFirstPosture = async () => {
+  //     if (!initialData?.id) return;
 
-      console.log(`🚀 直撃テスト開始: ${BUCKET_NAME}/${FOLDER_ID}`);
+  //     // 1. 最古のグループIDを取得
+  //     const { data: groupData } = await supabase
+  //       .from('posture_groups')
+  //       .select('id')
+  //       .eq('customer_id', initialData.id)
+  //       .order('created_at', { ascending: true })
+  //       .limit(1)
+  //       .single();
 
-      // 1. そのフォルダの中に何があるかリストアップ
-      const { data: files, error: listError } = await supabase.storage
-        .from(BUCKET_NAME)
-        .list(FOLDER_ID);
+  //     if (!groupData) return;
 
-      if (listError) {
-        console.error("❌ ストレージのリスト取得に失敗:", listError.message);
-        return;
-      }
+  //     // 2. 💡 ここが勝負所です。顧客IDを挟まず、グループID直下をリストアップします
+  //     const { data: files, error: listError } = await supabase.storage
+  //       .from('postures')
+  //       .list(`${groupData.id}`);
 
-      console.log("📂 フォルダ内の実ファイル:", files?.map(f => f.name));
+  //     console.log(`--- フォルダ [${groupData.id}] の中身をチェック ---`);
+  //     console.log("📂 発見されたファイル:", files?.map(f => f.name));
 
-      if (files && files.length > 0) {
-        const imagesWithUrls = await Promise.all(['front', 'back', 'side_l', 'side_r'].map(async (pos) => {
-          // 拡張子があってもなくてもマッチするように検索
-          const file = files.find(f => f.name.toLowerCase().startsWith(pos.toLowerCase()));
+  //     if (!files || files.length === 0) {
+  //       console.warn("⚠️ 指定したフォルダは空、または存在しません。");
+  //       // 💡 ここで空なら、手動でリネームした「a0ed...」がバケットの「直下」にあるか確認が必要です
+  //     }
+
+  //     const { data: imagesData } = await supabase
+  //       .from('posture_images')
+  //       .select('position')
+  //       .eq('posture_group_id', groupData.id);
+
+  //     if (imagesData && files) {
+  //       const imagesWithUrls = await Promise.all(imagesData.map(async (img) => {
+  //         // Storage内のファイル名と、DBのposition(frontなど)を照合
+  //         const actualFile = files.find(f => f.name.toLowerCase().startsWith(img.position.toLowerCase()));
           
-          if (!file) return { position: pos, url: '' };
+  //         if (!actualFile) return { position: img.position, url: '' };
 
-          // 💡 パスを組み立てる (フォルダ名 / ファイル名)
-          const fullPath = `${FOLDER_ID}/${file.name}`;
+  //         // 💡 発見したファイル名を使ってURLを生成
+  //         const cleanPath = `${groupData.id}/${actualFile.name}`;
+  //         const { data: signedData } = await supabase.storage
+  //           .from('postures')
+  //           .createSignedUrl(cleanPath, 3600);
           
-          const { data: signedData, error: sError } = await supabase.storage
-            .from(BUCKET_NAME)
-            .createSignedUrl(fullPath, 3600);
-
-          if (sError) console.error(`❌ ${pos} のURL生成失敗:`, sError.message);
-
-          return {
-            position: pos,
-            url: signedData?.signedUrl || ''
-          };
-        }));
-        setPostureImages(imagesWithUrls);
-      } else {
-        console.warn("⚠️ フォルダは存在しますが、中身が空です。");
-      }
-    };
-
-    fetchDirect();
-  }, [initialData?.id]);
+  //         return {
+  //           position: img.position,
+  //           url: signedData?.signedUrl || '' 
+  //         };
+  //       }));
+  //       setPostureImages(imagesWithUrls);
+  //     }
+  //   };
+  //   fetchFirstPosture();
+  // }, [initialData?.id]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -98,7 +105,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-h-[70vh] overflow-y-auto px-2">
       {/* 1. 初回姿勢画像セクション（更新時のみ表示） */}
-      {initialData && (
+      {/* {initialData && (
         <section className="space-y-4">
           <h3 className="text-lg font-medium border-b pb-2">初回姿勢画像</h3>
           {postureImages.length > 0 ? (
@@ -118,7 +125,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
             </div>
           )}
         </section>
-      )}
+      )} */}
       {/* 基本情報セクション */}
       <section className="space-y-4">
         <h3 className="text-lg font-medium border-b pb-2">基本情報</h3>
