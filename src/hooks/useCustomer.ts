@@ -12,22 +12,39 @@ export const useCustomers = () => {
   const [searchQuery, setSearchQuery] = useState('');
 
   // --- 1. データ取得 ---
-  const fetchCustomers = useCallback(async () => {
-    setLoading(true);
-    try {
-      const { data, error: dbError } = await supabase
-        .from('customers')
-        .select('*')
-        .order('created_at', { ascending: false });
+const fetchCustomers = useCallback(async () => {
+  setLoading(true);
+  try {
+    // 顧客一覧を取得
+    const { data: customersData, error: dbError } = await supabase
+      .from('customers')
+      .select('*')
+      .order('created_at', { ascending: false });
 
-      if (dbError) throw dbError;
+    if (dbError) throw dbError;
 
-      // DB(スネークケース) -> アプリ(キャメルケース)へのマッピング
-      setAllCustomers(data.map((c: any) => ({
+    // 各顧客の「一番古い姿勢グループID」を取得してマッピング
+    const customersWithFirstPosture = await Promise.all(customersData.map(async (c: any) => {
+      let firstId = c.first_posture_group_id;
+
+      // もしDBのfirst_posture_group_idが空なら、posture_groupsテーブルから最小値を探す
+      if (!firstId) {
+        const { data: groupData } = await supabase
+          .from('posture_groups')
+          .select('id')
+          .eq('customer_id', c.id)
+          .order('created_at', { ascending: true }) // 1番古いもの
+          .limit(1)
+          .maybeSingle();
+        
+        if (groupData) firstId = groupData.id;
+      }
+
+      return {
         id: c.id,
         kana: c.kana,
         name: c.name,
-        gender: c.gender, // '男' or '女'
+        gender: c.gender,
         birthday: c.birthday,
         height: c.height,
         email: c.email,
@@ -35,17 +52,20 @@ export const useCustomers = () => {
         address: c.address,
         medical: c.medical,
         taboo: c.taboo,
-        firstPostureGroupId: c.first_posture_group_id, 
+        firstPostureGroupId: firstId, // ここで一番古いIDが入る
         memo: c.memo,
         createdAt: c.created_at,
         isActive: c.is_active,
-      })));
-    } catch (err: any) {
-      setError(`取得失敗: ${err.message}`);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      };
+    }));
+
+    setAllCustomers(customersWithFirstPosture);
+  } catch (err: any) {
+    setError(`取得失敗: ${err.message}`);
+  } finally {
+    setLoading(false);
+  }
+}, []);
 
   // --- 2. 新規作成 ---
   const createCustomer = async (formData: CustomerFormData) => {
@@ -56,7 +76,7 @@ export const useCustomers = () => {
         .insert([{
           name: formData.name,
           kana: formData.kana,
-          gender: formData.gender, // フォーム側で '男'/'女' を選択させている前提
+          gender: formData.gender,
           birthday: formData.birthday,
           height: formData.height,
           email: formData.email,

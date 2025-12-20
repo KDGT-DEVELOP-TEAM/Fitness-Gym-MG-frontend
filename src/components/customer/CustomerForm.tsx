@@ -15,7 +15,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
   const [formData, setFormData] = useState<CustomerFormData>({
     name: initialData?.name || '',
     kana: initialData?.kana || '',
-    gender: initialData?.gender || 'male',
+    gender: initialData?.gender || '男',
     birthday: initialData?.birthday || '',
     height: initialData?.height || null,
     email: initialData?.email || '',
@@ -29,27 +29,54 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
   });
 
   useEffect(() => {
-    const fetchFirstPosture = async () => {
-      if (!initialData?.firstPostureGroupId) return;
+    const fetchDirect = async () => {
+      // 💡 手動で書き換えた「正しいはずのフォルダID」を直接指定
+      const FOLDER_ID = "a0ed1875-7dd7-4379-bd12-b91d74069ef8";
+      const BUCKET_NAME = "postures"; // 💡 ここが小文字であることを再確認！
 
-      const { data, error } = await supabase
-        .from('posture_images')
-        .select('position, storage_key')
-        .eq('posture_group_id', initialData.firstPostureGroupId)
-        .order('position'); // front, right, back, left の順
+      console.log(`🚀 直撃テスト開始: ${BUCKET_NAME}/${FOLDER_ID}`);
 
-      if (data) {
-        // storage_keyから公開URLを取得（Storageの設定に合わせて調整してください）
-        const imagesWithUrls = data.map(img => ({
-          position: img.position,
-          url: supabase.storage.from('postures').getPublicUrl(img.storage_key).data.publicUrl
+      // 1. そのフォルダの中に何があるかリストアップ
+      const { data: files, error: listError } = await supabase.storage
+        .from(BUCKET_NAME)
+        .list(FOLDER_ID);
+
+      if (listError) {
+        console.error("❌ ストレージのリスト取得に失敗:", listError.message);
+        return;
+      }
+
+      console.log("📂 フォルダ内の実ファイル:", files?.map(f => f.name));
+
+      if (files && files.length > 0) {
+        const imagesWithUrls = await Promise.all(['front', 'back', 'side_l', 'side_r'].map(async (pos) => {
+          // 拡張子があってもなくてもマッチするように検索
+          const file = files.find(f => f.name.toLowerCase().startsWith(pos.toLowerCase()));
+          
+          if (!file) return { position: pos, url: '' };
+
+          // 💡 パスを組み立てる (フォルダ名 / ファイル名)
+          const fullPath = `${FOLDER_ID}/${file.name}`;
+          
+          const { data: signedData, error: sError } = await supabase.storage
+            .from(BUCKET_NAME)
+            .createSignedUrl(fullPath, 3600);
+
+          if (sError) console.error(`❌ ${pos} のURL生成失敗:`, sError.message);
+
+          return {
+            position: pos,
+            url: signedData?.signedUrl || ''
+          };
         }));
         setPostureImages(imagesWithUrls);
+      } else {
+        console.warn("⚠️ フォルダは存在しますが、中身が空です。");
       }
     };
 
-    fetchFirstPosture();
-  }, [initialData]);
+    fetchDirect();
+  }, [initialData?.id]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -111,8 +138,8 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
           <div>
             <label className="block text-sm font-medium">性別 <RequiredBadge /></label>
             <select name="gender" value={formData.gender} onChange={handleChange} className="w-full border p-2 rounded">
-              <option value="male">男性</option>
-              <option value="female">女性</option>
+              <option value="男">男</option>
+              <option value="女">女</option>
             </select>
           </div>
         </div>
