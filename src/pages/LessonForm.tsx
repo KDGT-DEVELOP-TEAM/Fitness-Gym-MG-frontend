@@ -3,12 +3,11 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ROUTES } from '../constants/routes';
 import { lessonApi } from '../api/lessonApi';
 import { LessonFormData, TrainingInput } from '../types/lesson';
-import { supabase } from '../lib/supabase';
 import { logger } from '../utils/logger';
 import { PosturePosition, getPosturePositionLabel, ALL_POSTURE_POSITIONS } from '../constants/posture';
 import { useOptions } from '../hooks/useOptions';
 import { IMAGE_QUALITY, CANVAS_DIMENSIONS } from '../constants/image';
-import { STORAGE_CONSTANTS, IMAGE_CONSTANTS } from '../constants/storage';
+import { IMAGE_CONSTANTS } from '../constants/storage';
 import { FORM_STYLES } from '../styles/formStyles';
 import { useErrorHandler } from '../hooks/useErrorHandler';
 import { validateRequired, validateDateRange, validateNumericRange } from '../utils/validators';
@@ -145,7 +144,6 @@ export const LessonForm: React.FC = () => {
 
   const captureAndUpload = async (position: PosturePosition) => {
     setError('');
-    const client = supabase;
     const video = videoRef.current;
     if (!video) {
       setError('カメラが起動していません');
@@ -170,77 +168,62 @@ export const LessonForm: React.FC = () => {
           return;
         }
 
-        // Always show local preview to avoid blocking when Supabase未設定や顧客未選択
+        // Always show local preview
         const localUrl = URL.createObjectURL(blob);
-        const updatePreview = (storageKey: string) =>
+        const updatePreview = (signedUrl: string, storageKey: string) =>
           setPosturePreviews((prev) => {
             const filtered = prev.filter((p) => p.position !== position);
-            return [...filtered, { position, url: localUrl, storageKey }];
+            return [...filtered, { position, url: signedUrl || localUrl, storageKey }];
           });
 
-        const canUpload = !!client && !!formData.customerId;
-        if (!canUpload) {
-          if (!client) setError('Supabase未設定のためローカルプレビューのみ表示します');
-          else if (!formData.customerId) setError('顧客未選択のためローカルプレビューのみ表示します');
-          updatePreview('');
+        if (!formData.customerId) {
+          setError('顧客未選択のためローカルプレビューのみ表示します');
+          updatePreview('', '');
           resolve();
           return;
         }
 
         const groupId = await ensurePostureGroup();
         if (!groupId) {
-          updatePreview('');
+          updatePreview('', '');
           resolve();
           return;
         }
 
-        const fileName = `${position}.jpg`;
-        const path = `postures/${formData.customerId}/${groupId}/${fileName}`;
-        logger.debug('Uploading image', { path, groupId, position, blobSize: blob.size }, 'LessonForm');
-        const { data: uploadData, error: uploadError } = await client.storage
-          .from(STORAGE_CONSTANTS.POSTURES_BUCKET)
-          .upload(path, blob, { contentType: IMAGE_CONSTANTS.JPEG_MIME_TYPE, upsert: true });
-        if (uploadError) {
-          setError(handleError(uploadError, 'LessonForm'));
-          updatePreview('');
-          resolve();
-          return;
-        }
-        logger.debug('Upload successful', { path: uploadData?.path }, 'LessonForm');
+        // FormDataを作成してバックエンドに送信
+        const uploadFormData = new FormData();
+        uploadFormData.append('file', blob, `${position}.jpg`);
+        uploadFormData.append('postureGroupId', groupId);
+        uploadFormData.append('position', position);
+        uploadFormData.append('consentPublication', 'false');
+
+        logger.debug('Uploading image via backend', { groupId, position, blobSize: blob.size }, 'LessonForm');
         
-        // 同じポジションの既存レコードを削除（REST API）
         try {
-          await axiosInstance.delete('/posture-images', {
-            params: {
-              postureGroupId: groupId,
-              position,
+          const response = await axiosInstance.post('/posture-images/upload', uploadFormData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
             },
           });
-        } catch (deleteError) {
-          logger.warn('Failed to delete existing posture_image record', deleteError, 'LessonForm');
-          // 削除エラーは警告として記録するが、続行する
-        }
-        
-        // 新しいレコードを挿入（REST API）
-        logger.debug('Inserting posture_image record', { storageKey: path }, 'LessonForm');
-        try {
-          await axiosInstance.post('/posture-images', {
-            postureGroupId: groupId,
-            storageKey: path,
-            position,
-            consentPublication: false,
-            takenAt: new Date().toISOString(),
-          });
-          logger.debug('Insert successful', { storageKey: path }, 'LessonForm');
-        } catch (insertError) {
-          setError(handleError(insertError, 'LessonForm'));
-          updatePreview('');
+          
+          if (!response.data || !response.data.signedUrl) {
+            setError('画像のアップロードに失敗しました');
+            updatePreview('', '');
+            resolve();
+            return;
+          }
+          
+          const { signedUrl, storageKey } = response.data;
+          logger.debug('Upload successful', { storageKey, signedUrl }, 'LessonForm');
+          
+          updatePreview(signedUrl, storageKey);
           resolve();
-          return;
+        } catch (uploadError) {
+          logger.error('Failed to upload image', uploadError, 'LessonForm');
+          setError(handleError(uploadError, 'LessonForm'));
+          updatePreview('', '');
+          resolve();
         }
-
-        updatePreview(path);
-        resolve();
       }, IMAGE_CONSTANTS.JPEG_MIME_TYPE, IMAGE_QUALITY.JPEG)
     );
   };

@@ -7,7 +7,6 @@ import { useLessonData } from '../hooks/useLessonData';
 import { usePostureImagesForLesson } from '../hooks/usePostureImagesForLesson';
 import { useTrainingsForLesson } from '../hooks/useTrainingsForLesson';
 import { FORM_STYLES } from '../styles/formStyles';
-import { supabase } from '../lib/supabase';
 import { logger } from '../utils/logger';
 
 export const LessonDetail: React.FC = () => {
@@ -20,15 +19,6 @@ export const LessonDetail: React.FC = () => {
   const { trainings, loading: trainingsLoading } = useTrainingsForLesson(id);
 
   const loading = lessonLoading || imagesLoading || trainingsLoading;
-
-  // Check Supabase configuration
-  if (!supabase) {
-    return (
-      <div className="p-4">
-        <p className="text-red-500">Supabase未設定です</p>
-      </div>
-    );
-  }
 
   const findName = (list: Option[], targetId?: string | null) =>
     list.find((o) => o.id === targetId)?.name ?? '';

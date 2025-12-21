@@ -32,6 +32,8 @@ cp .env.example .env
 REACT_APP_API_BASE_URL=http://localhost:3001/api
 ```
 
+**注意**: 以前は`REACT_APP_SUPABASE_URL`と`REACT_APP_SUPABASE_ANON_KEY`が必要でしたが、画像アップロード機能の完全責務分離移行により、フロントエンドからSupabaseへの直接アクセスは不要になりました。これらの環境変数は`.env`ファイルから削除できます。
+
 ### 3. 開発サーバーの起動
 
 ```bash

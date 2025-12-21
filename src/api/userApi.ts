@@ -1,90 +1,144 @@
-import { requireSupabase } from '../lib/supabaseHelpers';
+import axiosInstance from './axiosConfig';
 import { User, UserFormData } from '../types/user';
 import { PaginatedResponse, PaginationParams } from '../types/common';
 import { isUser, isUserArray } from '../utils/typeGuards';
-import { handleSupabaseError, logError } from '../utils/errorHandler';
+import { handleApiError, logError } from '../utils/errorHandler';
 import { DEFAULT_PAGE, DEFAULT_PAGE_LIMIT } from '../constants/pagination';
 
+/**
+ * Map API response to User type
+ * Handles both camelCase and snake_case responses
+ */
+const mapUser = (row: User | any): User => {
+  // If already in correct format, return as is
+  if (row.id && row.email && row.name && row.createdAt) {
+    return row as User;
+  }
+  
+  // Map from snake_case if needed
+  return {
+    id: row.id,
+    email: row.email ?? '',
+    name: row.name ?? '',
+    role: (row.role as User['role']) ?? 'trainer',
+    createdAt: row.created_at ?? row.createdAt ?? new Date().toISOString(), // DBでNOT NULL
+  };
+};
+
+/**
+ * User API
+ * Handles CRUD operations for users
+ */
 export const userApi = {
+  /**
+   * Get all users with pagination
+   * 
+   * @param params - Pagination parameters (page, limit)
+   * @returns Paginated response containing users
+   */
   getAll: async (params?: PaginationParams): Promise<PaginatedResponse<User>> => {
-    const client = requireSupabase();
-    const page = params?.page ?? DEFAULT_PAGE;
-    const limit = params?.limit ?? DEFAULT_PAGE_LIMIT;
-    const from = (page - 1) * limit;
-    const to = from + limit - 1;
-    const { data, error, count } = await client
-      .from('users')
-      .select('*', { count: 'exact' })
-      .range(from, to);
-    if (error) {
-      const appError = handleSupabaseError(error);
+    try {
+      const page = params?.page ?? DEFAULT_PAGE;
+      const limit = params?.limit ?? DEFAULT_PAGE_LIMIT;
+      
+      const response = await axiosInstance.get<PaginatedResponse<User>>('/users', {
+        params: { page, limit },
+      });
+      
+      if (!response.data || !Array.isArray(response.data.data)) {
+        throw new Error('Invalid response format from /users');
+      }
+      
+      const mapped = response.data.data.map(mapUser).filter(isUser);
+      return {
+        data: mapped,
+        total: response.data.total ?? mapped.length,
+        page: response.data.page ?? page,
+        limit: response.data.limit ?? limit,
+      };
+    } catch (error) {
+      const appError = handleApiError(error);
       logError(appError, 'userApi.getAll');
       throw appError;
     }
-    const users = isUserArray(data) ? data : [];
-    return {
-      data: users,
-      total: count ?? users.length,
-      page,
-      limit,
-    };
   },
 
+  /**
+   * Get user by ID
+   * 
+   * @param id - User ID
+   * @returns User data
+   */
   getById: async (id: string): Promise<User> => {
-    const client = requireSupabase();
-    const { data, error } = await client.from('users').select('*').eq('id', id).single();
-    if (error) {
-      const appError = handleSupabaseError(error);
+    try {
+      const response = await axiosInstance.get<User>(`/users/${id}`);
+      const user = mapUser(response.data);
+      if (!isUser(user)) {
+        throw new Error('Invalid user data format');
+      }
+      return user;
+    } catch (error) {
+      const appError = handleApiError(error);
       logError(appError, 'userApi.getById');
       throw appError;
     }
-    if (!isUser(data)) {
-      throw new Error('Invalid user data format');
-    }
-    return data;
   },
 
+  /**
+   * Create a new user
+   * 
+   * @param data - User form data
+   * @returns Created user
+   */
   create: async (data: UserFormData): Promise<User> => {
-    const client = requireSupabase();
-    const { data: inserted, error } = await client.from('users').insert([data]).select().single();
-    if (error) {
-      const appError = handleSupabaseError(error);
+    try {
+      const response = await axiosInstance.post<User>('/users', data);
+      const user = mapUser(response.data);
+      if (!isUser(user)) {
+        throw new Error('Invalid user data format');
+      }
+      return user;
+    } catch (error) {
+      const appError = handleApiError(error);
       logError(appError, 'userApi.create');
       throw appError;
     }
-    if (!isUser(inserted)) {
-      throw new Error('Invalid user data format');
-    }
-    return inserted;
   },
 
+  /**
+   * Update user by ID
+   * 
+   * @param id - User ID
+   * @param data - Partial user form data
+   * @returns Updated user
+   */
   update: async (id: string, data: Partial<UserFormData>): Promise<User> => {
-    const client = requireSupabase();
-    const { data: updated, error } = await client
-      .from('users')
-      .update(data)
-      .eq('id', id)
-      .select()
-      .single();
-    if (error) {
-      const appError = handleSupabaseError(error);
+    try {
+      const response = await axiosInstance.put<User>(`/users/${id}`, data);
+      const user = mapUser(response.data);
+      if (!isUser(user)) {
+        throw new Error('Invalid user data format');
+      }
+      return user;
+    } catch (error) {
+      const appError = handleApiError(error);
       logError(appError, 'userApi.update');
       throw appError;
     }
-    if (!isUser(updated)) {
-      throw new Error('Invalid user data format');
-    }
-    return updated;
   },
 
+  /**
+   * Delete user by ID
+   * 
+   * @param id - User ID
+   */
   delete: async (id: string): Promise<void> => {
-    const client = requireSupabase();
-    const { error } = await client.from('users').delete().eq('id', id);
-    if (error) {
-      const appError = handleSupabaseError(error);
+    try {
+      await axiosInstance.delete(`/users/${id}`);
+    } catch (error) {
+      const appError = handleApiError(error);
       logError(appError, 'userApi.delete');
       throw appError;
     }
   },
 };
-

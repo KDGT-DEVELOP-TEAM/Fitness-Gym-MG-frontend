@@ -1,9 +1,30 @@
-import { requireSupabase } from '../lib/supabaseHelpers';
+import axiosInstance from './axiosConfig';
 import { Customer, CustomerFormData } from '../types/customer';
 import { PaginatedResponse, PaginationParams } from '../types/common';
 import { isCustomer, isCustomerArray } from '../utils/typeGuards';
-import { handleSupabaseError, logError } from '../utils/errorHandler';
+import { handleApiError, logError } from '../utils/errorHandler';
 import { DEFAULT_PAGE, DEFAULT_PAGE_LIMIT } from '../constants/pagination';
+
+/**
+ * Map API response to Customer type
+ * Handles both camelCase and snake_case responses
+ */
+const mapCustomer = (row: Customer | any): Customer => {
+  // If already in correct format, return as is
+  if (row.id && row.name && row.email && row.phone && row.createdAt) {
+    return row as Customer;
+  }
+  
+  // Map from snake_case if needed
+  return {
+    id: row.id,
+    name: row.name ?? '',
+    email: row.email ?? '', // DBでNOT NULL
+    phone: row.phone ?? '', // DBでNOT NULL
+    shopId: row.shop_id ?? row.shopId ?? '',
+    createdAt: row.created_at ?? row.createdAt ?? new Date().toISOString(), // DBでNOT NULL
+  };
+};
 
 /**
  * Customer API
@@ -17,27 +38,30 @@ export const customerApi = {
    * @returns Paginated response containing customers
    */
   getAll: async (params?: PaginationParams): Promise<PaginatedResponse<Customer>> => {
-    const client = requireSupabase();
-    const page = params?.page ?? DEFAULT_PAGE;
-    const limit = params?.limit ?? DEFAULT_PAGE_LIMIT;
-    const from = (page - 1) * limit;
-    const to = from + limit - 1;
-    const { data, error, count } = await client
-      .from('customers')
-      .select('*', { count: 'exact' })
-      .range(from, to);
-    if (error) {
-      const appError = handleSupabaseError(error);
+    try {
+      const page = params?.page ?? DEFAULT_PAGE;
+      const limit = params?.limit ?? DEFAULT_PAGE_LIMIT;
+      
+      const response = await axiosInstance.get<PaginatedResponse<Customer>>('/customers', {
+        params: { page, limit },
+      });
+      
+      if (!response.data || !Array.isArray(response.data.data)) {
+        throw new Error('Invalid response format from /customers');
+      }
+      
+      const mapped = response.data.data.map(mapCustomer).filter(isCustomer);
+      return {
+        data: mapped,
+        total: response.data.total ?? mapped.length,
+        page: response.data.page ?? page,
+        limit: response.data.limit ?? limit,
+      };
+    } catch (error) {
+      const appError = handleApiError(error);
       logError(appError, 'customerApi.getAll');
       throw appError;
     }
-    const customers = isCustomerArray(data) ? data : [];
-    return {
-      data: customers,
-      total: count ?? customers.length,
-      page,
-      limit,
-    };
   },
 
   /**
@@ -47,17 +71,18 @@ export const customerApi = {
    * @returns Customer data
    */
   getById: async (id: string): Promise<Customer> => {
-    const client = requireSupabase();
-    const { data, error } = await client.from('customers').select('*').eq('id', id).single();
-    if (error) {
-      const appError = handleSupabaseError(error);
+    try {
+      const response = await axiosInstance.get<Customer>(`/customers/${id}`);
+      const customer = mapCustomer(response.data);
+      if (!isCustomer(customer)) {
+        throw new Error('Invalid customer data format');
+      }
+      return customer;
+    } catch (error) {
+      const appError = handleApiError(error);
       logError(appError, 'customerApi.getById');
       throw appError;
     }
-    if (!isCustomer(data)) {
-      throw new Error('Invalid customer data format');
-    }
-    return data;
   },
 
   /**
@@ -67,17 +92,18 @@ export const customerApi = {
    * @returns Created customer
    */
   create: async (data: CustomerFormData): Promise<Customer> => {
-    const client = requireSupabase();
-    const { data: inserted, error } = await client.from('customers').insert([data]).select().single();
-    if (error) {
-      const appError = handleSupabaseError(error);
+    try {
+      const response = await axiosInstance.post<Customer>('/customers', data);
+      const customer = mapCustomer(response.data);
+      if (!isCustomer(customer)) {
+        throw new Error('Invalid customer data format');
+      }
+      return customer;
+    } catch (error) {
+      const appError = handleApiError(error);
       logError(appError, 'customerApi.create');
       throw appError;
     }
-    if (!isCustomer(inserted)) {
-      throw new Error('Invalid customer data format');
-    }
-    return inserted;
   },
 
   /**
@@ -88,22 +114,18 @@ export const customerApi = {
    * @returns Updated customer
    */
   update: async (id: string, data: Partial<CustomerFormData>): Promise<Customer> => {
-    const client = requireSupabase();
-    const { data: updated, error } = await client
-      .from('customers')
-      .update(data)
-      .eq('id', id)
-      .select()
-      .single();
-    if (error) {
-      const appError = handleSupabaseError(error);
+    try {
+      const response = await axiosInstance.put<Customer>(`/customers/${id}`, data);
+      const customer = mapCustomer(response.data);
+      if (!isCustomer(customer)) {
+        throw new Error('Invalid customer data format');
+      }
+      return customer;
+    } catch (error) {
+      const appError = handleApiError(error);
       logError(appError, 'customerApi.update');
       throw appError;
     }
-    if (!isCustomer(updated)) {
-      throw new Error('Invalid customer data format');
-    }
-    return updated;
   },
 
   /**
@@ -112,13 +134,12 @@ export const customerApi = {
    * @param id - Customer ID
    */
   delete: async (id: string): Promise<void> => {
-    const client = requireSupabase();
-    const { error } = await client.from('customers').delete().eq('id', id);
-    if (error) {
-      const appError = handleSupabaseError(error);
+    try {
+      await axiosInstance.delete(`/customers/${id}`);
+    } catch (error) {
+      const appError = handleApiError(error);
       logError(appError, 'customerApi.delete');
       throw appError;
     }
   },
 };
-

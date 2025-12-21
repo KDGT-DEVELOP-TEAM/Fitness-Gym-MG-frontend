@@ -1,13 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
 import { PostureImage } from '../types/posture';
 import { formatDateForGrouping, formatDateTimeForCompare } from '../utils/dateFormatter';
 import { logger } from '../utils/logger';
 import { COLOR_CLASSES } from '../constants/colors';
 import { PosturePosition, isPosturePosition } from '../constants/posture';
 import { TIME_CONSTANTS } from '../constants/time';
-import { STORAGE_CONSTANTS } from '../constants/storage';
 import { ConfirmModal } from '../components/common/ConfirmModal';
 import { PostureImageGrid } from '../components/posture/PostureImageGrid';
 import { PostureCompareModal } from '../components/posture/PostureCompareModal';
@@ -152,7 +150,7 @@ export const usePostureImageList = () => {
   // 姿勢画像を取得
   useEffect(() => {
     const fetchImages = async () => {
-      if (!customerId || !supabase) {
+      if (!customerId) {
         setLoading(false);
         return;
       }
@@ -161,11 +159,6 @@ export const usePostureImageList = () => {
       setError(null);
 
       try {
-        const client = supabase;
-        if (!client) {
-          throw new Error('Supabase未設定');
-        }
-
         // REST APIから姿勢グループを取得
         const postureGroupsResponse = await axiosInstance.get<PostureGroupResponse[]>(
           `/customers/${customerId}/posture-groups`
@@ -199,54 +192,53 @@ export const usePostureImageList = () => {
           return;
         }
 
-        // 署名付きURLを生成（Supabase Storage継続使用）
-        const imagesWithUrls = await Promise.all(
-          allImages.map(async (img: PostureImageResponse): Promise<PostureImage | null> => {
-            if (!img.storageKey) {
-              return null;
+        // 署名付きURLをバックエンド経由でバッチ取得
+        let signedUrlMap: Map<string, string> = new Map();
+        
+        try {
+          const imageIds = allImages.map(img => img.id).filter(Boolean);
+          if (imageIds.length > 0) {
+            const signedUrlResponse = await axiosInstance.post('/posture-images/signed-urls', {
+              imageIds,
+              expiresIn: TIME_CONSTANTS.SEVEN_DAYS_IN_SECONDS,
+            });
+            
+            if (signedUrlResponse.data && Array.isArray(signedUrlResponse.data.urls)) {
+              signedUrlMap = new Map(
+                signedUrlResponse.data.urls.map((u: any) => [u.imageId, u.signedUrl])
+              );
             }
+          }
+        } catch (urlError) {
+          logger.error('Failed to generate batch signed URLs', urlError, 'PostureImageList');
+          // 署名付きURLの生成に失敗しても続行（URLなしで表示）
+        }
 
-            // Validate position type
-            if (!isPosturePosition(img.position)) {
-              logger.warn('Invalid posture position', { position: img.position }, 'PostureImageList');
-              return null;
-            }
+        const imagesWithUrls = allImages.map((img: PostureImageResponse): PostureImage | null => {
+          if (!img.storageKey) {
+            return null;
+          }
 
-            const position: PosturePosition = img.position;
+          // Validate position type
+          if (!isPosturePosition(img.position)) {
+            logger.warn('Invalid posture position', { position: img.position }, 'PostureImageList');
+            return null;
+          }
 
-            const { data: signedUrlData, error: signedUrlError } = await client.storage
-              .from(STORAGE_CONSTANTS.POSTURES_BUCKET)
-              .createSignedUrl(img.storageKey, TIME_CONSTANTS.SEVEN_DAYS_IN_SECONDS);
+          const position: PosturePosition = img.position;
+          const signedUrl = signedUrlMap.get(img.id) || '';
 
-            if (signedUrlError) {
-              logger.error('Error creating signed URL', signedUrlError, 'PostureImageList');
-              const { data: publicUrl } = client.storage
-                .from(STORAGE_CONSTANTS.POSTURES_BUCKET)
-                .getPublicUrl(img.storageKey);
-              return {
-                id: img.id,
-                storage_key: img.storageKey,
-                position: position,
-                taken_at: img.takenAt,
-                posture_group_id: img.postureGroupId,
-                url: publicUrl.publicUrl,
-                date: formatDateForGrouping(img.takenAt),
-                formattedDateTime: formatDateTimeForCompare(img.takenAt),
-              };
-            }
-
-            return {
-              id: img.id,
-              storage_key: img.storageKey,
-              position: position,
-              taken_at: img.takenAt,
-              posture_group_id: img.postureGroupId,
-              url: signedUrlData?.signedUrl || '',
-              date: formatDateForGrouping(img.takenAt),
-              formattedDateTime: formatDateTimeForCompare(img.takenAt),
-            };
-          })
-        );
+          return {
+            id: img.id,
+            storage_key: img.storageKey,
+            position: position,
+            taken_at: img.takenAt,
+            posture_group_id: img.postureGroupId,
+            url: signedUrl,
+            date: formatDateForGrouping(img.takenAt),
+            formattedDateTime: formatDateTimeForCompare(img.takenAt),
+          };
+        });
 
         const validImages = imagesWithUrls.filter((img): img is PostureImage => img !== null);
         setImages(validImages);
@@ -289,37 +281,20 @@ export const usePostureImageList = () => {
 
   // 選択した画像を削除
   const handleDelete = async () => {
-    if (selectedImageIds.size === 0 || !supabase) return;
-
-    const client = supabase;
-    if (!client) return;
+    if (selectedImageIds.size === 0) return;
 
     setShowDeleteConfirm(true);
   };
 
   const confirmDelete = async () => {
-    if (selectedImageIds.size === 0 || !supabase) return;
-
-    const client = supabase;
-    if (!client) return;
+    if (selectedImageIds.size === 0) return;
 
     setShowDeleteConfirm(false);
 
     try {
-      const selectedImages = images.filter((img) => selectedImageIds.has(img.id));
-      const storageKeys = selectedImages.map((img) => img.storage_key).filter(Boolean);
-
-      // ストレージから削除
-      if (storageKeys.length > 0) {
-        const { error: storageError } = await client.storage
-          .from(STORAGE_CONSTANTS.POSTURES_BUCKET)
-          .remove(storageKeys);
-        if (storageError) {
-          logger.error('Error deleting from storage', storageError, 'PostureImageList');
-        }
-      }
-
-      // REST APIから削除
+      // バックエンド経由で削除（Storage + メタデータの両方を削除）
+      logger.info('Deleting images via backend', { count: selectedImageIds.size }, 'PostureImageList');
+      
       await Promise.all(
         Array.from(selectedImageIds).map((id) =>
           axiosInstance.delete(`/posture-images/${id}`).catch((err) => {
@@ -333,6 +308,8 @@ export const usePostureImageList = () => {
       setImages((prev) => prev.filter((img) => !selectedImageIds.has(img.id)));
       setSelectedImageIds(new Set());
       setIsSelectionMode(false);
+      
+      logger.info('Successfully deleted images', { count: selectedImageIds.size }, 'PostureImageList');
     } catch (err: unknown) {
       const errorMessage = handleError(err, 'PostureImageList');
       setError(errorMessage);
