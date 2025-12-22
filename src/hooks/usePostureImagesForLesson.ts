@@ -6,8 +6,11 @@ import { isPosturePosition } from '../constants/posture';
 import axiosInstance from '../api/axiosConfig';
 
 interface PostureImageResponse {
+  id: string;
   storageKey: string;
   position: string;
+  takenAt: string;
+  postureGroupId: string;
 }
 
 /**
@@ -92,7 +95,9 @@ export const usePostureImagesForLesson = (
         };
       });
 
-      const validPreviews: PosturePreview[] = previewResults.filter((p): p is PosturePreview => p !== null && p.url);
+      const validPreviews: PosturePreview[] = previewResults.filter((p): p is PosturePreview => 
+        p !== null && typeof p.url === 'string' && p.url !== ''
+      );
       setPosturePreviews(validPreviews);
     } catch (err) {
       logger.error('Unexpected error loading posture images', err, 'usePostureImagesForLesson');
@@ -103,7 +108,7 @@ export const usePostureImagesForLesson = (
   }, [lessonId, postureGroupId]);
 
   useEffect(() => {
-    if (!lessonId || !supabase) {
+    if (!lessonId) {
       return;
     }
     loadPostureImages();
