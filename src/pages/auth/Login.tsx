@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { ROUTES } from '../constants/routes';
-import { getLoginErrorMessage } from '../utils/errorHandler';
-import { logger } from '../utils/logger';
-import { authApi } from '../api/authApi';
+import { useAuth } from '../../context/AuthContext';
+import { ROUTES } from '../../constants/routes';
+import { getLoginErrorMessage } from '../../utils/errorHandler';
+import { logger } from '../../utils/logger';
+import { authApi } from '../../api/authApi';
 
 export const Login: React.FC = () => {
   const [email, setEmail] = useState('');

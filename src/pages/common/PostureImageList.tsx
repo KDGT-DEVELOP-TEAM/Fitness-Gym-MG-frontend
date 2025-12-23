@@ -1,23 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { PostureImage } from '../types/posture';
-import { formatDateForGrouping, formatDateTimeForCompare } from '../utils/dateFormatter';
-import { logger } from '../utils/logger';
-import { COLOR_CLASSES } from '../constants/colors';
-import { PosturePosition, isPosturePosition } from '../constants/posture';
-import { TIME_CONSTANTS } from '../constants/time';
-import { ConfirmModal } from '../components/common/ConfirmModal';
-import { PostureImageGrid } from '../components/posture/PostureImageGrid';
-import { PostureCompareModal } from '../components/posture/PostureCompareModal';
-import { PostureImageListFloatingButtons } from '../components/posture/PostureImageListFloatingButtons';
-import { useErrorHandler } from '../hooks/useErrorHandler';
-import axiosInstance from '../api/axiosConfig';
-
-interface PostureGroupResponse {
-  id: string;
-  capturedAt: string;
-  lessonId: string | null;
-}
+import { PostureImage } from '../../types/posture';
+import { formatDateForGrouping, formatDateTimeForCompare } from '../../utils/dateFormatter';
+import { logger } from '../../utils/logger';
+import { COLOR_CLASSES } from '../../constants/colors';
+import { PosturePosition, isPosturePosition } from '../../constants/posture';
+import { TIME_CONSTANTS } from '../../constants/time';
+import { ConfirmModal } from '../../components/common/ConfirmModal';
+import { PostureImageGrid } from '../../components/posture/PostureImageGrid';
+import { PostureCompareModal } from '../../components/posture/PostureCompareModal';
+import { PostureImageListFloatingButtons } from '../../components/posture/PostureImageListFloatingButtons';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
+import { postureApi } from '../../api/postureApi';
+import { customerApi } from '../../api/customerApi';
 
 interface PostureImageResponse {
   id: string;
@@ -160,9 +155,8 @@ export const usePostureImageList = () => {
 
       try {
         // REST APIから姿勢グループを取得
-        const postureGroupsResponse = await axiosInstance.get<PostureGroupResponse[]>(
-          `/customers/${customerId}/posture-groups`
-        );
+        const postureGroupsResponse = await customerApi.getProfile(customerId) as any;
+        const postureGroups = postureGroupsResponse.postureGroups || [];
 
         if (!postureGroupsResponse.data || !Array.isArray(postureGroupsResponse.data) || postureGroupsResponse.data.length === 0) {
           setImages([]);
@@ -172,13 +166,12 @@ export const usePostureImageList = () => {
 
         // 各姿勢グループの画像を取得
         const allImages: PostureImageResponse[] = [];
-        for (const group of postureGroupsResponse.data) {
+        for (const group of postureGroups) {
           try {
-            const imagesResponse = await axiosInstance.get<PostureImageResponse[]>(
-              `/posture-groups/${group.id}/images`
-            );
-            if (imagesResponse.data && Array.isArray(imagesResponse.data)) {
-              allImages.push(...imagesResponse.data);
+            const imagesResponse = await postureApi.getPostureGroups(customerId) as any;
+            const groupImages = imagesResponse.images || [];
+            if (Array.isArray(groupImages)) {
+              allImages.push(...groupImages);
             }
           } catch (err) {
             logger.warn(`Failed to fetch images for posture group ${group.id}`, err, 'PostureImageList');
@@ -198,14 +191,14 @@ export const usePostureImageList = () => {
         try {
           const imageIds = allImages.map(img => img.id).filter(Boolean);
           if (imageIds.length > 0) {
-            const signedUrlResponse = await axiosInstance.post('/posture-images/signed-urls', {
+            const signedUrlResponse = await postureApi.getBatchSignedUrls(
               imageIds,
-              expiresIn: TIME_CONSTANTS.SEVEN_DAYS_IN_SECONDS,
-            });
+              TIME_CONSTANTS.SEVEN_DAYS_IN_SECONDS
+            );
             
-            if (signedUrlResponse.data && Array.isArray(signedUrlResponse.data.urls)) {
+            if (signedUrlResponse && Array.isArray(signedUrlResponse.urls)) {
               signedUrlMap = new Map(
-                signedUrlResponse.data.urls.map((u: any) => [u.imageId, u.signedUrl])
+                signedUrlResponse.urls.map((u: any) => [u.imageId, u.signedUrl])
               );
             }
           }
@@ -297,7 +290,7 @@ export const usePostureImageList = () => {
       
       await Promise.all(
         Array.from(selectedImageIds).map((id) =>
-          axiosInstance.delete(`/posture-images/${id}`).catch((err) => {
+          postureApi.deleteImage(id).catch((err) => {
             logger.error(`Failed to delete posture image ${id}`, err, 'PostureImageList');
             throw err;
           })

@@ -3,7 +3,8 @@ import { PosturePreview, PosturePosition } from '../types/lesson';
 import { TIME_CONSTANTS } from '../constants/time';
 import { logger } from '../utils/logger';
 import { isPosturePosition } from '../constants/posture';
-import axiosInstance from '../api/axiosConfig';
+import { lessonApi } from '../api/lessonApi';
+import { postureApi } from '../api/postureApi';
 
 interface PostureImageResponse {
   id: string;
@@ -36,32 +37,33 @@ export const usePostureImagesForLesson = (
     try {
       // REST APIから画像メタデータを取得
       logger.debug('Fetching posture images for lesson', { lessonId }, 'usePostureImagesForLesson');
-      const response = await axiosInstance.get<PostureImageResponse[]>(`/lessons/${lessonId}/posture-images`);
+      const response = await lessonApi.getLesson(lessonId) as any;
+      const images = response.postureImages || [];
 
-      if (!response.data || !Array.isArray(response.data) || response.data.length === 0) {
+      if (!images || !Array.isArray(images) || images.length === 0) {
         logger.debug('No posture images found for lesson', { lessonId }, 'usePostureImagesForLesson');
         setPosturePreviews([]);
         return;
       }
 
-      logger.debug('Found posture images', { count: response.data.length }, 'usePostureImagesForLesson');
+      logger.debug('Found posture images', { count: images.length }, 'usePostureImagesForLesson');
       
       // 署名付きURLをバックエンド経由でバッチ取得
       let signedUrlMap: Map<string, string> = new Map();
       
       try {
-        const imageIds = response.data.map(img => img.id).filter(Boolean);
+        const imageIds = images.map((img: any) => img.id).filter(Boolean);
         if (imageIds.length > 0) {
           logger.debug('Fetching batch signed URLs', { count: imageIds.length }, 'usePostureImagesForLesson');
           
-          const signedUrlResponse = await axiosInstance.post('/posture-images/signed-urls', {
+          const signedUrlResponse = await postureApi.getBatchSignedUrls(
             imageIds,
-            expiresIn: TIME_CONSTANTS.ONE_HOUR_IN_SECONDS,
-          });
+            TIME_CONSTANTS.ONE_HOUR_IN_SECONDS
+          );
           
-          if (signedUrlResponse.data && Array.isArray(signedUrlResponse.data.urls)) {
+          if (signedUrlResponse && Array.isArray(signedUrlResponse.urls)) {
             signedUrlMap = new Map(
-              signedUrlResponse.data.urls.map((u: any) => [u.imageId, u.signedUrl])
+              signedUrlResponse.urls.map((u: any) => [u.imageId, u.signedUrl])
             );
             logger.debug('Successfully fetched signed URLs', { count: signedUrlMap.size }, 'usePostureImagesForLesson');
           }
@@ -71,7 +73,7 @@ export const usePostureImagesForLesson = (
         // 署名付きURLの生成に失敗しても続行（URLなしで表示）
       }
 
-      const previewResults = response.data.map((img: PostureImageResponse): PosturePreview | null => {
+      const previewResults = images.map((img: PostureImageResponse): PosturePreview | null => {
         if (!img.storageKey) {
           logger.warn('Missing storage_key for image', { image: img }, 'usePostureImagesForLesson');
           return null;
@@ -105,14 +107,16 @@ export const usePostureImagesForLesson = (
     } finally {
       setLoading(false);
     }
-  }, [lessonId, postureGroupId]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lessonId]);
 
   useEffect(() => {
     if (!lessonId) {
       return;
     }
     loadPostureImages();
-  }, [lessonId, postureGroupId, loadPostureImages]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lessonId, loadPostureImages]);
 
   return { posturePreviews, loading };
 };

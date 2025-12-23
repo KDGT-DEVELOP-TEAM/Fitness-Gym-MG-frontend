@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { logger } from '../utils/logger';
-import axiosInstance from '../api/axiosConfig';
+import { lessonApi } from '../api/lessonApi';
 import { handleApiError } from '../utils/errorHandler';
 
 interface Training {
@@ -26,15 +26,16 @@ export const useTrainingsForLesson = (lessonId: string | undefined) => {
     const loadTrainings = async () => {
       setLoading(true);
       try {
-        const response = await axiosInstance.get<Training[]>(`/lessons/${lessonId}/trainings`);
+        const response = await lessonApi.getLesson(lessonId) as any;
+        const trainingsData = response.trainings || [];
 
-        if (!response.data || !Array.isArray(response.data)) {
-          logger.warn('Invalid trainings data format', { data: response.data }, 'useTrainingsForLesson');
+        if (!Array.isArray(trainingsData)) {
+          logger.warn('Invalid trainings data format', { data: trainingsData }, 'useTrainingsForLesson');
           setTrainings([]);
           return;
         }
 
-        setTrainings(response.data);
+        setTrainings(trainingsData);
       } catch (err) {
         const appError = handleApiError(err);
         logger.error('Error fetching trainings', appError, 'useTrainingsForLesson');

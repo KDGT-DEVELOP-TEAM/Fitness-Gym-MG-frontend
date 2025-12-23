@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { postureApi } from '../api/postureApi';
-import { PostureComparison } from '../types/posture';
-import { logger } from '../utils/logger';
+import { postureApi } from '../../api/postureApi';
+import { PostureComparison } from '../../types/posture';
+import { logger } from '../../utils/logger';
 
 export const PostureCompare: React.FC = () => {
   const [beforeId, setBeforeId] = useState('');

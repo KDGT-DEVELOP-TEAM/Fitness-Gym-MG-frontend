@@ -33,7 +33,8 @@ export const useLessons = (params?: PaginationParams) => {
     } finally {
       setLoading(false);
     }
-  }, [params?.page, params?.limit, params, handleError]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params, handleError]);
 
   useEffect(() => {
     fetchLessons();

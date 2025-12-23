@@ -1,13 +1,13 @@
 import React from 'react';
 import { useParams } from 'react-router-dom';
-import { formatDateTime } from '../utils/dateFormatter';
-import { getPosturePositionLabel, ALL_POSTURE_POSITIONS } from '../constants/posture';
-import { useOptions, Option } from '../hooks/useOptions';
-import { useLessonData } from '../hooks/useLessonData';
-import { usePostureImagesForLesson } from '../hooks/usePostureImagesForLesson';
-import { useTrainingsForLesson } from '../hooks/useTrainingsForLesson';
-import { FORM_STYLES } from '../styles/formStyles';
-import { logger } from '../utils/logger';
+import { formatDateTime } from '../../utils/dateFormatter';
+import { getPosturePositionLabel, ALL_POSTURE_POSITIONS } from '../../constants/posture';
+import { useOptions, Option } from '../../hooks/useOptions';
+import { useLessonData } from '../../hooks/useLessonData';
+import { usePostureImagesForLesson } from '../../hooks/usePostureImagesForLesson';
+import { useTrainingsForLesson } from '../../hooks/useTrainingsForLesson';
+import { FORM_STYLES } from '../../styles/formStyles';
+import { logger } from '../../utils/logger';
 
 export const LessonDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();

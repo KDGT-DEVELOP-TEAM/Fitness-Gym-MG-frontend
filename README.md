@@ -29,10 +29,13 @@ cp .env.example .env
 `.env`ファイルに以下の環境変数を設定してください：
 
 ```
-REACT_APP_API_BASE_URL=http://localhost:3001/api
+REACT_APP_API_BASE_URL=http://localhost:8080
 ```
 
-**注意**: 以前は`REACT_APP_SUPABASE_URL`と`REACT_APP_SUPABASE_ANON_KEY`が必要でしたが、画像アップロード機能の完全責務分離移行により、フロントエンドからSupabaseへの直接アクセスは不要になりました。これらの環境変数は`.env`ファイルから削除できます。
+**注意**: 
+- セッションベース認証を使用しているため、JWTトークン関連の設定は不要です
+- 以前使用していた`REACT_APP_SUPABASE_URL`と`REACT_APP_SUPABASE_ANON_KEY`は削除してください
+- APIベースURLはバックエンドサーバーのURLに合わせて設定してください（デフォルト: http://localhost:8080）
 
 ### 3. 開発サーバーの起動
 

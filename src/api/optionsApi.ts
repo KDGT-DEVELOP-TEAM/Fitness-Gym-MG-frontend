@@ -3,9 +3,8 @@
  * コードの重複を避けるために一元化
  */
 
-import axiosInstance from './axiosConfig';
+import { apiClient } from './client';
 import { logger } from '../utils/logger';
-import { handleApiError, logError } from '../utils/errorHandler';
 
 export type Option = { id: string; name: string };
 
@@ -29,17 +28,15 @@ interface CustomerResponse {
  */
 export const fetchStoreOptions = async (): Promise<Option[]> => {
   try {
-    const response = await axiosInstance.get<StoreResponse[]>('/stores');
+    const response = await apiClient.get<StoreResponse[]>('/api/stores');
     
-    if (!response.data || !Array.isArray(response.data)) {
-      logger.warn('Invalid stores data format', { data: response.data }, 'optionsApi');
+    if (!response || !Array.isArray(response)) {
+      logger.warn('Invalid stores data format', { data: response }, 'optionsApi');
       return [];
     }
     
-    return response.data.map((d) => ({ id: d.id, name: d.name }));
+    return response.map((d) => ({ id: d.id, name: d.name }));
   } catch (error) {
-    const appError = handleApiError(error);
-    logError(appError, 'optionsApi.fetchStoreOptions');
     logger.error('Failed to fetch stores', error, 'optionsApi');
     return [];
   }
@@ -50,17 +47,15 @@ export const fetchStoreOptions = async (): Promise<Option[]> => {
  */
 export const fetchUserOptions = async (): Promise<Option[]> => {
   try {
-    const response = await axiosInstance.get<UserResponse[]>('/users');
+    const response = await apiClient.get<UserResponse[]>('/api/users');
     
-    if (!response.data || !Array.isArray(response.data)) {
-      logger.warn('Invalid users data format', { data: response.data }, 'optionsApi');
+    if (!response || !Array.isArray(response)) {
+      logger.warn('Invalid users data format', { data: response }, 'optionsApi');
       return [];
     }
     
-    return response.data.map((d) => ({ id: d.id, name: d.name }));
+    return response.map((d) => ({ id: d.id, name: d.name }));
   } catch (error) {
-    const appError = handleApiError(error);
-    logError(appError, 'optionsApi.fetchUserOptions');
     logger.error('Failed to fetch users', error, 'optionsApi');
     return [];
   }
@@ -71,17 +66,15 @@ export const fetchUserOptions = async (): Promise<Option[]> => {
  */
 export const fetchCustomerOptions = async (): Promise<Option[]> => {
   try {
-    const response = await axiosInstance.get<CustomerResponse[]>('/customers');
+    const response = await apiClient.get<CustomerResponse[]>('/api/customers');
     
-    if (!response.data || !Array.isArray(response.data)) {
-      logger.warn('Invalid customers data format', { data: response.data }, 'optionsApi');
+    if (!response || !Array.isArray(response)) {
+      logger.warn('Invalid customers data format', { data: response }, 'optionsApi');
       return [];
     }
     
-    return response.data.map((d) => ({ id: d.id, name: d.name }));
+    return response.map((d) => ({ id: d.id, name: d.name }));
   } catch (error) {
-    const appError = handleApiError(error);
-    logError(appError, 'optionsApi.fetchCustomerOptions');
     logger.error('Failed to fetch customers', error, 'optionsApi');
     return [];
   }

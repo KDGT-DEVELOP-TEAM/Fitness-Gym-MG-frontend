@@ -1,6 +1,6 @@
 import React from 'react';
-import { useLessons } from '../hooks/useLesson';
-import { formatDate } from '../utils/dateFormatter';
+import { useLessons } from '../../hooks/useLesson';
+import { formatDate } from '../../utils/dateFormatter';
 
 export const LessonHistory: React.FC = () => {
   const { lessons, loading, error } = useLessons();

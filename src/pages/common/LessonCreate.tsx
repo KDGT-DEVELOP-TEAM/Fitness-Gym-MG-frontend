@@ -1,25 +1,25 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ROUTES } from '../constants/routes';
-import { lessonApi } from '../api/lessonApi';
-import { LessonFormData, TrainingInput } from '../types/lesson';
-import { logger } from '../utils/logger';
-import { PosturePosition, getPosturePositionLabel, ALL_POSTURE_POSITIONS } from '../constants/posture';
-import { useOptions } from '../hooks/useOptions';
-import { IMAGE_QUALITY, CANVAS_DIMENSIONS } from '../constants/image';
-import { IMAGE_CONSTANTS } from '../constants/storage';
-import { FORM_STYLES } from '../styles/formStyles';
-import { useErrorHandler } from '../hooks/useErrorHandler';
-import { validateRequired, validateDateRange, validateNumericRange } from '../utils/validators';
-import { ERROR_MESSAGES } from '../constants/errorMessages';
-import axiosInstance from '../api/axiosConfig';
+import { ROUTES } from '../../constants/routes';
+import { lessonApi } from '../../api/lessonApi';
+import { postureApi } from '../../api/postureApi';
+import { LessonFormData, TrainingInput } from '../../types/lesson';
+import { logger } from '../../utils/logger';
+import { PosturePosition, getPosturePositionLabel, ALL_POSTURE_POSITIONS } from '../../constants/posture';
+import { useOptions } from '../../hooks/useOptions';
+import { IMAGE_QUALITY, CANVAS_DIMENSIONS } from '../../constants/image';
+import { IMAGE_CONSTANTS } from '../../constants/storage';
+import { FORM_STYLES } from '../../styles/formStyles';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
+import { validateRequired, validateDateRange, validateNumericRange } from '../../utils/validators';
+import { ERROR_MESSAGES } from '../../constants/errorMessages';
 type PosturePreview = {
   position: PosturePosition;
   url: string;
   storageKey: string;
 };
 
-export const LessonForm: React.FC = () => {
+export const LessonCreate: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { stores, users, customers } = useOptions();
@@ -120,18 +120,18 @@ export const LessonForm: React.FC = () => {
     }
     
     try {
-      const response = await axiosInstance.post<{ id: string }>('/posture-groups', {
+      const response = await postureApi.createPostureGroup('', {
         customerId: formData.customerId,
         lessonId: null,
         capturedAt: new Date().toISOString(),
-      });
+      }) as any;
       
-      if (!response.data || !response.data.id) {
+      if (!response || !response.id) {
         setError('姿勢グループの作成に失敗しました');
         return null;
       }
       
-      const newId = response.data.id;
+      const newId = response.id;
       setPostureGroupId(newId);
       logger.debug('Posture group created', { id: newId }, 'LessonForm');
       return newId;
@@ -200,20 +200,16 @@ export const LessonForm: React.FC = () => {
         logger.debug('Uploading image via backend', { groupId, position, blobSize: blob.size }, 'LessonForm');
         
         try {
-          const response = await axiosInstance.post('/posture-images/upload', uploadFormData, {
-            headers: {
-              'Content-Type': 'multipart/form-data',
-            },
-          });
+          const response = await postureApi.uploadImage(blob as File, groupId, position);
           
-          if (!response.data || !response.data.signedUrl) {
+          if (!response || !response.signedUrl) {
             setError('画像のアップロードに失敗しました');
             updatePreview('', '');
             resolve();
             return;
           }
           
-          const { signedUrl, storageKey } = response.data;
+          const { signedUrl, storageKey } = response;
           logger.debug('Upload successful', { storageKey, signedUrl }, 'LessonForm');
           
           updatePreview(signedUrl, storageKey);
@@ -253,7 +249,8 @@ export const LessonForm: React.FC = () => {
   const linkPostureGroupToLesson = async (lessonId: string) => {
     if (!postureGroupId) return;
     try {
-      await axiosInstance.put(`/posture-groups/${postureGroupId}`, {
+      await postureApi.createPostureGroup(lessonId, {
+        id: postureGroupId,
         lessonId,
       });
     } catch (error) {

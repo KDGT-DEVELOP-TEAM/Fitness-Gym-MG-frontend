@@ -1,8 +1,14 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User } from '../types/auth';
 import { authApi } from '../api/authApi';
 import { storage } from '../utils/storage';
 import { logger } from '../utils/logger';
+
+interface User {
+  email: string;
+  name: string;
+  role: 'ADMIN' | 'MANAGER' | 'TRAINER';
+  storeId?: string;
+}
 
 interface AuthContextType {
   user: User | null;
@@ -17,29 +23,18 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [authLoading, setAuthLoading] = useState(true); // 認証初期化中
-  const [actionLoading, setActionLoading] = useState(false); // アクション実行中（login/logoutなど）
+  const [authLoading, setAuthLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
     const init = async () => {
       try {
-        const storedUser = storage.getUser();
-        if (storedUser) {
-          setUser(storedUser as User);
-          return;
-        }
-
-        const token = storage.getToken();
-        if (!token) {
-          setUser(null);
-          return;
-        }
-
-        const userData = await authApi.getCurrentUser();
+        // セッションCookieの確認
+        const userData = await authApi.checkAuth();
         setUser(userData);
+        storage.setUser(userData); // オプショナル
       } catch (error) {
-        logger.error('Failed to initialize auth', error, 'AuthContext');
-        storage.clear();
+        logger.debug('No active session', {}, 'AuthContext');
         setUser(null);
       } finally {
         setAuthLoading(false);
@@ -52,8 +47,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const login = async (email: string, password: string) => {
     setActionLoading(true);
     try {
-      const response = await authApi.login({ email, password });
-      setUser(response.user);
+      const userData = await authApi.login({ email, password });
+      setUser(userData);
+      storage.setUser(userData); // オプショナル
+    } catch (error) {
+      logger.error('Login failed', error, 'AuthContext');
+      throw error;
     } finally {
       setActionLoading(false);
     }
@@ -64,9 +63,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       await authApi.logout();
       setUser(null);
+      storage.clear();
     } catch (error) {
       logger.error('Logout failed', error, 'AuthContext');
-      setUser(null);
+      throw error;
     } finally {
       setActionLoading(false);
     }
@@ -80,7 +80,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         actionLoading,
         login,
         logout,
-        isAuthenticated: !!user, // userがあれば認証済み
+        isAuthenticated: !!user,
       }}
     >
       {children}
@@ -88,11 +88,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   );
 };
 
-export const useAuth = (): AuthContextType => {
+export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+  if (!context) {
+    throw new Error('useAuth must be used within AuthProvider');
   }
   return context;
 };
-

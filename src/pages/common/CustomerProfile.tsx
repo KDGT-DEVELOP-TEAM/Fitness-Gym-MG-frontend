@@ -1,6 +1,6 @@
 import React from 'react';
 import { useParams } from 'react-router-dom';
-import { useCustomer } from '../hooks/useCustomer';
+import { useCustomer } from '../../hooks/useCustomer';
 
 export const CustomerProfile: React.FC = () => {
   const { id } = useParams<{ id: string }>();
