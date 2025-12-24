@@ -1,5 +1,5 @@
-import { apiClient } from '../client';
+import axiosInstance from '../axiosConfig';
 
 export const adminHomeApi = {
-  getHome: () => apiClient.get('/api/admin/home'),
+  getHome: () => axiosInstance.get('/api/admin/home').then(res => res.data),
 };

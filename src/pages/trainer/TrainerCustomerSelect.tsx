@@ -9,10 +9,14 @@ export const TrainerCustomerSelect: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user?.storeId) return;
+    // TODO: storeIdはLoginResponseから削除されたため、別のAPIエンドポイントから取得する必要があります
+    // 例: /api/users/{userId}/store など
+    // 現時点では、storeIdが取得できないため、このコンポーネントは動作しません
+    const storeId = (user as any)?.storeId;
+    if (!storeId) return;
     const fetchData = async () => {
       try {
-        const result = await trainerCustomersApi.getCustomers(user.storeId!);
+        const result = await trainerCustomersApi.getCustomers(storeId);
         setCustomers(Array.isArray(result) ? result : []);
       } catch (error) {
         console.error('Failed to fetch customers', error);

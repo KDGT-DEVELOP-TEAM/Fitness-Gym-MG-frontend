@@ -9,10 +9,14 @@ export const ManagerCustomerList: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user?.storeId) return;
+    // TODO: storeIdはLoginResponseから削除されたため、別のAPIエンドポイントから取得する必要があります
+    // 例: /api/users/{userId}/store など
+    // 現時点では、storeIdが取得できないため、このコンポーネントは動作しません
+    const storeId = (user as any)?.storeId;
+    if (!storeId) return;
     const fetchData = async () => {
       try {
-        const result = await managerCustomersApi.getCustomers(user.storeId!);
+        const result = await managerCustomersApi.getCustomers(storeId);
         setCustomers(result.data || []);
       } catch (error) {
         console.error('Failed to fetch customers', error);

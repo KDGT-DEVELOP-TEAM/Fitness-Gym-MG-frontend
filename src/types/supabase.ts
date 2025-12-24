@@ -4,7 +4,7 @@
  */
 
 // Enums
-export type UserRole = 'admin' | 'manager' | 'trainer';
+export type UserRole = 'ADMIN' | 'MANAGER' | 'TRAINER';
 export type Gender = 'male' | 'female' | 'other';
 export type PostureImagePosition = 'front' | 'right' | 'back' | 'left';
 

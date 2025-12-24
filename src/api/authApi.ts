@@ -1,4 +1,5 @@
-import { apiClient } from './client';
+import axiosInstance from './axiosConfig';
+import { storage } from '../utils/storage';
 
 export interface LoginRequest {
   email: string;
@@ -6,26 +7,40 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
+  userId: string;
   email: string;
   name: string;
   role: 'ADMIN' | 'MANAGER' | 'TRAINER';
-  storeId?: string;
+  token?: string;
 }
 
 export const authApi = {
   login: async (credentials: LoginRequest): Promise<LoginResponse> => {
-    return apiClient.post('/api/auth/login', credentials);
+    const response = await axiosInstance.post<LoginResponse>('/api/auth/login', credentials);
+    const { token, ...userData } = response.data;
+    
+    // JWTトークンを保存
+    if (token) {
+      storage.setToken(token);
+    }
+    
+    // ユーザー情報を保存
+    storage.setUser(userData);
+    
+    return response.data;
   },
 
   logout: async (): Promise<void> => {
-    return apiClient.post('/api/auth/logout');
+    try {
+      await axiosInstance.post('/api/auth/logout');
+    } finally {
+      // サーバーエラーでもローカルストレージはクリア
+      storage.clear();
+    }
   },
 
   checkAuth: async (): Promise<LoginResponse> => {
-    return apiClient.get('/api/auth/login');
-  },
-
-  resetPassword: async (email: string): Promise<void> => {
-    return apiClient.post('/api/auth/reset-password', { email });
+    const response = await axiosInstance.get<LoginResponse>('/api/auth/login');
+    return response.data;
   },
 };

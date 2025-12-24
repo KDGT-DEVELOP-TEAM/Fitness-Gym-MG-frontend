@@ -1,4 +1,5 @@
-import { apiClient } from '../client';
+import axiosInstance from '../axiosConfig';
+import { convertPageResponse, PaginatedResponse, SpringPage } from '../../utils/pagination';
 
 export interface CustomerListParams {
   page?: number;
@@ -8,24 +9,18 @@ export interface CustomerListParams {
   active?: boolean;
 }
 
-export interface PaginatedResponse<T> {
-  data: T[];
-  total: number;
-  page: number;
-  limit: number;
-}
-
 export const adminCustomersApi = {
   getCustomers: (params?: CustomerListParams): Promise<PaginatedResponse<any>> => {
     const queryString = new URLSearchParams(params as any).toString();
-    return apiClient.get(`/api/admin/customers?${queryString}`);
+    return axiosInstance.get<SpringPage<any>>(`/api/admin/customers?${queryString}`)
+      .then(res => convertPageResponse(res.data));
   },
   createCustomer: (customerData: any) => 
-    apiClient.post('/api/admin/customers', customerData),
+    axiosInstance.post('/api/admin/customers', customerData).then(res => res.data),
   enableCustomer: (customerId: string) => 
-    apiClient.patch(`/api/admin/customers/${customerId}/enable`),
+    axiosInstance.patch(`/api/admin/customers/${customerId}/enable`).then(res => res.data),
   disableCustomer: (customerId: string) => 
-    apiClient.patch(`/api/admin/customers/${customerId}/disable`),
+    axiosInstance.patch(`/api/admin/customers/${customerId}/disable`).then(res => res.data),
   deleteCustomer: (customerId: string) => 
-    apiClient.delete(`/api/admin/customers/${customerId}`),
+    axiosInstance.delete(`/api/admin/customers/${customerId}`).then(res => res.data),
 };

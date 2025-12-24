@@ -1,6 +1,6 @@
-import { apiClient } from '../client';
+import axiosInstance from '../axiosConfig';
 
 export const trainerCustomersApi = {
   getCustomers: (storeId: string): Promise<any[]> =>
-    apiClient.get(`/api/stores/${storeId}/trainers/customers`),
+    axiosInstance.get(`/api/stores/${storeId}/trainers/customers`).then(res => res.data),
 };

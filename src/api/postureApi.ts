@@ -1,4 +1,4 @@
-import { apiClient } from './client';
+import axiosInstance from './axiosConfig';
 import { Posture, PostureComparison } from '../types/posture';
 
 export interface PaginationParams {
@@ -14,23 +14,11 @@ export interface PaginatedResponse<T> {
 }
 
 export const postureApi = {
-  getAll: (params?: PaginationParams): Promise<PaginatedResponse<Posture>> =>
-    apiClient.get(`/api/postures?page=${params?.page || 1}&limit=${params?.limit || 10}`),
-
-  getById: (postureId: string): Promise<Posture> =>
-    apiClient.get(`/api/postures/${postureId}`),
-
-  getByCustomerId: (customerId: string): Promise<Posture[]> =>
-    apiClient.get(`/api/customers/${customerId}/postures`),
-
-  compare: (beforeId: string, afterId: string): Promise<PostureComparison> =>
-    apiClient.post('/api/postures/compare', { beforeId, afterId }),
-
   getPostureGroups: (customerId: string) =>
-    apiClient.get(`/api/customers/${customerId}/posture_groups`),
+    axiosInstance.get(`/api/customers/${customerId}/posture_groups`).then(res => res.data),
 
-  createPostureGroup: (lessonId: string, groupData: any) =>
-    apiClient.post(`/api/lessons/${lessonId}/posture_groups`, groupData),
+  createPostureGroup: (lessonId: string) =>
+    axiosInstance.post(`/api/lessons/${lessonId}/posture_groups`).then(res => res.data),
 
   uploadImage: async (file: File, postureGroupId: string, position: string): Promise<{
     id: string;
@@ -48,12 +36,15 @@ export const postureApi = {
     formData.append('position', position);
     formData.append('consentPublication', 'false');
 
-    return apiClient.postFormData('/api/posture-images/upload', formData);
+    const response = await axiosInstance.post('/api/posture_images/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    return response.data;
   },
 
   getBatchSignedUrls: (imageIds: string[], expiresIn: number = 3600): Promise<{ urls: Array<{ imageId: string; signedUrl: string; expiresAt: string }> }> =>
-    apiClient.post('/api/posture-images/signed-urls', { imageIds, expiresIn }),
+    axiosInstance.post('/api/posture_images/signed-urls', { imageIds, expiresIn }).then(res => res.data),
 
   deleteImage: (imageId: string) =>
-    apiClient.delete(`/api/posture-images/${imageId}`),
+    axiosInstance.delete(`/api/posture_images/${imageId}`).then(res => res.data),
 };

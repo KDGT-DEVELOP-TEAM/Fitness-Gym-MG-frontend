@@ -1,5 +1,5 @@
-import { apiClient } from '../client';
+import axiosInstance from '../axiosConfig';
 
 export const trainerHomeApi = {
-  getHome: () => apiClient.get('/api/trainers/home'),
+  getHome: () => axiosInstance.get('/api/trainers/home').then(res => res.data),
 };

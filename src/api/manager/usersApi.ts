@@ -1,23 +1,18 @@
-import { apiClient } from '../client';
-
-export interface PaginatedResponse<T> {
-  data: T[];
-  total: number;
-  page: number;
-  limit: number;
-}
+import axiosInstance from '../axiosConfig';
+import { convertPageResponse, PaginatedResponse, SpringPage } from '../../utils/pagination';
 
 export const managerUsersApi = {
   getUsers: (storeId: string, params?: any): Promise<PaginatedResponse<any>> => {
     const queryString = new URLSearchParams(params).toString();
-    return apiClient.get(`/api/stores/${storeId}/manager/users?${queryString}`);
+    return axiosInstance.get<SpringPage<any>>(`/api/stores/${storeId}/manager/users?${queryString}`)
+      .then(res => convertPageResponse(res.data));
   },
   getUser: (storeId: string, userId: string) =>
-    apiClient.get(`/api/stores/${storeId}/manager/users/${userId}`),
+    axiosInstance.get(`/api/stores/${storeId}/manager/users/${userId}`).then(res => res.data),
   createUser: (storeId: string, userData: any) =>
-    apiClient.post(`/api/stores/${storeId}/manager/users`, userData),
+    axiosInstance.post(`/api/stores/${storeId}/manager/users`, userData).then(res => res.data),
   updateUser: (storeId: string, userId: string, userData: any) =>
-    apiClient.patch(`/api/stores/${storeId}/manager/users/${userId}`, userData),
+    axiosInstance.patch(`/api/stores/${storeId}/manager/users/${userId}`, userData).then(res => res.data),
   deleteUser: (storeId: string, userId: string) =>
-    apiClient.delete(`/api/stores/${storeId}/manager/users/${userId}`),
+    axiosInstance.delete(`/api/stores/${storeId}/manager/users/${userId}`).then(res => res.data),
 };

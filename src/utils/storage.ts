@@ -1,25 +1,26 @@
 /**
  * Secure storage utilities using sessionStorage
  * sessionStorage is cleared when the browser tab is closed
- * セッションベース認証ではトークンは不要（Cookieで管理）
+ * JWT認証用にトークン管理機能を提供
  */
 
 import { logger } from './logger';
 
 const USER_KEY = 'user';
+const TOKEN_KEY = 'token';
 
 export const storage = {
   /**
    * Store minimal user information (only essential fields)
    */
-  setUser: (user: { email: string; name: string; role: string; storeId?: string }): void => {
+  setUser: (user: { userId: string; email: string; name: string; role: string }): void => {
     try {
       // Store only essential user information, exclude sensitive data
       const minimalUser = {
+        userId: user.userId,
         email: user.email,
         name: user.name,
         role: user.role,
-        storeId: user.storeId,
       };
       sessionStorage.setItem(USER_KEY, JSON.stringify(minimalUser));
     } catch (error) {
@@ -32,7 +33,7 @@ export const storage = {
    * Get stored user information
    * 不正なデータや型が一致しない場合はnullを返し、ストレージをクリア
    */
-  getUser: (): { email: string; name: string; role: string; storeId?: string } | null => {
+  getUser: (): { userId: string; email: string; name: string; role: string } | null => {
     try {
       const userStr = sessionStorage.getItem(USER_KEY);
       if (!userStr) return null;
@@ -44,6 +45,7 @@ export const storage = {
       if (
         typeof parsed !== 'object' ||
         parsed === null ||
+        typeof parsed.userId !== 'string' ||
         typeof parsed.email !== 'string' ||
         typeof parsed.name !== 'string' ||
         typeof parsed.role !== 'string'
@@ -54,7 +56,7 @@ export const storage = {
       }
 
       // 必須フィールドが空でないことを確認
-      if (!parsed.email || !parsed.name || !parsed.role) {
+      if (!parsed.userId || !parsed.email || !parsed.name || !parsed.role) {
         logger.warn('User data has empty required fields, clearing', { parsed }, 'storage');
         storage.clear();
         return null;
@@ -70,11 +72,58 @@ export const storage = {
   },
 
   /**
+   * Store JWT token
+   */
+  setToken: (token: string): void => {
+    try {
+      sessionStorage.setItem(TOKEN_KEY, token);
+    } catch (error) {
+      logger.error('Failed to store token', error, 'storage');
+      throw new Error('Failed to store token');
+    }
+  },
+
+  /**
+   * Get stored JWT token
+   */
+  getToken: (): string | null => {
+    try {
+      return sessionStorage.getItem(TOKEN_KEY);
+    } catch (error) {
+      logger.error('Failed to retrieve token', error, 'storage');
+      return null;
+    }
+  },
+
+  /**
+   * Remove JWT token
+   */
+  removeToken: (): void => {
+    try {
+      sessionStorage.removeItem(TOKEN_KEY);
+    } catch (error) {
+      logger.error('Failed to remove token', error, 'storage');
+    }
+  },
+
+  /**
+   * Remove user data
+   */
+  removeUser: (): void => {
+    try {
+      sessionStorage.removeItem(USER_KEY);
+    } catch (error) {
+      logger.error('Failed to remove user', error, 'storage');
+    }
+  },
+
+  /**
    * Clear all authentication data
    */
   clear: (): void => {
     try {
-      sessionStorage.clear();
+      storage.removeToken();
+      storage.removeUser();
     } catch (error) {
       logger.error('Failed to clear storage', error, 'storage');
     }

@@ -1,4 +1,5 @@
-import { apiClient } from '../client';
+import axiosInstance from '../axiosConfig';
+import { convertPageResponse, PaginatedResponse, SpringPage } from '../../utils/pagination';
 
 export interface UserListParams {
   page?: number;
@@ -8,21 +9,18 @@ export interface UserListParams {
   active?: boolean;
 }
 
-export interface PaginatedResponse<T> {
-  data: T[];
-  total: number;
-  page: number;
-  limit: number;
-}
-
 export const adminUsersApi = {
   getUsers: (params?: UserListParams): Promise<PaginatedResponse<any>> => {
     const queryString = new URLSearchParams(params as any).toString();
-    return apiClient.get(`/api/admin/users?${queryString}`);
+    return axiosInstance.get<SpringPage<any>>(`/api/admin/users?${queryString}`)
+      .then(res => convertPageResponse(res.data));
   },
-  getUser: (userId: string) => apiClient.get(`/api/admin/users/${userId}`),
-  createUser: (userData: any) => apiClient.post('/api/admin/users', userData),
+  getUser: (userId: string) => 
+    axiosInstance.get(`/api/admin/users/${userId}`).then(res => res.data),
+  createUser: (userData: any) => 
+    axiosInstance.post('/api/admin/users', userData).then(res => res.data),
   updateUser: (userId: string, userData: any) => 
-    apiClient.patch(`/api/admin/users/${userId}`, userData),
-  deleteUser: (userId: string) => apiClient.delete(`/api/admin/users/${userId}`),
+    axiosInstance.patch(`/api/admin/users/${userId}`, userData).then(res => res.data),
+  deleteUser: (userId: string) => 
+    axiosInstance.delete(`/api/admin/users/${userId}`).then(res => res.data),
 };

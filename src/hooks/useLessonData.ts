@@ -23,7 +23,7 @@ export const useLessonData = (lessonId: string | undefined) => {
     const loadLesson = async () => {
       setLoading(true);
       try {
-        const data = await lessonApi.getById(lessonId);
+        const data = await lessonApi.getLesson(lessonId);
         setLesson(data);
       } catch (err) {
         handleError(err, 'useLessonData');

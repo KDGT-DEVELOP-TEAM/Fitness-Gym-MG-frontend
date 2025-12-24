@@ -27,7 +27,6 @@ import { LessonCreate } from '../pages/common/LessonCreate';
 import { LessonDetail } from '../pages/common/LessonDetail';
 import { LessonHistory } from '../pages/common/LessonHistory';
 import { PostureImageList } from '../pages/common/PostureImageList';
-import { PostureCompare } from '../pages/common/PostureCompare';
 
 export const AppRouter = () => {
   return (
@@ -69,7 +68,6 @@ export const AppRouter = () => {
           <Route path="lesson/new" element={<LessonCreate />} />
           <Route path="lessons" element={<LessonHistory />} />
           <Route path="posture_groups" element={<PostureImageList />} />
-          <Route path="posture/compare" element={<PostureCompare />} />
         </Route>
 
         <Route path="/lesson/:lessonId" element={<ProtectedRoute roles={['ADMIN', 'MANAGER', 'TRAINER']} />}>

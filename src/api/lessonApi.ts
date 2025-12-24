@@ -1,5 +1,6 @@
-import { apiClient } from './client';
+import axiosInstance from './axiosConfig';
 import { Lesson } from '../types/lesson';
+import { convertPageResponse, PaginatedResponse, SpringPage } from '../utils/pagination';
 
 export interface LessonCreateRequest {
   customerId: string;
@@ -15,42 +16,22 @@ export interface LessonCreateRequest {
   }>;
 }
 
-export interface PaginationParams {
-  page?: number;
-  limit?: number;
-}
-
-export interface PaginatedResponse<T> {
-  data: T[];
-  total: number;
-  page: number;
-  limit: number;
-}
-
 export const lessonApi = {
-  getAll: (params?: PaginationParams): Promise<PaginatedResponse<Lesson>> =>
-    apiClient.get(`/api/lessons?page=${params?.page || 1}&limit=${params?.limit || 10}`),
+  createLesson: (customerId: string, lessonData: LessonCreateRequest): Promise<Lesson> =>
+    axiosInstance.post(`/api/customers/${customerId}/lessons`, lessonData).then(res => res.data),
 
-  create: (lessonData: any): Promise<Lesson> =>
-    apiClient.post('/api/lessons', lessonData),
-
-  createLesson: (customerId: string, lessonData: LessonCreateRequest) =>
-    apiClient.post(`/api/customers/${customerId}/lessons`, lessonData),
-
-  getLessons: (customerId: string, params?: { page?: number; size?: number }) => {
+  getLessons: (customerId: string, params?: { page?: number; size?: number }): Promise<PaginatedResponse<Lesson>> => {
     const queryString = new URLSearchParams(params as any).toString();
-    return apiClient.get(`/api/customers/${customerId}/lessons?${queryString}`);
+    return axiosInstance.get<SpringPage<Lesson>>(`/api/customers/${customerId}/lessons?${queryString}`)
+      .then(res => convertPageResponse(res.data));
   },
 
   getByCustomerId: (customerId: string): Promise<Lesson[]> =>
-    apiClient.get(`/api/customers/${customerId}/lessons`),
-
-  getById: (lessonId: string): Promise<Lesson> =>
-    apiClient.get(`/api/lessons/${lessonId}`),
+    axiosInstance.get(`/api/customers/${customerId}/lessons`).then(res => res.data),
 
   getLesson: (lessonId: string): Promise<Lesson> =>
-    apiClient.get(`/api/lessons/${lessonId}`),
+    axiosInstance.get(`/api/lessons/${lessonId}`).then(res => res.data),
 
   updateLesson: (lessonId: string, lessonData: any) =>
-    apiClient.patch(`/api/lessons/${lessonId}`, lessonData),
+    axiosInstance.patch(`/api/lessons/${lessonId}`, lessonData).then(res => res.data),
 };

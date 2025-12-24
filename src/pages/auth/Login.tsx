@@ -41,9 +41,10 @@ export const Login: React.FC = () => {
     setResetLoading(true);
 
     try {
-      await authApi.resetPassword(resetEmail);
-      setResetSuccess(true);
-      logger.info('Password reset email sent', { email: resetEmail }, 'Login');
+      // パスワードリセット機能は現在バックエンドで実装されていません
+      // TODO: バックエンドに実装が追加されたら、authApi.resetPassword()を呼び出す
+      logger.warn('Password reset not implemented', { email: resetEmail }, 'Login');
+      setResetError('パスワードリセット機能は現在利用できません。管理者にお問い合わせください。');
     } catch (err) {
       logger.error('Password reset failed', err, 'Login');
       setResetError('パスワードリセットメールの送信に失敗しました。メールアドレスを確認してください。');

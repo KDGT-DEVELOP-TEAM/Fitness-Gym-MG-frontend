@@ -1,5 +1,5 @@
 import React from 'react';
-import { userApi } from '../api/userApi';
+import { adminUsersApi } from '../api/admin/usersApi';
 import { User } from '../types/user';
 import { useState, useEffect } from 'react';
 
@@ -12,8 +12,8 @@ export const UserList: React.FC = () => {
     const fetchUsers = async () => {
       setLoading(true);
       try {
-        const data = await userApi.getAll();
-        setUsers(data.data);
+        const data = await adminUsersApi.getUsers();
+        setUsers(data?.data || []);
       } catch (err) {
         setError(err as Error);
       } finally {

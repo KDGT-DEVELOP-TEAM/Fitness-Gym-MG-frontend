@@ -4,10 +4,10 @@ import { storage } from '../utils/storage';
 import { logger } from '../utils/logger';
 
 interface User {
+  userId: string;
   email: string;
   name: string;
   role: 'ADMIN' | 'MANAGER' | 'TRAINER';
-  storeId?: string;
 }
 
 interface AuthContextType {

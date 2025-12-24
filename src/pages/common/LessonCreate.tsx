@@ -120,11 +120,12 @@ export const LessonCreate: React.FC = () => {
     }
     
     try {
-      const response = await postureApi.createPostureGroup('', {
-        customerId: formData.customerId,
-        lessonId: null,
-        capturedAt: new Date().toISOString(),
-      }) as any;
+      // バックエンドの仕様: lessonIdが必要なため、レッスン作成前は姿勢グループを作成できない
+      // 一時的な姿勢グループIDを生成（実際の作成はレッスン作成後に行う）
+      const tempId = `temp-${Date.now()}`;
+      setPostureGroupId(tempId);
+      logger.debug('Temporary posture group ID created', { id: tempId }, 'LessonForm');
+      return tempId;
       
       if (!response || !response.id) {
         setError('姿勢グループの作成に失敗しました');
@@ -245,17 +246,16 @@ export const LessonCreate: React.FC = () => {
     setPosturePreviews((prev) => prev.filter((p) => p.position !== position));
   };
 
-  // レッスン作成後に posture_group をレッスンIDと紐づける
+  // レッスン作成後に posture_group を作成してレッスンIDと紐づける
   const linkPostureGroupToLesson = async (lessonId: string) => {
-    if (!postureGroupId) return;
+    if (!postureGroupId || !postureGroupId.startsWith('temp-')) return;
     try {
-      await postureApi.createPostureGroup(lessonId, {
-        id: postureGroupId,
-        lessonId,
-      });
+      // レッスンIDで姿勢グループを作成（バックエンドが自動的に紐づける）
+      await postureApi.createPostureGroup(lessonId);
+      logger.debug('Posture group created and linked to lesson', { lessonId }, 'LessonForm');
     } catch (error) {
       // 画面遷移は続行するが、エラーは表示
-      logger.warn('Failed to update posture group with lesson ID', error, 'LessonForm');
+      logger.warn('Failed to create posture group for lesson', error, 'LessonForm');
       setError(handleError(error, 'LessonForm'));
     }
   };
@@ -301,10 +301,15 @@ export const LessonCreate: React.FC = () => {
 
     setLoading(true);
     try {
-      const created = await lessonApi.create({ 
-        ...formData, 
-        postureGroupId: postureGroupId ?? undefined,
-        trainings: trainings 
+      const created = await lessonApi.createLesson(formData.customerId, { 
+        customerId: formData.customerId,
+        storeId: formData.storeId,
+        trainerId: formData.userId,
+        lessonDate: formData.startDate || new Date().toISOString(),
+        trainings: trainings.map(t => ({
+          menuName: t.name,
+          reps: t.reps
+        }))
       });
       if (created?.id) {
         await linkPostureGroupToLesson(created.id);
