@@ -65,7 +65,7 @@ import axios from 'axios';
 import { storage } from '../utils/storage';
 
 const axiosInstance = axios.create({
-  baseURL: process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -845,14 +845,16 @@ export function convertPageResponse<T>(springPage: SpringPage<T>): PaginatedResp
 ### `.env`
 
 ```env
-REACT_APP_API_BASE_URL=http://localhost:8080
+VITE_API_BASE_URL=http://localhost:3001/api
 ```
 
 ### `.env.example`
 
 ```env
-REACT_APP_API_BASE_URL=
+VITE_API_BASE_URL=
 ```
+
+**注意**: Viteでは環境変数に `VITE_` プレフィックスが必要です。環境変数は `import.meta.env.VITE_*` でアクセスします。
 
 ---
 
@@ -882,7 +884,14 @@ REACT_APP_API_BASE_URL=
 - フロントエンドでは `convertPageResponse` を使用して `PaginatedResponse<T>` に変換
 - すべてのページネーション付きAPIでこの変換を適用する
 
+### 開発環境
+
+- **Vite**を使用した開発環境
+- 開発サーバーはデフォルトで `localhost:3000` で起動（`vite.config.ts`で設定可能）
+- ビルド出力は `dist/` ディレクトリに生成されます
+- 環境変数は `VITE_` プレフィックスが必要で、`import.meta.env.VITE_*` でアクセスします
+
 ### CORS
 
 - 同一オリジンなら設定不要
-- 別オリジン（例: React開発サーバーが `localhost:3000`、バックエンドが `localhost:8080`）の場合はバックエンドでCORS設定が必要
+- 別オリジン（例: Vite開発サーバーが `localhost:3000`、バックエンドが `localhost:3001`）の場合はバックエンドでCORS設定が必要

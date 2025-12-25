@@ -1,6 +1,6 @@
 /**
- * Secure storage utilities using sessionStorage
- * sessionStorage is cleared when the browser tab is closed
+ * Secure storage utilities using localStorage
+ * localStorage persists across browser sessions (login state maintained after tab is closed)
  * JWT認証用にトークン管理機能を提供
  */
 
@@ -22,7 +22,7 @@ export const storage = {
         name: user.name,
         role: user.role,
       };
-      sessionStorage.setItem(USER_KEY, JSON.stringify(minimalUser));
+      localStorage.setItem(USER_KEY, JSON.stringify(minimalUser));
     } catch (error) {
       logger.error('Failed to store user', error, 'storage');
       throw new Error('Failed to store user information');
@@ -35,7 +35,7 @@ export const storage = {
    */
   getUser: (): { userId: string; email: string; name: string; role: string } | null => {
     try {
-      const userStr = sessionStorage.getItem(USER_KEY);
+      const userStr = localStorage.getItem(USER_KEY);
       if (!userStr) return null;
 
       // JSON.parseを実行
@@ -76,7 +76,7 @@ export const storage = {
    */
   setToken: (token: string): void => {
     try {
-      sessionStorage.setItem(TOKEN_KEY, token);
+      localStorage.setItem(TOKEN_KEY, token);
     } catch (error) {
       logger.error('Failed to store token', error, 'storage');
       throw new Error('Failed to store token');
@@ -88,7 +88,7 @@ export const storage = {
    */
   getToken: (): string | null => {
     try {
-      return sessionStorage.getItem(TOKEN_KEY);
+      return localStorage.getItem(TOKEN_KEY);
     } catch (error) {
       logger.error('Failed to retrieve token', error, 'storage');
       return null;
@@ -100,7 +100,7 @@ export const storage = {
    */
   removeToken: (): void => {
     try {
-      sessionStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(TOKEN_KEY);
     } catch (error) {
       logger.error('Failed to remove token', error, 'storage');
     }
@@ -111,7 +111,7 @@ export const storage = {
    */
   removeUser: (): void => {
     try {
-      sessionStorage.removeItem(USER_KEY);
+      localStorage.removeItem(USER_KEY);
     } catch (error) {
       logger.error('Failed to remove user', error, 'storage');
     }

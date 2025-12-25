@@ -4,7 +4,6 @@ import { useAuth } from '../../context/AuthContext';
 import { ROUTES } from '../../constants/routes';
 import { getLoginErrorMessage } from '../../utils/errorHandler';
 import { logger } from '../../utils/logger';
-import { authApi } from '../../api/authApi';
 
 export const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -23,8 +22,22 @@ export const Login: React.FC = () => {
     setError('');
 
     try {
-      await login(email, password);
-      navigate(ROUTES.LESSON_FORM);
+      const userData = await login(email, password);
+      
+      // ロールベースのリダイレクト
+      switch (userData.role) {
+        case 'ADMIN':
+          navigate('/admin/home');
+          break;
+        case 'MANAGER':
+          navigate('/manager/home');
+          break;
+        case 'TRAINER':
+          navigate('/trainer/home');
+          break;
+        default:
+          navigate('/login');
+      }
     } catch (err) {
       logger.error('Login failed', err, 'Login');
       setError(getLoginErrorMessage(err));

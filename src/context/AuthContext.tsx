@@ -14,7 +14,7 @@ interface AuthContextType {
   user: User | null;
   authLoading: boolean;
   actionLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
 }
@@ -44,12 +44,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     init();
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<User> => {
     setActionLoading(true);
     try {
       const userData = await authApi.login({ email, password });
       setUser(userData);
       storage.setUser(userData); // オプショナル
+      return userData;
     } catch (error) {
       logger.error('Login failed', error, 'AuthContext');
       throw error;

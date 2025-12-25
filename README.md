@@ -6,9 +6,10 @@
 
 - **React** 19.2.0
 - **TypeScript** 4.9.5
+- **Vite** 5.4.2
 - **React Router** 7.10.0
 - **Axios** 1.13.2
-- **Tailwind CSS** 4.1.17
+- **Tailwind CSS** 3.4.18
 
 ## セットアップ
 
@@ -29,28 +30,51 @@ cp .env.example .env
 `.env`ファイルに以下の環境変数を設定してください：
 
 ```
-REACT_APP_API_BASE_URL=http://localhost:8080
+VITE_API_BASE_URL=http://localhost:3001/api
 ```
 
 **注意**: 
-- セッションベース認証を使用しているため、JWTトークン関連の設定は不要です
-- 以前使用していた`REACT_APP_SUPABASE_URL`と`REACT_APP_SUPABASE_ANON_KEY`は削除してください
-- APIベースURLはバックエンドサーバーのURLに合わせて設定してください（デフォルト: http://localhost:8080）
+- Viteでは環境変数に `VITE_` プレフィックスが必要です
+- 環境変数は `import.meta.env.VITE_*` でアクセスします
+- APIベースURLはバックエンドサーバーのURLに合わせて設定してください（デフォルト: http://localhost:3001/api）
 
 ### 3. 開発サーバーの起動
+
+```bash
+npm run dev
+```
+
+または
 
 ```bash
 npm start
 ```
 
-ブラウザで [http://localhost:3000](http://localhost:3000) を開きます。
+ブラウザで [http://localhost:3000](http://localhost:3000) が自動的に開きます。
+
+### 4. ビルド
+
+```bash
+npm run build
+```
+
+ビルド出力は `dist/` ディレクトリに生成されます。
+
+### 5. プレビュー
+
+ビルドしたアプリケーションをプレビューする場合：
+
+```bash
+npm run preview
+```
 
 ## ディレクトリ構成
 
 ```
 fitnessgym-mg-frontend/
-├── public/
-│   └── index.html
+├── index.html                 # Vite用のエントリーポイント
+├── vite.config.ts            # Vite設定ファイル
+├── public/                   # 静的ファイル
 ├── src/
 │   ├── api/                    # API通信関連
 │   │   ├── axiosConfig.ts      # Axios設定
@@ -133,6 +157,8 @@ fitnessgym-mg-frontend/
 ├── .gitignore
 ├── package.json
 ├── tsconfig.json             # TypeScript設定
+├── tsconfig.node.json        # Vite用TypeScript設定
+├── vite.config.ts            # Vite設定
 ├── tailwind.config.js
 ├── postcss.config.js
 └── README.md

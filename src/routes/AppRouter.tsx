@@ -27,12 +27,14 @@ import { LessonCreate } from '../pages/common/LessonCreate';
 import { LessonDetail } from '../pages/common/LessonDetail';
 import { LessonHistory } from '../pages/common/LessonHistory';
 import { PostureImageList } from '../pages/common/PostureImageList';
+import { Forbidden } from '../pages/common/Forbidden';
 
 export const AppRouter = () => {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/403" element={<Forbidden />} />
 
         {/* Admin routes */}
         <Route path="/admin" element={<ProtectedRoute roles={['ADMIN']} />}>
