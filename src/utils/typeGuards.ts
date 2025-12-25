@@ -1,56 +1,6 @@
-import { SupabaseUser, SupabaseTraining, SupabasePostureGroup, SupabaseStore, SupabaseCustomer } from '../types/supabase';
 import { User } from '../types/user';
 import { Customer } from '../types/customer';
 import { Posture, PostureComparison, PostureAnalysis } from '../types/posture';
-
-/**
- * Type guard to check if a value is a SupabaseStore
- */
-export const isSupabaseStore = (data: unknown): data is SupabaseStore => {
-  if (!data || typeof data !== 'object') return false;
-  const store = data as Record<string, unknown>;
-  return (
-    typeof store.id === 'string' &&
-    typeof store.name === 'string'
-  );
-};
-
-/**
- * Type guard to check if a value is a SupabaseUser
- */
-export const isSupabaseUser = (user: unknown): user is SupabaseUser => {
-  if (!user || typeof user !== 'object') {
-    return false;
-  }
-
-  const u = user as Record<string, unknown>;
-  return (
-    typeof u.id === 'string' &&
-    typeof u.email === 'string' &&
-    'auth_user_id' in u
-  );
-};
-
-/**
- * Type guard to check if a value is a SupabaseCustomer
- */
-export const isSupabaseCustomer = (data: unknown): data is SupabaseCustomer => {
-  if (!data || typeof data !== 'object') return false;
-  const customer = data as Record<string, unknown>;
-  return (
-    typeof customer.id === 'string' &&
-    typeof customer.name === 'string' &&
-    typeof customer.email === 'string' &&
-    typeof customer.kana === 'string' &&
-    typeof customer.gender === 'string' &&
-    typeof customer.birthday === 'string' &&
-    typeof customer.height === 'number' &&
-    typeof customer.phone === 'string' &&
-    typeof customer.address === 'string' &&
-    typeof customer.created_at === 'string' &&
-    typeof customer.is_active === 'boolean'
-  );
-};
 
 /**
  * Type guard to check if a value is a User
@@ -113,34 +63,6 @@ export const isCustomerArray = (customers: unknown): customers is Customer[] => 
  */
 export const isUserArray = (users: unknown): users is User[] => {
   return Array.isArray(users) && users.every(isUser);
-};
-
-/**
- * Type guard to check if a value is a SupabaseTraining
- */
-export const isSupabaseTraining = (data: unknown): data is SupabaseTraining => {
-  if (!data || typeof data !== 'object') return false;
-  const t = data as Record<string, unknown>;
-  return (
-    typeof t.lesson_id === 'string' &&
-    typeof t.name === 'string' &&
-    typeof t.reps === 'number' &&
-    typeof t.order_no === 'number'
-  );
-};
-
-/**
- * Type guard to check if a value is a SupabasePostureGroup
- */
-export const isSupabasePostureGroup = (data: unknown): data is SupabasePostureGroup => {
-  if (!data || typeof data !== 'object') return false;
-  const pg = data as Record<string, unknown>;
-  return (
-    typeof pg.id === 'string' &&
-    typeof pg.customer_id === 'string' &&
-    typeof pg.captured_at === 'string' &&
-    typeof pg.created_at === 'string'
-  );
 };
 
 /**

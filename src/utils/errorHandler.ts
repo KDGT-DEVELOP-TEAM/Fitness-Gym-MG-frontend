@@ -8,7 +8,6 @@ import { AxiosError } from 'axios';
 
 export enum ErrorType {
   API_ERROR = 'API_ERROR',
-  SUPABASE_ERROR = 'SUPABASE_ERROR',
   NETWORK_ERROR = 'NETWORK_ERROR',
   VALIDATION_ERROR = 'VALIDATION_ERROR',
   AUTH_ERROR = 'AUTH_ERROR',
@@ -85,34 +84,6 @@ export function handleApiError(error: unknown): AppError {
 }
 
 /**
- * Handle Supabase errors
- */
-export function handleSupabaseError(error: unknown): AppError {
-  if (error && typeof error === 'object') {
-    const err = error as { message?: string; code?: string; details?: string; hint?: string };
-
-    if ('message' in err && typeof err.message === 'string') {
-      return createError(
-        ErrorType.SUPABASE_ERROR,
-        err.message,
-        error,
-        {
-          code: err.code,
-          details: err.details,
-          hint: err.hint,
-        }
-      );
-    }
-  }
-
-  return createError(
-    ErrorType.SUPABASE_ERROR,
-    error instanceof Error ? error.message : 'Supabase operation failed',
-    error
-  );
-}
-
-/**
  * Handle network errors
  */
 export function handleNetworkError(error: unknown): AppError {
@@ -161,12 +132,6 @@ export function getUserFriendlyMessage(error: AppError): string {
         return 'リクエストに失敗しました。しばらくしてから再度お試しください。';
       }
       return error.message || 'リクエストに失敗しました。';
-    case ErrorType.SUPABASE_ERROR:
-      // 本番環境では詳細なエラーメッセージを隠す
-      if (isProduction) {
-        return 'データベース操作に失敗しました。しばらくしてから再度お試しください。';
-      }
-      return error.message || 'データベース操作に失敗しました。';
     default:
       // 本番環境では詳細なエラーメッセージを隠す
       if (isProduction) {
@@ -196,7 +161,6 @@ export function logError(error: AppError, context?: string): void {
  * Uses unified error messages to prevent user enumeration attacks
  */
 export function getLoginErrorMessage(error: unknown): string {
-  // Handle Supabase Auth errors
   if (error && typeof error === 'object' && 'status' in error && 'message' in error) {
     const err = error as { status?: number; message?: string };
     const status = typeof err.status === 'number' ? err.status : undefined;

@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { handleApiError, handleSupabaseError, handleNetworkError, getUserFriendlyMessage, logError, AppError } from '../utils/errorHandler';
+import { handleApiError, handleNetworkError, getUserFriendlyMessage, logError, AppError } from '../utils/errorHandler';
 
 /**
  * Custom hook for unified error handling
@@ -10,10 +10,7 @@ export const useErrorHandler = () => {
     let appError: AppError;
 
     // Determine error type and handle accordingly
-    if (error && typeof error === 'object' && 'code' in error) {
-      // Likely a Supabase error
-      appError = handleSupabaseError(error);
-    } else if (error && typeof error === 'object' && ('response' in error || 'isAxiosError' in error)) {
+    if (error && typeof error === 'object' && ('response' in error || 'isAxiosError' in error)) {
       // Likely an Axios/API error
       appError = handleApiError(error);
     } else if (error instanceof Error && (error.message.includes('Network') || error.message.includes('fetch'))) {
