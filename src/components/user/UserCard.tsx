@@ -7,7 +7,6 @@ interface UserCardProps {
 }
 
 export const UserCard: React.FC<UserCardProps> = ({ user, onEdit }) => {
-  // ロール名の日本語マッピング
   const roleLabels: { [key: string]: string } = {
     admin: '管理者',
     manager: '店長',

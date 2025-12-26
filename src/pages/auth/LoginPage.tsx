@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
-import { ROUTES } from '../constants/routes';
-import { getErrorMessage } from '../utils/loginErrorMessages';
+import { useAuth } from '../../hooks/useAuth';
+import { ROUTES } from '../../constants/routes';
+import { getErrorMessage } from '../../utils/loginErrorMessages';
 
-export const Login: React.FC = () => {
+export const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');

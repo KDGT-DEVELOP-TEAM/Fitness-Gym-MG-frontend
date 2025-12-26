@@ -1,17 +1,29 @@
 // src/hooks/useStore.ts
 import { useState, useEffect } from 'react';
-import { supabase } from '../supabase/supabaseClient';
+import { storeApi, Store } from '../api/storeApi';
 
 export const useStores = () => {
-  const [stores, setStores] = useState<{id: string, name: string}[]>([]);
+  const [stores, setStores] = useState<Store[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchStores = async () => {
-      const { data } = await supabase.from('stores').select('id, name');
-      if (data) setStores(data);
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await storeApi.getStores();
+        setStores(data);
+      } catch (err: any) {
+        console.error('店舗一覧の取得に失敗しました:', err);
+        setError(err.response?.data?.message || '店舗情報を取得できませんでした');
+      } finally {
+        setLoading(false);
+      }
     };
+
     fetchStores();
   }, []);
 
-  return { stores };
+  return { stores, loading, error };
 };

@@ -4,7 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { MainLayout } from './components/common/MainLayout';
 import { Loading } from './components/common/Loading';
 import { ROUTES } from './constants/routes';
-import { Login } from './pages/Login';
+import { LoginPage } from './pages/auth/LoginPage';
 import { StoreManagement } from './pages/StoreManagement'
 import { CustomerSelect } from './pages/CustomerSelect';
 import { LessonForm } from './pages/LessonForm';
@@ -51,7 +51,7 @@ const AppRoutes: React.FC = () => {
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          <Route path={ROUTES.LOGIN} element={<Login />} />
+          <Route path={ROUTES.LOGIN} element={<LoginPage />} />
           <Route
             path={ROUTES.STORE_MANAGEMENT}
             element={

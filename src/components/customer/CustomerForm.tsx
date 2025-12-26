@@ -1,7 +1,6 @@
 // src/components/customers/CustomerForm.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Customer, CustomerFormData } from '../../types/customer';
-// import { supabase } from '../../supabase/supabaseClient';
 
 interface CustomerFormProps {
   initialData?: Customer;
@@ -11,7 +10,8 @@ interface CustomerFormProps {
 }
 
 export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmit, onDelete, isSubmitting }) => {
-  // const [postureImages, setPostureImages] = useState<{position: string, url: string}[]>([]);
+  const isEditMode = !!initialData;
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [formData, setFormData] = useState<CustomerFormData>({
     name: initialData?.name || '',
     kana: initialData?.kana || '',
@@ -28,72 +28,30 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
     firstPostureGroupId: initialData?.firstPostureGroupId || null,
   });
 
-  // useEffect(() => {
-  //   const fetchFirstPosture = async () => {
-  //     if (!initialData?.id) return;
-
-  //     // 1. 最古のグループIDを取得
-  //     const { data: groupData } = await supabase
-  //       .from('posture_groups')
-  //       .select('id')
-  //       .eq('customer_id', initialData.id)
-  //       .order('created_at', { ascending: true })
-  //       .limit(1)
-  //       .single();
-
-  //     if (!groupData) return;
-
-  //     // 2. 💡 ここが勝負所です。顧客IDを挟まず、グループID直下をリストアップします
-  //     const { data: files, error: listError } = await supabase.storage
-  //       .from('postures')
-  //       .list(`${groupData.id}`);
-
-  //     console.log(`--- フォルダ [${groupData.id}] の中身をチェック ---`);
-  //     console.log("📂 発見されたファイル:", files?.map(f => f.name));
-
-  //     if (!files || files.length === 0) {
-  //       console.warn("⚠️ 指定したフォルダは空、または存在しません。");
-  //       // 💡 ここで空なら、手動でリネームした「a0ed...」がバケットの「直下」にあるか確認が必要です
-  //     }
-
-  //     const { data: imagesData } = await supabase
-  //       .from('posture_images')
-  //       .select('position')
-  //       .eq('posture_group_id', groupData.id);
-
-  //     if (imagesData && files) {
-  //       const imagesWithUrls = await Promise.all(imagesData.map(async (img) => {
-  //         // Storage内のファイル名と、DBのposition(frontなど)を照合
-  //         const actualFile = files.find(f => f.name.toLowerCase().startsWith(img.position.toLowerCase()));
-          
-  //         if (!actualFile) return { position: img.position, url: '' };
-
-  //         // 💡 発見したファイル名を使ってURLを生成
-  //         const cleanPath = `${groupData.id}/${actualFile.name}`;
-  //         const { data: signedData } = await supabase.storage
-  //           .from('postures')
-  //           .createSignedUrl(cleanPath, 3600);
-          
-  //         return {
-  //           position: img.position,
-  //           url: signedData?.signedUrl || '' 
-  //         };
-  //       }));
-  //       setPostureImages(imagesWithUrls);
-  //     }
-  //   };
-  //   fetchFirstPosture();
-  // }, [initialData?.id]);
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     const finalValue = type === 'checkbox' ? (e.target as HTMLInputElement).checked : value;
     setFormData(prev => ({ ...prev, [name]: finalValue }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    setErrorMsg(null);
+
+    try {
+      await onSubmit(formData);
+    } catch (err: any) {
+      // APIからのエラーメッセージ（RuntimeException等）を解析して表示
+      const message = err.response?.data?.message || err.message;
+      
+      if (message.includes("関連データが存在するため")) {
+        setErrorMsg("この顧客にはレッスン履歴があるため削除できません。先にステータスを無効にしてください。");
+      } else if (message.includes("有効顧客は削除できません")) {
+        setErrorMsg("有効なステータスのままでは削除できません。");
+      } else {
+        setErrorMsg(message || "保存中にエラーが発生しました。");
+      }
+    }
   };
 
   const RequiredBadge = () => (
@@ -104,28 +62,12 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-h-[70vh] overflow-y-auto px-2">
-      {/* 1. 初回姿勢画像セクション（更新時のみ表示） */}
-      {/* {initialData && (
-        <section className="space-y-4">
-          <h3 className="text-lg font-medium border-b pb-2">初回姿勢画像</h3>
-          {postureImages.length > 0 ? (
-            <div className="grid grid-cols-4 gap-2 bg-gray-50 p-3 rounded-2xl border border-gray-100">
-              {postureImages.map((img, idx) => (
-                <div key={idx} className="space-y-1">
-                  <div className="aspect-[3/4] rounded-lg overflow-hidden border bg-white shadow-inner">
-                    <img src={img.url} alt={img.position} className="w-full h-full object-cover" />
-                  </div>
-                  <p className="text-[8px] font-black text-center text-gray-400 uppercase">{img.position}</p>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="py-8 text-center bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-              <p className="text-xs font-bold text-gray-400">初回姿勢画像が登録されていません</p>
-            </div>
-          )}
-        </section>
-      )} */}
+      {/* エラーメッセージ表示エリア */}
+      {errorMsg && (
+        <div className="p-4 bg-red-50 border-2 border-red-200 text-red-600 rounded-2xl font-bold text-sm animate-bounce">
+          ⚠️ {errorMsg}
+        </div>
+      )}
       {/* 基本情報セクション */}
       <section className="space-y-4">
         <h3 className="text-lg font-medium border-b pb-2">基本情報</h3>

@@ -1,8 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '../types/user';
-// import { authApi } from '../api/authApi';
-import * as authApi from '../api/tempSupabaseAuthApi'; // 🔑 代替APIをインポート
-import { supabase } from '../supabase/supabaseClient';
+import { authApi } from '../api/authApi'; 
 
 interface AuthContextType {
   user: User | null;
@@ -17,57 +15,53 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [authLoading, setAuthLoading] = useState(true); // 認証初期化中
-  const [actionLoading, setActionLoading] = useState(false); // アクション実行中（login/logoutなど）
+  const [authLoading, setAuthLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
 
+  // 1. 初期化ロジック (useEffect内)
   useEffect(() => {
     const initAuth = async () => {
       const token = localStorage.getItem('token');
-
       if (token) {
         try {
-          // getCurrentUser()が成功して初めて認証済みと判断
-          const currentUser = await authApi.getCurrentUser();
-          setUser(currentUser);
+          const currentUser = await authApi.checkAuth();
+          setUser(currentUser as any); // 必要に応じて型をキャスト
         } catch (error) {
-          // トークンがあっても getCurrentUser() が失敗したら未認証
           localStorage.removeItem('token');
-          localStorage.removeItem('user');
           setUser(null);
         }
       }
       setAuthLoading(false);
     };
-
     initAuth();
   }, []);
 
+  // 2. ログインロジック
   const login = async (email: string, password: string) => {
     setActionLoading(true);
     try {
-      // ログイン実行
-      const response = await authApi.login({ email, password });
-      localStorage.setItem('token', response.token);
-
-      // getCurrentUser()で認証を確定
-      const currentUser = await authApi.getCurrentUser();
-      setUser(currentUser);
-      localStorage.setItem('user', JSON.stringify(currentUser));
+      const userData = await authApi.login({ email, password });
+      
+      setUser(userData as any);
+    } catch (error: any) {
+      console.error('Login failed:', error);
+      throw error;
     } finally {
       setActionLoading(false);
     }
   };
 
+  // 3. ログアウトロジック
   const logout = async () => {
     setActionLoading(true);
     try {
+      // サーバー側でトークン無効化処理などが必要な場合は呼び出し
       await authApi.logout();
     } catch (error) {
-      // ログアウトAPIが失敗してもローカルの状態はクリア
       console.error('Logout API failed:', error);
     } finally {
+      // APIの成否に関わらず、フロント側の認証情報は必ずクリアする
       localStorage.removeItem('token');
-      localStorage.removeItem('user');
       setUser(null);
       setActionLoading(false);
     }
@@ -81,7 +75,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         actionLoading,
         login,
         logout,
-        isAuthenticated: !!user, // userがあれば認証済み
+        isAuthenticated: !!user,
       }}
     >
       {children}
@@ -96,4 +90,3 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
-

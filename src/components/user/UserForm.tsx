@@ -11,13 +11,14 @@ interface UserFormProps {
 }
 
 const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDelete, isSubmitting }) => {
+    const [errorMsg, setErrorMsg] = useState<string | null>(null);
     
     const [formData, setFormData] = useState<UserFormData>({
         email: '',
         name: '',
         kana: null,
         pass: '',
-        role: 'trainer',
+        role: 'TRAINER',
         storeId: [],
       });
 
@@ -46,8 +47,9 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
         }));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setErrorMsg(null);
         
         // 🔑 提出データの整形
         const dataToSubmit: UserFormData = {
@@ -55,11 +57,24 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
             isActive: isActive,
             kana: formData.kana || null,
             // 💡 storeIdの制約: manager以外は空配列にする
-            storeId: formData.role === 'manager' ? formData.storeId : [],
+            storeId: formData.role === 'MANAGER' ? formData.storeId : [],
         };
 
-        // 🔑 onSubmitを呼び出す。内部で signUp -> DB insert が行われる想定
-        onSubmit(dataToSubmit, initialData?.id);
+        try {
+            await onSubmit(formData);
+          } catch (err: any) {
+            // APIからのエラーメッセージ（RuntimeException等）を解析して表示
+            const message = err.response?.data?.message || err.message;
+            
+            // バックエンドの例外メッセージに応じた日本語化
+            if (message.includes("関連データが存在するため")) {
+              setErrorMsg("このユーザーにはレッスン履歴があるため削除できません。先にステータスを無効にしてください。");
+            } else if (message.includes("有効ユーザーは削除できません")) {
+              setErrorMsg("有効なステータスのままでは削除できません。");
+            } else {
+              setErrorMsg(message || "保存中にエラーが発生しました。");
+            }
+          }
     };
     
     const handleDelete = () => {
@@ -76,6 +91,13 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
 
     return (
         <form onSubmit={handleSubmit} className="space-y-8 max-h-[70vh] overflow-y-auto px-1 custom-scrollbar">
+
+            {/* エラーメッセージ表示エリア */}
+            {errorMsg && (
+                <div className="p-4 bg-red-50 border-2 border-red-200 text-red-600 rounded-2xl font-bold text-sm animate-bounce">
+                ⚠️ {errorMsg}
+                </div>
+            )}
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Email */}
@@ -88,9 +110,9 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
                 <div>
                     <label className="block text-sm font-bold text-gray-700 mb-1">権限ロール <RequiredBadge /></label>
                     <select name="role" value={formData.role} onChange={handleChange} required className="w-full border p-2 rounded shadow-sm">
-                        <option value="admin">管理者</option>
-                        <option value="manager">店長</option>
-                        <option value="trainer">トレーナー</option>
+                        <option value="ADMIN">管理者</option>
+                        <option value="MANAGER">店長</option>
+                        <option value="TRAINER">トレーナー</option>
                     </select>
                 </div>
             </div>
@@ -116,7 +138,7 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
             </div>
             
             {/* 🔑 manager（店長）の時のみ表示 */}
-            {formData.role === 'manager' && (
+            {formData.role === 'MANAGER' && (
                 <div className="space-y-3 p-4 bg-green-50/50 rounded-xl border border-green-100 animate-in fade-in slide-in-from-top-2 duration-300">
                     <label className="block text-sm font-bold text-green-900 flex items-center gap-2">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

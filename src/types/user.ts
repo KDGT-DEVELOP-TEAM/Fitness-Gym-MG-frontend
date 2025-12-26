@@ -3,7 +3,7 @@ export interface User {
   email: string; 
   name: string; 
   kana: string | null;
-  role: 'admin' | 'trainer' | 'manager' | string;
+  role: 'ADMIN' | 'TRAINER' | 'MANAGER' | string;
   storeId: string[] | null;
   isActive: boolean; 
 
@@ -15,7 +15,7 @@ export interface UserFormData {
   name: string;
   kana: string | null;
   pass?: string;
-  role: 'admin' | 'trainer' | 'manager';
+  role: 'ADMIN' | 'TRAINER' | 'MANAGER';
   storeId: string[] | null;
   isActive?: boolean; 
 }

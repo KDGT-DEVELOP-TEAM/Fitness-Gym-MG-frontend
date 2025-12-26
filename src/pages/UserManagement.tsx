@@ -1,99 +1,111 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import useUsers from '../hooks/useUser'; 
 import { useStores } from '../hooks/useStore'; 
 import { UserCard } from '../components/user/UserCard'; 
 import UserFormModal from '../components/user/UserFormModal'; 
 import { User, UserFormData } from '../types/user';
+import { useAuth } from '../context/AuthContext';
+import { adminUsersApi } from '../api/admin/usersApi';
+import { managerUsersApi } from '../api/manager/usersApi';
 
 const ITEMS_PER_PAGE = 10;
 
-const UserManagement: React.FC = () => {
+export const UserManagement: React.FC = () => {
+  const { user: authUser } = useAuth(); // ログイン中のユーザー情報
   const { 
-    users, 
+    users,
+    total,
     loading: usersLoading, 
-    error, 
+    error: fetchError, 
     filters, 
     handleFilterChange, 
     refetchUsers,
-    createUser, 
-    updateUser, 
-    deleteUser, 
   } = useUsers();
   
   const { stores } = useStores();
-  
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | undefined>(undefined);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
-  // --- 1. ソート & ページネーションロジック ---
-  const { paginatedUsers, totalPages, totalCount } = useMemo(() => {
-    const sorted = [...users].sort((a, b) => {
-      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-      return dateB - dateA;
-    });
+  // --- API セレクター ---
+  // ロールと所属店舗に基づいて、叩くべきAPIエンドポイントを動的に切り替える
+  const getUserService = useCallback(() => {
+    const isAdmin = authUser?.role?.toUpperCase() === 'ADMIN';
+    // 店長の場合、所属している最初の店舗IDを使用（兼任対応が必要な場合はロジック調整）
+    const storeId = Array.isArray(authUser?.storeId) ? authUser.storeId[0] : authUser?.storeId;
 
-    const pages = Math.ceil(sorted.length / ITEMS_PER_PAGE);
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    
     return {
-      paginatedUsers: sorted.slice(start, start + ITEMS_PER_PAGE),
-      totalPages: pages || 1,
-      totalCount: sorted.length
+      create: (data: UserFormData) => 
+        isAdmin ? adminUsersApi.createUser(data) : managerUsersApi.createUser(storeId!, data),
+      update: (id: string, data: UserFormData) => 
+        isAdmin ? adminUsersApi.updateUser(id, data) : managerUsersApi.updateUser(storeId!, id, data),
+      delete: (id: string) => 
+        isAdmin ? adminUsersApi.deleteUser(id) : managerUsersApi.deleteUser(storeId!, id),
     };
-  }, [users, currentPage]);
+  }, [authUser]);
+
+  // --- ページネーション・フィルタ制御 ---
+  const totalPages = Math.ceil(total / ITEMS_PER_PAGE) || 1;
 
   useEffect(() => {
-    setCurrentPage(1);
+    refetchUsers(currentPage - 1);
+  }, [currentPage, refetchUsers]);
+
+  useEffect(() => {
+    setCurrentPage(1); // 検索条件が変わったら1ページ目に戻す
   }, [filters.nameOrKana, filters.role]);
 
-  // --- 2. ハンドラー関数 ---
-  const handleNewClick = () => {
-    setEditingUser(undefined);
-    setIsModalOpen(true);
-  };
-
-  const handleEditClick = (user: User) => {
-    setEditingUser(user);
-    setIsModalOpen(true);
-  };
-  
-  const handleModalClose = () => {
-    setIsModalOpen(false);
-    setEditingUser(undefined);
-  };
-
+  // --- ハンドラー ---
   const handleSubmit = async (data: UserFormData, userId?: string) => {
     setIsSubmitting(true);
+    const service = getUserService();
+    const targetId = userId || editingUser?.id;
+
     try {
-      if (editingUser || userId) {
-        await updateUser(data, userId || editingUser!.id);
+      if (targetId) {
+        // 更新処理（adminUsersApi.updateUser または managerUsersApi.updateUser）
+        await service.update(targetId, data);
       } else {
-        await createUser(data);
+        // 新規作成処理
+        await service.create(data);
       }
-      await refetchUsers(); 
-      handleModalClose();
-    } catch (err) {
-      alert("保存に失敗しました。");
+      await refetchUsers(currentPage - 1); // 一覧を再取得
+      setIsModalOpen(false);
+    } catch (err: any) {
+      // UserForm.tsx 内の catch ブロックでエラーメッセージを表示させるために例外を再送出
+      throw err;
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleDelete = async (userId: string) => {
-    if (!window.confirm("このユーザーを完全に削除してもよろしいですか？")) return;
+    // 削除前の最終確認
+    if (!window.confirm("このユーザーを完全に削除してもよろしいですか？\n※このスタッフが担当したレッスン履歴がある場合は削除できません。")) return;
+    
     setIsSubmitting(true);
+    const service = getUserService();
     try {
-      await deleteUser(userId);
-      await refetchUsers(); 
-      handleModalClose();
-    } catch (err) {
-      alert("削除に失敗しました。");
+      await service.delete(userId);
+      await refetchUsers(currentPage - 1); 
+      setIsModalOpen(false);
+    } catch (err: any) {
+      const msg = err.response?.data?.message || "削除に失敗しました。関連データを確認してください。";
+      alert(msg);
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleEditClick = (user: User) => {
+    setEditingUser(user);
+    setIsModalOpen(true);
+  };
+
+  const handleNewClick = () => {
+    setEditingUser(undefined);
+    setIsModalOpen(true);
   };
 
   return (
@@ -103,11 +115,11 @@ const UserManagement: React.FC = () => {
         <div>
           <h1 className="text-3xl font-black text-gray-900 tracking-tight">ユーザー管理</h1>
           <p className="text-sm text-gray-500 mt-1">
-            <span className="font-bold text-green-600">{totalCount}</span> 名のユーザーが登録されています
+            <span className="font-bold text-green-600">{total}</span> 名のユーザーが登録されています
           </p>
         </div>
         <button
-          onClick={handleNewClick}
+          onClick={() => { setEditingUser(undefined); setIsModalOpen(true); }}
           className="h-12 px-6 bg-green-600 text-white font-black rounded-2xl hover:bg-green-700 shadow-xl shadow-green-100 transition-all active:scale-95 flex items-center justify-center gap-2"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -140,16 +152,16 @@ const UserManagement: React.FC = () => {
           className="h-14 px-6 bg-white border-2 border-gray-50 rounded-2xl text-sm font-black text-gray-600 focus:border-green-500 focus:ring-0 outline-none cursor-pointer shadow-sm transition-all"
         >
           <option value="all">全てのロール</option>
-          <option value="admin">管理者</option>
-          <option value="manager">店長</option>
-          <option value="trainer">トレーナー</option>
+          <option value="ADMIN">管理者</option>
+          <option value="MANAGER">店長</option>
+          <option value="TRAINER">トレーナー</option>
         </select>
       </div>
 
       {/* エラー表示 */}
-      {error && (
+      {fetchError && (
         <div className="p-4 bg-red-50 text-red-600 rounded-2xl font-bold text-sm border border-red-100">
-          ⚠️ エラーが発生しました: {error}
+          ⚠️ エラーが発生しました: {fetchError}
         </div>
       )}
 
@@ -173,14 +185,14 @@ const UserManagement: React.FC = () => {
                     <p className="text-gray-400 font-black uppercase tracking-widest text-xs">Loading Data...</p>
                   </td>
                 </tr>
-              ) : paginatedUsers.length === 0 ? (
+              ) : users.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="py-24 text-center text-gray-400 font-medium">
                     ユーザーが見つかりませんでした
                   </td>
                 </tr>
               ) : (
-                paginatedUsers.map((user) => (
+                users.map((user) => (
                   <UserCard 
                     key={user.id} 
                     user={user} 
@@ -221,7 +233,7 @@ const UserManagement: React.FC = () => {
       {/* モーダル */}
       <UserFormModal 
         isOpen={isModalOpen}
-        onClose={handleModalClose}
+        onClose={() => setIsModalOpen(false)}
         initialData={editingUser}
         stores={stores} 
         onSubmit={handleSubmit}

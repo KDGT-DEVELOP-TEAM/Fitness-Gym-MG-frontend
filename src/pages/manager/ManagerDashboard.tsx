@@ -1,48 +1,56 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { useLessonHistory } from '../hooks/useLessonHistory';
-import { useStores } from '../hooks/useStore';
-import { useAuth } from '../context/AuthContext';
-import { LessonCard } from '../components/lesson/LessonCard';
+import { useLessonHistory } from '../../hooks/useLessonHistory';
+import { useStores } from '../../hooks/useStore';
+import { useAuth } from '../../context/AuthContext';
+import { LessonCard } from '../../components/lesson/LessonCard';
+import { managerHomeApi, ManagerHomeResponse } from '../../api/manager/homeApi'; 
 
 const ITEMS_PER_PAGE = 10;
 
-export const LessonHistory: React.FC = () => {
+export const ManagerDashboard: React.FC = () => {
   const { user } = useAuth();
   const { stores } = useStores();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-  const [selectedStoreId, setSelectedStoreId] = useState<'all' | string>('all');
-  const [viewMode, setViewMode] = useState<'week' | 'month'>('week');
   const [currentPage, setCurrentPage] = useState(1);
-  
-  // --- 1. バックエンド連携フック ---
-  // storeId, viewMode, pageを指定して、集計済みデータと該当ページの履歴を直接取得します
+  const [viewMode, setViewMode] = useState<'week' | 'month'>('week');
+
+  const [homeData, setHomeData] = useState<ManagerHomeResponse | null>(null);
+
+  const storeId = useMemo(() => {
+    if (!user?.storeId) return '';
+    return Array.isArray(user.storeId) ? user.storeId[0] : user.storeId;
+  }, [user?.storeId]);
+
+  // --- 🔑 Home API の呼び出し (店舗IDが確定したら実行) ---
+  useEffect(() => {
+    if (storeId) {
+      managerHomeApi.getHome(storeId)
+        .then(data => setHomeData(data))
+        .catch(err => console.error("Manager Home API Fetch Error:", err));
+    }
+  }, [storeId]);
+
+  const currentStoreName = useMemo(() => {
+    return stores.find(s => s.id === storeId)?.name || '所属店舗';
+  }, [stores, storeId]);
+
+  // --- 1. バックエンド連携フック (既存維持) ---
   const { history, chartData, total, loading, error, refetch } = useLessonHistory(
-    selectedStoreId, 
+    storeId, 
     viewMode
   );
 
-  // ページ変更時や条件変更時にバックエンドへ再リクエスト (0-based index)
   useEffect(() => {
     refetch(currentPage - 1);
-  }, [currentPage, selectedStoreId, viewMode, refetch]);
+  }, [currentPage, refetch]);
 
-  // 表示店舗名の取得ロジック (店舗リストから名称を引くだけのシンプルなものに)
-  const currentStoreDisplay = useMemo(() => {
-    if (selectedStoreId === 'all') return '全店舗';
-    return stores.find(s => s.id === selectedStoreId)?.name || '店舗を選択中...';
-  }, [stores, selectedStoreId]);
-
-  // 総ページ数の計算 (バックエンドが返した total レコード数を使用)
   const totalPages = Math.ceil(total / ITEMS_PER_PAGE) || 1;
 
-  // グラフの最新（右端）へのスクロール制御
   useEffect(() => {
     if (scrollContainerRef.current && chartData) {
-      const timer = setTimeout(() => {
-        scrollContainerRef.current!.scrollLeft = scrollContainerRef.current!.scrollWidth;
+      setTimeout(() => {
+        if (scrollContainerRef.current) scrollContainerRef.current.scrollLeft = scrollContainerRef.current.scrollWidth;
       }, 100);
-      return () => clearTimeout(timer);
     }
   }, [chartData]);
 
@@ -56,21 +64,13 @@ export const LessonHistory: React.FC = () => {
         <div className="space-y-3">
           <h1 className="text-3xl font-black text-gray-900 tracking-tight">統計情報</h1>
           <div className="flex flex-wrap items-center gap-3">
-            <div className="relative group">
-                <select 
-                className="h-10 pl-6 pr-10 bg-white border-2 border-gray-50 rounded-2xl text-sm font-black text-gray-600 focus:border-green-500 focus:ring-0 outline-none cursor-pointer shadow-sm transition-all hover:border-gray-200 appearance-none"
-                value={selectedStoreId}
-                onChange={(e) => {
-                    setSelectedStoreId(e.target.value);
-                    setCurrentPage(1);
-                }}
-                >
-                <option value="all">全店舗</option>
-                {stores.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                </select>
-                {/* カスタム矢印アイコン */}
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7"/></svg>
+            {/* ロールに応じた店舗表示エリア */}
+            <div className="flex items-center">
+                <div className="h-10 px-6 bg-white border-2 border-gray-50 rounded-2xl text-sm font-black text-gray-600 flex items-center outline-none shadow-sm">
+                  <svg className="w-3.5 h-3.5 mr-2 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                  </svg>
+                  {currentStoreName}
                 </div>
             </div>
             <p className="text-sm text-gray-500 px-3 py-1">
@@ -179,4 +179,4 @@ export const LessonHistory: React.FC = () => {
   );
 };
 
-export default LessonHistory;
+export default ManagerDashboard;

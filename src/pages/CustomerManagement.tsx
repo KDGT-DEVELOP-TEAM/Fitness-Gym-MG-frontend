@@ -1,22 +1,24 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useCustomers } from '../hooks/useCustomer'; 
 import { CustomerCard } from '../components/customer/CustomerCard';
 import { CustomerFormModal } from '../components/customer/CustomerFormModal';
 import { Customer, CustomerFormData } from '../types/customer';
+import { useAuth } from '../context/AuthContext';
+import { adminCustomersApi } from '../api/admin/customersApi';
+import { managerCustomersApi } from '../api/manager/customersApi';
 
 const ITEMS_PER_PAGE = 10;
 
 export const CustomerManagement: React.FC = () => {
+  const { user: authUser } = useAuth();
   const { 
-    customers, 
+    customers,
+    total,
     loading, 
-    error, 
+    error: fetchError, 
     searchQuery, 
-    setSearchQuery, 
-    calculateAge, 
-    createCustomer,
-    updateCustomer,
-    deleteCustomer,
+    setSearchQuery,
+    refetch,
   } = useCustomers();
   
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -24,57 +26,63 @@ export const CustomerManagement: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
-  // --- 1. ソート & ページネーションロジック ---
-  const { paginatedCustomers, totalPages, totalCount } = useMemo(() => {
-    // 作成日時の降順（新しい順）でソート
-    const sorted = [...customers].sort((a, b) => {
-      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-      return dateB - dateA;
-    });
+  // --- API Selector ---
+  const getCustomerService = useCallback(() => {
+    const isAdmin = authUser?.role?.toUpperCase() === 'ADMIN';
+    const storeId = Array.isArray(authUser?.storeId) ? authUser.storeId[0] : authUser?.storeId;
 
-    const pages = Math.ceil(sorted.length / ITEMS_PER_PAGE);
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    
     return {
-      paginatedCustomers: sorted.slice(start, start + ITEMS_PER_PAGE),
-      totalPages: pages || 1,
-      totalCount: sorted.length
+      create: (data: CustomerFormData) => 
+        isAdmin ? adminCustomersApi.createCustomer(data) : managerCustomersApi.createCustomer(storeId!, data),
+      update: (id: string, data: CustomerFormData) => 
+        isAdmin ? adminCustomersApi.updateCustomer(id, data) : managerCustomersApi.updateCustomer(storeId!, id, data),
+      delete: (id: string) => 
+        isAdmin ? adminCustomersApi.deleteCustomer(id) : managerCustomersApi.deleteCustomer(storeId!, id),
     };
-  }, [customers, currentPage]);
+  }, [authUser]);
 
-  // 検索ワードが変わったら1ページ目に戻す
+  const totalPages = Math.ceil(total / ITEMS_PER_PAGE) || 1;
+
+  useEffect(() => {
+    refetch(currentPage - 1);
+  }, [currentPage, refetch]);
+
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery]);
 
-  // --- 2. ハンドラー関数 ---
+  // --- Handlers ---
   const handleSubmit = async (formData: CustomerFormData) => {
     setIsSubmitting(true);
+    const service = getCustomerService();
     try {
       if (selectedCustomer) {
-        await updateCustomer(formData, selectedCustomer.id);
+        await service.update(selectedCustomer.id, formData);
       } else {
-        await createCustomer(formData);
+        await service.create(formData);
       }
+      await refetch(currentPage - 1); 
       setIsModalOpen(false);
-    } catch (err) {
-      console.error("Save Error:", err);
-      alert("保存に失敗しました。");
+    } catch (err: any) {
+      // フォーム側(CustomerForm)の catch でエラーを表示させるため throw する
+      throw err;
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleDelete = async (customerId: string) => {
-    if (!window.confirm("この顧客データを完全に削除してもよろしいですか？")) return;
+    if (!window.confirm("この顧客データを完全に削除してもよろしいですか？\n※レッスン履歴がある場合は削除できません。")) return;
     
     setIsSubmitting(true);
+    const service = getCustomerService();
     try {
-      await deleteCustomer(customerId);
+      await service.delete(customerId);
+      await refetch(currentPage - 1);
       setIsModalOpen(false);
-    } catch (err) {
-      alert("削除に失敗しました。");
+    } catch (err: any) {
+      const msg = err.response?.data?.message || "削除に失敗しました。ステータスを無効にするか、関連データを確認してください。";
+      alert(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -97,7 +105,7 @@ export const CustomerManagement: React.FC = () => {
         <div>
           <h1 className="text-3xl font-bold text-gray-900 tracking-tight">顧客管理</h1>
           <p className="text-sm text-gray-500 mt-1">
-            <span className="font-bold text-green-600">{totalCount}</span> 名の顧客が登録されています
+            <span className="font-bold text-green-600">{total}</span> 名の顧客が登録されています
           </p>
         </div>
         <button 
@@ -131,9 +139,9 @@ export const CustomerManagement: React.FC = () => {
       </div>
 
       {/* エラー表示 */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl font-bold text-sm">
-          ⚠️ {error}
+      {fetchError && (
+        <div className="p-4 bg-red-50 text-red-600 rounded-2xl font-bold text-sm border border-red-100">
+          ⚠️ エラーが発生しました: {fetchError}
         </div>
       )}
 
@@ -150,11 +158,14 @@ export const CustomerManagement: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {paginatedCustomers.map((customer) => (
+              {customers.map((customer) => (
                 <CustomerCard 
                   key={customer.id} 
                   customer={customer} 
-                  calculateAge={calculateAge} 
+                  calculateAge={(b) => {
+                    const age = new Date().getFullYear() - new Date(b).getFullYear();
+                    return isNaN(age) ? 0 : age;
+                  }}
                   onEdit={handleEditClick} 
                 />
               ))}
