@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { FiChevronRight, FiUser, FiClock } from 'react-icons/fi';
 import { lessonApi } from '../api/lessonApi';
+import { customerApi } from '../api/customerApi';
 import { getErrorMessage } from '../utils/errorMessages';
 import {
   ComposedChart,
@@ -44,40 +45,75 @@ export const LessonHistory: React.FC = () => {
   const [lessonHistory, setLessonHistory] = useState<LessonHistoryItem[]>([]);
   const [bmiData, setBmiData] = useState<BMIHistoryItem[]>([]);
   const [selectedDataPoint, setSelectedDataPoint] = useState<string | null>(null);
+  const [customerHeight, setCustomerHeight] = useState<number>(189); // デフォルト値
   const itemsPerPage = 10;
 
   // データ取得
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!id) {
-        setError('顧客IDが指定されていません。');
-        setLoading(false);
-        return;
-      }
+  const fetchData = useCallback(async () => {
+    if (!id) {
+      setError('顧客IDが指定されていません。');
+      setLoading(false);
+      return;
+    }
 
-      try {
-        setLoading(true);
-        setError(null);
+    try {
+      setLoading(true);
+      setError(null);
 
-        // TODO: 実際のAPIからデータを取得
-        // const lessons = await lessonApi.getByCustomerId(id);
-        // 一時的にモックデータを設定
-        setLessonHistory([]);
+      // 顧客情報を取得（身長を取得）
+      const customer = await customerApi.getById(id);
+      const height = customer.height || 189; // デフォルト189cm
+      setCustomerHeight(height);
 
-        // TODO: BMIデータの取得APIを実装
-        // const bmiHistory = await customerApi.getBMIHistory(id);
-        setBmiData([]);
+      // 実際のAPIからレッスンデータを取得
+      const lessons = await lessonApi.getByCustomerId(id);
 
-        await new Promise(resolve => setTimeout(resolve, 500)); // API呼び出しをシミュレート
-      } catch (err) {
-        setError(getErrorMessage(err));
-      } finally {
-        setLoading(false);
-      }
-    };
+      // レッスンデータを変換してセット
+      const formattedLessons: LessonHistoryItem[] = lessons.map((lesson) => ({
+        id: lesson.id,
+        date: lesson.startDate || '',
+        dayOfWeek: lesson.startDate ? new Date(lesson.startDate).toLocaleDateString('ja-JP', { weekday: 'short' }) : '',
+        startTime: lesson.startDate ? new Date(lesson.startDate).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) : '',
+        status: '完了',
+        customerName: lesson.customerId || '',
+        shopName: lesson.storeId || '',
+      }));
+      setLessonHistory(formattedLessons);
 
-    fetchData();
+      // BMIデータを計算（体重が記録されているレッスンのみ）
+      const bmiHistory: BMIHistoryItem[] = lessons
+        .filter((lesson) => lesson.weight && lesson.startDate)
+        .map((lesson) => {
+          const weight = lesson.weight!;
+          const heightInMeters = height / 100;
+          const bmi = parseFloat((weight / (heightInMeters * heightInMeters)).toFixed(1));
+          const date = new Date(lesson.startDate!);
+          const formattedDate = `${date.getMonth() + 1}/${date.getDate()}`;
+
+          return {
+            date: formattedDate,
+            bmi: bmi,
+            weight: weight,
+          };
+        })
+        .sort((a, b) => {
+          // 日付順にソート
+          const dateA = new Date(a.date);
+          const dateB = new Date(b.date);
+          return dateA.getTime() - dateB.getTime();
+        });
+
+      setBmiData(bmiHistory);
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setLoading(false);
+    }
   }, [id]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   // ページネーション処理
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -147,7 +183,7 @@ export const LessonHistory: React.FC = () => {
 
   return (
     <div className="p-8 font-poppins">
-      <h1 className="text-3xl font-semibold mb-6 text-gray-800">身長: 189cm</h1>
+      <h1 className="text-3xl font-semibold mb-6 text-gray-800">身長: {customerHeight}cm</h1>
 
       {/* BMIの推移グラフ */}
       <div className="mb-8 bg-white border border-[#DFDFDF] rounded-[15px] p-6">

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { lessonApi } from '../api/lessonApi';
@@ -15,26 +15,8 @@ export const CustomerSelect: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [visibleCount, setVisibleCount] = useState(10); // 初期表示件数
 
-  useEffect(() => {
-    if (user?.id) {
-      fetchAppointments();
-    }
-  }, [user]);
-
-  // useMemoで検索フィルタリングとスライスを最適化
-  const displayedAppointments = useMemo(() => {
-    if (searchQuery.trim() === '') {
-      return appointments.slice(0, visibleCount);
-    } else {
-      const normalizedQuery = searchQuery.toLowerCase();
-      const filtered = appointments.filter((apt) =>
-        apt.customer.name.toLowerCase().includes(normalizedQuery)
-      );
-      return filtered.slice(0, visibleCount);
-    }
-  }, [appointments, searchQuery, visibleCount]);
-
-  const fetchAppointments = async () => {
+  // fetchAppointmentsをuseCallbackでメモ化
+  const fetchAppointments = useCallback(async () => {
     if (!user?.id) return;
 
     setLoading(true);
@@ -48,7 +30,26 @@ export const CustomerSelect: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchAppointments();
+    }
+  }, [user?.id, fetchAppointments]);
+
+  // useMemoで検索フィルタリングとスライスを最適化
+  const displayedAppointments = useMemo(() => {
+    if (searchQuery.trim() === '') {
+      return appointments.slice(0, visibleCount);
+    } else {
+      const normalizedQuery = searchQuery.toLowerCase();
+      const filtered = appointments.filter((apt) =>
+        apt.customer.name.toLowerCase().includes(normalizedQuery)
+      );
+      return filtered.slice(0, visibleCount);
+    }
+  }, [appointments, searchQuery, visibleCount]);
 
   const handleLoadMore = () => {
     setVisibleCount((prev) => prev + 10);
@@ -120,10 +121,20 @@ export const CustomerSelect: React.FC = () => {
     (apt) => apt.status === 'scheduled'
   ).length;
 
+  // ユーザーがログインしていない場合
+  if (!user) {
+    return (
+      <div className="p-8 text-center">
+        <p className="text-red-600 text-lg">ログインしてください</p>
+      </div>
+    );
+  }
+
+  // 初期ローディング
   if (loading && appointments.length === 0) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="text-gray-600">読み込み中...</div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#68BE6B]"></div>
       </div>
     );
   }

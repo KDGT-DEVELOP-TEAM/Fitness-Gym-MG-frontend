@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { customerApi } from '../api/customerApi';
 
 export interface CustomerProfileData {
   id: string;
@@ -66,11 +67,31 @@ export const useCustomerProfile = (customerId: string) => {
       try {
         setLoading(true);
         setError(null);
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        // TODO: Call actual API here
-        // const data = await fetchCustomerProfile(customerId);
-        // setProfileData(data);
+
+        // APIから顧客データを取得
+        const data = await customerApi.getById(customerId);
+
+        // 取得したデータをプロフィール形式に変換
+        setProfileData({
+          id: data.id,
+          furigana: data.furigana || '',
+          name: data.name,
+          gender: (data.gender as '男性' | '女性' | 'その他') || '',
+          birthDate: data.birthDate || '',
+          age: data.birthDate ? calculateAge(data.birthDate) : 0,
+          height: data.height?.toString() || '',
+          address: data.address || '',
+          email: data.email || '',
+          medicalHistory: data.medicalHistory || '',
+          contraindications: data.contraindications || '',
+          memo: data.memo || '',
+          postureImages: {
+            front: undefined,
+            back: undefined,
+            left: undefined,
+            right: undefined,
+          },
+        });
       } catch (error) {
         console.error('Failed to load profile:', error);
         setError('プロフィールの読み込みに失敗しました。');
@@ -103,11 +124,23 @@ export const useCustomerProfile = (customerId: string) => {
     try {
       setSaving(true);
       setError(null);
-      // Simulate API call to save data
-      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      // APIを使って顧客情報を更新
+      const updateData: Partial<CustomerProfileData> = {
+        [editingField]: profileData[editingField],
+      };
+
+      // heightは数値に変換
+      if (editingField === 'height') {
+        const heightNum = parseFloat(profileData.height);
+        await customerApi.update(customerId, {
+          height: isNaN(heightNum) ? undefined : heightNum,
+        });
+      } else {
+        await customerApi.update(customerId, updateData as any);
+      }
+
       console.log('Saved:', editingField, profileData[editingField]);
-      // TODO: Call actual API here
-      // await updateCustomerProfile(customerId, { [editingField]: profileData[editingField] });
     } catch (error) {
       console.error('Failed to save:', error);
       setError('保存に失敗しました。もう一度お試しください。');

@@ -17,6 +17,16 @@ import { useCustomerProfile } from '../hooks/useCustomerProfile';
 
 export const CustomerProfile: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+
+  // idが存在しない場合のエラーハンドリング
+  if (!id) {
+    return (
+      <div className="p-8 text-center">
+        <p className="text-red-600 text-lg">顧客IDが指定されていません</p>
+      </div>
+    );
+  }
+
   const {
     profileData,
     loading,
@@ -27,7 +37,7 @@ export const CustomerProfile: React.FC = () => {
     handleChange,
     handleBlur,
     dismissError,
-  } = useCustomerProfile(id || '');
+  } = useCustomerProfile(id);
 
   if (loading) {
     return (

@@ -22,16 +22,27 @@ export const LessonForm: React.FC = () => {
     trainings: [],
   });
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
+    setSuccessMessage(null);
+
     try {
       await lessonApi.create(formData);
-      navigate(ROUTES.CUSTOMER_SELECT);
+      setSuccessMessage('レッスンを登録しました');
+
+      // 2秒後に顧客選択画面に遷移
+      setTimeout(() => {
+        navigate(ROUTES.CUSTOMER_SELECT);
+      }, 2000);
     } catch (error) {
       console.error('Error creating lesson:', error);
+      setError('レッスンの登録に失敗しました。もう一度お試しください。');
     } finally {
       setLoading(false);
     }
@@ -40,6 +51,21 @@ export const LessonForm: React.FC = () => {
   return (
     <div className="p-8">
       <h1 className="text-2xl font-bold mb-4">レッスン登録</h1>
+
+      {/* エラーメッセージ */}
+      {error && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-600">
+          {error}
+        </div>
+      )}
+
+      {/* 成功メッセージ */}
+      {successMessage && (
+        <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg text-green-600">
+          {successMessage}
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-4 max-w-md">
         <div>
           <label className="block text-sm font-medium">顧客ID</label>
