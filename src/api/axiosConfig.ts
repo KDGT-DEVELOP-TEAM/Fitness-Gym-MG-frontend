@@ -1,37 +1,31 @@
-import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
+import axios from 'axios';
+import { storage } from '../utils/storage';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api';
-
-const axiosInstance: AxiosInstance = axios.create({
-  baseURL: API_BASE_URL,
+const axiosInstance = axios.create({
+  baseURL: process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080',
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Request interceptor
+// リクエストインターセプター: JWTトークンを自動付与
 axiosInstance.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
-    const token = localStorage.getItem('token');
-    if (token && config.headers) {
+  (config) => {
+    const token = storage.getToken();
+    if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Response interceptor
+// レスポンスインターセプター: 401エラー時に自動ログアウト
 axiosInstance.interceptors.response.use(
-  (response: AxiosResponse) => {
-    return response;
-  },
+  (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      storage.clear();
       window.location.href = '/login';
     }
     return Promise.reject(error);
@@ -39,4 +33,3 @@ axiosInstance.interceptors.response.use(
 );
 
 export default axiosInstance;
-

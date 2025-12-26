@@ -1,6 +1,6 @@
 import React from 'react';
 
-export const ShopManagement: React.FC = () => {
+export const StoreManagement: React.FC = () => {
   return (
     <div>
       <h1 className="text-2xl font-bold mb-4">店舗管理</h1>

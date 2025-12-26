@@ -1,13 +1,12 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { useLessonHistory } from '../hooks/useLessonHistory';
-import { useStores } from '../hooks/useStore';
-import { useAuth } from '../context/AuthContext';
-import { LessonCard } from '../components/lesson/LessonCard';
+import { useLessonHistory } from '../../hooks/useLessonHistory';
+import { useStores } from '../../hooks/useStore';
+import { LessonCard } from '../../components/lesson/LessonCard';
+import { adminHomeApi, AdminHomeResponse } from '../../api/admin/homeApi'; 
 
 const ITEMS_PER_PAGE = 10;
 
-export const LessonHistory: React.FC = () => {
-  const { user } = useAuth();
+export const AdminDashboard: React.FC = () => {
   const { stores } = useStores();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -15,28 +14,35 @@ export const LessonHistory: React.FC = () => {
   const [viewMode, setViewMode] = useState<'week' | 'month'>('week');
   const [currentPage, setCurrentPage] = useState(1);
   
-  // --- 1. バックエンド連携フック ---
-  // storeId, viewMode, pageを指定して、集計済みデータと該当ページの履歴を直接取得します
+  const [homeData, setHomeData] = useState<AdminHomeResponse | null>(null);
+
+  useEffect(() => {
+    adminHomeApi.getHome()
+      .then(data => setHomeData(data))
+      .catch(err => console.error("Admin Home API Fetch Error:", err));
+  }, []);
+
+  // --- 1. バックエンド連携フック (既存維持) ---
   const { history, chartData, total, loading, error, refetch } = useLessonHistory(
     selectedStoreId, 
     viewMode
   );
 
-  // ページ変更時や条件変更時にバックエンドへ再リクエスト (0-based index)
+  // ページ変更時や条件変更時にバックエンドへ再リクエスト
   useEffect(() => {
     refetch(currentPage - 1);
   }, [currentPage, selectedStoreId, viewMode, refetch]);
 
-  // 表示店舗名の取得ロジック (店舗リストから名称を引くだけのシンプルなものに)
+  // 表示店舗名の取得ロジック
   const currentStoreDisplay = useMemo(() => {
     if (selectedStoreId === 'all') return '全店舗';
     return stores.find(s => s.id === selectedStoreId)?.name || '店舗を選択中...';
   }, [stores, selectedStoreId]);
 
-  // 総ページ数の計算 (バックエンドが返した total レコード数を使用)
+  // 総ページ数の計算
   const totalPages = Math.ceil(total / ITEMS_PER_PAGE) || 1;
 
-  // グラフの最新（右端）へのスクロール制御
+  // グラフの最新へのスクロール制御
   useEffect(() => {
     if (scrollContainerRef.current && chartData) {
       const timer = setTimeout(() => {
@@ -179,4 +185,4 @@ export const LessonHistory: React.FC = () => {
   );
 };
 
-export default LessonHistory;
+export default AdminDashboard;

@@ -1,17 +1,19 @@
 export interface Customer {
   id: string;
+  kana: string | null;
   name: string;
-  email?: string;
-  phone?: string;
-  shopId: string;
+  gender: string;
+  birthday: string; // ISO形式の文字列
+  height: number | null;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+  medical: string | null;
+  taboo: string | null;
+  firstPostureGroupId?: string | null;
+  memo: string | null;
   createdAt: string;
-  updatedAt: string;
+  isActive: boolean;
 }
 
-export interface CustomerFormData {
-  name: string;
-  email?: string;
-  phone?: string;
-  shopId: string;
-}
-
+export type CustomerFormData = Omit<Customer, 'id' | 'createdAt' >;

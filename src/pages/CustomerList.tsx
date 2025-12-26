@@ -4,8 +4,8 @@ import { useCustomers } from '../hooks/useCustomer';
 export const CustomerList: React.FC = () => {
   const { customers, loading, error } = useCustomers();
 
-  if (loading) return <div>読み込み中...</div>;
-  if (error) return <div>エラー: {error.message}</div>;
+  // if (loading) return <div>読み込み中...</div>;
+  // if (error) return <div>エラー: {error.message}</div>;
 
   return (
     <div>

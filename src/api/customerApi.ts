@@ -1,30 +1,18 @@
 import axiosInstance from './axiosConfig';
-import { Customer, CustomerFormData } from '../types/customer';
-import { PaginatedResponse, PaginationParams } from '../types/common';
+import { Customer } from '../types/customer';
+
+export interface VitalsHistory {
+  // バイタル履歴の型定義
+  [key: string]: any;
+}
 
 export const customerApi = {
-  getAll: async (params?: PaginationParams): Promise<PaginatedResponse<Customer>> => {
-    const response = await axiosInstance.get<PaginatedResponse<Customer>>('/customers', { params });
-    return response.data;
-  },
+  getProfile: (customerId: string): Promise<Customer> =>
+    axiosInstance.get<Customer>(`/api/customers/${customerId}/profile`).then(res => res.data),
 
-  getById: async (id: string): Promise<Customer> => {
-    const response = await axiosInstance.get<Customer>(`/customers/${id}`);
-    return response.data;
-  },
+  updateProfile: (customerId: string, profileData: any): Promise<Customer> =>
+    axiosInstance.patch<Customer>(`/api/customers/${customerId}/profile`, profileData).then(res => res.data),
 
-  create: async (data: CustomerFormData): Promise<Customer> => {
-    const response = await axiosInstance.post<Customer>('/customers', data);
-    return response.data;
-  },
-
-  update: async (id: string, data: Partial<CustomerFormData>): Promise<Customer> => {
-    const response = await axiosInstance.put<Customer>(`/customers/${id}`, data);
-    return response.data;
-  },
-
-  delete: async (id: string): Promise<void> => {
-    await axiosInstance.delete(`/customers/${id}`);
-  },
+  getVitalsHistory: (customerId: string): Promise<VitalsHistory> =>
+    axiosInstance.get<VitalsHistory>(`/api/customers/${customerId}/vitals/history`).then(res => res.data),
 };
-

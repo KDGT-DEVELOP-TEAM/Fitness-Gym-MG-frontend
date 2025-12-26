@@ -1,18 +1,21 @@
 export interface User {
-  id: string;
-  email: string;
-  name: string;
-  role: 'admin' | 'instructor' | 'staff' | string;
-  shopId?: string;
+  id: string; 
+  email: string; 
+  name: string; 
+  kana: string | null;
+  role: 'ADMIN' | 'TRAINER' | 'MANAGER' | string;
+  storeId: string[] | null;
+  isActive: boolean; 
+
   createdAt?: string;
-  updatedAt?: string;
 }
 
 export interface UserFormData {
   email: string;
   name: string;
-  password?: string;
-  role: 'admin' | 'instructor' | 'staff';
-  shopId?: string;
+  kana: string | null;
+  pass?: string;
+  role: 'ADMIN' | 'TRAINER' | 'MANAGER';
+  storeId: string[] | null;
+  isActive?: boolean; 
 }
-
