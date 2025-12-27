@@ -20,3 +20,14 @@ export interface PostureComparison {
   improvements?: string[];
 }
 
+export interface PostureImage {
+  id: string;
+  storage_key: string;
+  position: 'front' | 'right' | 'back' | 'left';
+  taken_at: string;
+  posture_group_id: string;
+  url?: string; // 生成された署名付きURL
+  date?: string; // フォーマットされた日付
+  formattedDateTime?: string; // 比較モーダル用の日時表示
+}
+

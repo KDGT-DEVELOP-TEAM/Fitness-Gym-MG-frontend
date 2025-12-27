@@ -1,42 +1,50 @@
 import axiosInstance from './axiosConfig';
 import { Posture, PostureComparison } from '../types/posture';
-import { PaginatedResponse, PaginationParams } from '../types/common';
+
+export interface PaginationParams {
+  page?: number;
+  limit?: number;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+}
 
 export const postureApi = {
-  getAll: async (params?: PaginationParams): Promise<PaginatedResponse<Posture>> => {
-    const response = await axiosInstance.get<PaginatedResponse<Posture>>('/postures', { params });
-    return response.data;
-  },
+  getPostureGroups: (customerId: string) =>
+    axiosInstance.get(`/api/customers/${customerId}/posture_groups`).then(res => res.data),
 
-  getById: async (id: string): Promise<Posture> => {
-    const response = await axiosInstance.get<Posture>(`/postures/${id}`);
-    return response.data;
-  },
+  createPostureGroup: (lessonId: string) =>
+    axiosInstance.post(`/api/lessons/${lessonId}/posture_groups`).then(res => res.data),
 
-  getByCustomerId: async (customerId: string): Promise<Posture[]> => {
-    const response = await axiosInstance.get<Posture[]>(`/postures/customer/${customerId}`);
-    return response.data;
-  },
+  uploadImage: async (file: File, postureGroupId: string, position: string): Promise<{
+    id: string;
+    postureGroupId: string;
+    storageKey: string;
+    position: string;
+    takenAt: string;
+    createdAt: string;
+    signedUrl: string;
+    consentPublication: boolean;
+  }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('postureGroupId', postureGroupId);
+    formData.append('position', position);
+    formData.append('consentPublication', 'false');
 
-  create: async (formData: FormData): Promise<Posture> => {
-    const response = await axiosInstance.post<Posture>('/postures', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+    const response = await axiosInstance.post('/api/posture_images/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
     });
     return response.data;
   },
 
-  compare: async (beforeId: string, afterId: string): Promise<PostureComparison> => {
-    const response = await axiosInstance.post<PostureComparison>('/postures/compare', {
-      beforeId,
-      afterId,
-    });
-    return response.data;
-  },
+  getBatchSignedUrls: (imageIds: string[], expiresIn: number = 3600): Promise<{ urls: Array<{ imageId: string; signedUrl: string; expiresAt: string }> }> =>
+    axiosInstance.post('/api/posture_images/signed-urls', { imageIds, expiresIn }).then(res => res.data),
 
-  delete: async (id: string): Promise<void> => {
-    await axiosInstance.delete(`/postures/${id}`);
-  },
+  deleteImage: (imageId: string) =>
+    axiosInstance.delete(`/api/posture_images/${imageId}`).then(res => res.data),
 };
-

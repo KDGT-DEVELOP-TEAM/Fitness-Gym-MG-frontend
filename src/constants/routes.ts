@@ -1,16 +1,8 @@
 export const ROUTES = {
   LOGIN: '/login',
-  SHOP_MANAGEMENT: '/shop',
-  CUSTOMER_SELECT: '/customers/select',
   LESSON_FORM: '/lessons/new',
-  LESSON_HISTORY: '/lessons/history',
-  CUSTOMER_PROFILE: '/customers/:id',
-  POSTURE_LIST: '/postures',
-  POSTURE_DETAIL: '/postures/:id',
+  LESSON_DETAIL: '/lessons/:id',
   POSTURE_COMPARE: '/postures/compare',
-  CUSTOMER_MANAGEMENT: '/customers',
-  CUSTOMER_LIST: '/customers/list',
-  USER_MANAGEMENT: '/users',
-  USER_LIST: '/users/list',
+  POSTURE_IMAGE_LIST: '/postures/images/:customerId',
 } as const;
 

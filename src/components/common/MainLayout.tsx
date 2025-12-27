@@ -1,6 +1,6 @@
 import React, { ReactNode } from 'react';
-import { Header } from './Header';
 import { Sidebar } from './Sidebar';
+import { COLOR_CLASSES } from '../../constants/colors';
 
 interface MenuItem {
   path: string;
@@ -11,14 +11,19 @@ interface MenuItem {
 interface MainLayoutProps {
   children: ReactNode;
   menuItems: MenuItem[];
+  header?: ReactNode;
 }
 
-export const MainLayout: React.FC<MainLayoutProps> = ({ children, menuItems }) => {
+export const MainLayout: React.FC<MainLayoutProps> = ({ children, menuItems, header }) => {
   return (
-    <div className="flex h-screen bg-[#FAF8F3]">
+    <div className={`flex h-screen ${COLOR_CLASSES.BACKGROUND_LIGHT}`}>
       <Sidebar menuItems={menuItems} />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header />
+        {header && (
+          <div className={`flex-shrink-0 ${COLOR_CLASSES.BACKGROUND_LIGHT} border-b border-black`}>
+            {header}
+          </div>
+        )}
         <main className="flex-1 overflow-y-auto p-6">{children}</main>
       </div>
     </div>
