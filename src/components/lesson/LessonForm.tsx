@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { LessonFormData } from '../../types/lesson';
 
 interface LessonFormProps {
-  initialData?: LessonFormData;
+  initialData?: Partial<LessonFormData>;
   onSubmit: (data: LessonFormData) => Promise<void>;
   onCancel?: () => void;
 }
@@ -12,16 +12,22 @@ export const LessonForm: React.FC<LessonFormProps> = ({
   onSubmit,
   onCancel,
 }) => {
-  const [formData, setFormData] = useState<LessonFormData>(
-    initialData || {
-      customerId: '',
-      instructorId: '',
-      date: '',
-      startTime: '',
-      endTime: '',
-      notes: '',
-    }
-  );
+  const [formData, setFormData] = useState<LessonFormData>({
+    storeId: initialData?.storeId || '',
+    userId: initialData?.userId || '',
+    customerId: initialData?.customerId || '',
+    postureGroupId: initialData?.postureGroupId || null,
+    condition: initialData?.condition || '',
+    weight: initialData?.weight || null,
+    meal: initialData?.meal || '',
+    memo: initialData?.memo || '',
+    startDate: initialData?.startDate || '',
+    endDate: initialData?.endDate || '',
+    nextDate: initialData?.nextDate || null,
+    nextStoreId: initialData?.nextStoreId || null,
+    nextUserId: initialData?.nextUserId || null,
+    trainings: initialData?.trainings || [],
+  });
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -47,50 +53,58 @@ export const LessonForm: React.FC<LessonFormProps> = ({
         />
       </div>
       <div>
-        <label className="block text-sm font-medium">インストラクターID</label>
+        <label className="block text-sm font-medium">店舗ID</label>
         <input
           type="text"
-          value={formData.instructorId}
-          onChange={(e) => setFormData({ ...formData, instructorId: e.target.value })}
+          value={formData.storeId}
+          onChange={(e) => setFormData({ ...formData, storeId: e.target.value })}
           required
           className="mt-1 block w-full px-3 py-2 border rounded-md"
         />
       </div>
       <div>
-        <label className="block text-sm font-medium">日付</label>
+        <label className="block text-sm font-medium">ユーザーID</label>
+        <input
+          type="text"
+          value={formData.userId}
+          onChange={(e) => setFormData({ ...formData, userId: e.target.value })}
+          required
+          className="mt-1 block w-full px-3 py-2 border rounded-md"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium">開始日</label>
         <input
           type="date"
-          value={formData.date}
-          onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-          required
+          value={formData.startDate || ''}
+          onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
           className="mt-1 block w-full px-3 py-2 border rounded-md"
         />
       </div>
       <div>
-        <label className="block text-sm font-medium">開始時間</label>
+        <label className="block text-sm font-medium">終了日</label>
         <input
-          type="time"
-          value={formData.startTime}
-          onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
-          required
+          type="date"
+          value={formData.endDate || ''}
+          onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
           className="mt-1 block w-full px-3 py-2 border rounded-md"
         />
       </div>
       <div>
-        <label className="block text-sm font-medium">終了時間</label>
+        <label className="block text-sm font-medium">体重 (kg)</label>
         <input
-          type="time"
-          value={formData.endTime}
-          onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
-          required
+          type="number"
+          step="0.1"
+          value={formData.weight || ''}
+          onChange={(e) => setFormData({ ...formData, weight: e.target.value ? Number(e.target.value) : null })}
           className="mt-1 block w-full px-3 py-2 border rounded-md"
         />
       </div>
       <div>
-        <label className="block text-sm font-medium">備考</label>
+        <label className="block text-sm font-medium">メモ</label>
         <textarea
-          value={formData.notes}
-          onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+          value={formData.memo || ''}
+          onChange={(e) => setFormData({ ...formData, memo: e.target.value })}
           className="mt-1 block w-full px-3 py-2 border rounded-md"
         />
       </div>
@@ -115,4 +129,3 @@ export const LessonForm: React.FC<LessonFormProps> = ({
     </form>
   );
 };
-

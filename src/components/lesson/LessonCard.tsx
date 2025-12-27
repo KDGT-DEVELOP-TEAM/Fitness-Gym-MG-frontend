@@ -1,11 +1,16 @@
 import React from 'react';
 import { Lesson } from '../../types/lesson';
-import { formatDate, formatTime } from '../../utils/dateFormatter';
 
 interface LessonCardProps {
   lesson: Lesson;
   onClick?: () => void;
 }
+
+const formatDate = (dateStr?: string | null) => {
+  if (!dateStr) return '-';
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('ja-JP');
+};
 
 export const LessonCard: React.FC<LessonCardProps> = ({ lesson, onClick }) => {
   return (
@@ -15,14 +20,16 @@ export const LessonCard: React.FC<LessonCardProps> = ({ lesson, onClick }) => {
     >
       <div className="flex justify-between items-start">
         <div>
-          <p className="font-semibold">{formatDate(lesson.date)}</p>
+          <p className="font-semibold">
+            {formatDate(lesson.startDate)} {lesson.startDate && lesson.endDate && `- ${formatDate(lesson.endDate)}`}
+          </p>
           <p className="text-sm text-gray-600">
-            {formatTime(lesson.startTime)} - {formatTime(lesson.endTime)}
+            体重: {lesson.weight ? `${lesson.weight}kg` : '未記録'}
           </p>
         </div>
       </div>
-      {lesson.notes && (
-        <p className="mt-2 text-sm text-gray-600">{lesson.notes}</p>
+      {lesson.memo && (
+        <p className="mt-2 text-sm text-gray-600">{lesson.memo}</p>
       )}
     </div>
   );
