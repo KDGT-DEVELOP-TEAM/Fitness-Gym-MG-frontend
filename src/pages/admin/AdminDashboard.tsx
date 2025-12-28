@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useLessonHistory } from '../../hooks/useLessonHistory';
 import { useStores } from '../../hooks/useStore';
 import { LessonCard } from '../../components/lesson/LessonCard';
+import { LoadingRow, EmptyRow } from '../../components/common/TableStatusRows';
 import { adminHomeApi, AdminHomeResponse } from '../../api/admin/homeApi'; 
 
 const ITEMS_PER_PAGE = 10;
@@ -137,14 +138,9 @@ export const AdminDashboard: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-gray-50 bg-white">
               {loading ? (
-                <tr>
-                  <td colSpan={4} className="py-24 text-center">
-                    <div className="animate-spin h-10 w-10 border-4 border-green-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-                    <p className="text-gray-400 font-black uppercase tracking-widest text-xs">Synchronizing History...</p>
-                  </td>
-                </tr>
-              ) : history.length > 0 ? (
-                history.map((lesson) => <LessonCard key={lesson.id} lesson={lesson} />)
+                <LoadingRow colSpan={6} />
+              ) : history.length === 0 ? (
+                <EmptyRow colSpan={6} message="レッスン履歴はありません" />
               ) : (
                 <tr>
                   <td colSpan={4} className="py-24 text-center text-gray-400 font-medium italic">

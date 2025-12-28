@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useCustomers } from '../hooks/useCustomer'; 
 import { CustomerCard } from '../components/customer/CustomerCard';
 import { CustomerFormModal } from '../components/customer/CustomerFormModal';
+import { LoadingRow, EmptyRow } from '../components/common/TableStatusRows';
 import { Customer, CustomerFormData } from '../types/customer';
 import { useAuth } from '../context/AuthContext';
 import { adminCustomersApi } from '../api/admin/customersApi';
@@ -158,17 +159,22 @@ export const CustomerManagement: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {customers.map((customer) => (
-                <CustomerCard 
-                  key={customer.id} 
-                  customer={customer} 
-                  calculateAge={(b) => {
-                    const age = new Date().getFullYear() - new Date(b).getFullYear();
-                    return isNaN(age) ? 0 : age;
-                  }}
-                  onEdit={handleEditClick} 
-                />
-              ))}
+              {loading ? (
+                  <LoadingRow colSpan={5} /> 
+                ) : customers.length === 0 ? (
+                  <EmptyRow colSpan={5} message="顧客データが登録されていません" />
+                ) : (
+                customers.map((customer) => (
+                  <CustomerCard 
+                    key={customer.id} 
+                    customer={customer} 
+                    calculateAge={(b) => {
+                      const age = new Date().getFullYear() - new Date(b).getFullYear();
+                      return isNaN(age) ? 0 : age;
+                    }}
+                    onEdit={handleEditClick} 
+                  />
+              )))}
             </tbody>
           </table>
         </div>

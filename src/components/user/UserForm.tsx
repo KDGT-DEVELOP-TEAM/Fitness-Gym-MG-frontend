@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { User, UserFormData } from '../../types/user'; 
+import { User, UserFormData, UserStatusUpdate } from '../../types/user'; 
 import { Store } from '../../types/store';
 
 interface UserFormProps {
   initialData?: User;
   stores: Store[];
-  onSubmit: (data: UserFormData, userId?: string) => Promise<void>; 
+  onSubmit: (data: UserFormData, status: UserStatusUpdate) => Promise<void>; 
   onDelete?: (id: string) => Promise<void>; 
   isSubmitting: boolean;
 }
 
 const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDelete, isSubmitting }) => {
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
-    
+    const isEditMode = !!initialData;
     const [formData, setFormData] = useState<UserFormData>({
         email: '',
         name: '',
@@ -22,8 +22,9 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
         storeId: [],
       });
 
-    const [isActive, setIsActive] = useState(true);
-    const isEditMode = !!initialData;
+    const [status, setStatus] = useState<UserStatusUpdate>({
+        isActive: true
+    });
 
     useEffect(() => {
         if (initialData) {
@@ -35,7 +36,7 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
                 role: initialData.role as UserFormData['role'],
                 storeId: initialData.storeId || [],
             });
-            setIsActive(initialData.isActive ?? true);
+            setStatus({ isActive: initialData.isActive });
         }
     }, [initialData]);
 
@@ -54,14 +55,13 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
         // 🔑 提出データの整形
         const dataToSubmit: UserFormData = {
             ...formData,
-            isActive: isActive,
             kana: formData.kana || null,
             // 💡 storeIdの制約: manager以外は空配列にする
             storeId: formData.role === 'MANAGER' ? formData.storeId : [],
         };
 
         try {
-            await onSubmit(formData);
+            await onSubmit(dataToSubmit, status);
           } catch (err: any) {
             // APIからのエラーメッセージ（RuntimeException等）を解析して表示
             const message = err.response?.data?.message || err.message;
@@ -191,8 +191,8 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
                     <input
                         id="isActive"
                         type="checkbox"
-                        checked={isActive}
-                        onChange={(e) => setIsActive(e.target.checked)}
+                        checked={status.isActive}
+                        onChange={(e) =>setStatus({ isActive: e.target.checked })}
                         className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
                     />
                     <label htmlFor="isActive" className="ml-2 block text-sm font-bold text-gray-700">

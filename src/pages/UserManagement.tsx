@@ -3,7 +3,8 @@ import useUsers from '../hooks/useUser';
 import { useStores } from '../hooks/useStore'; 
 import { UserCard } from '../components/user/UserCard'; 
 import UserFormModal from '../components/user/UserFormModal'; 
-import { User, UserFormData } from '../types/user';
+import { LoadingRow, EmptyRow } from '../components/common/TableStatusRows';
+import { User, UserFormData, UserListItem } from '../types/user';
 import { useAuth } from '../context/AuthContext';
 import { adminUsersApi } from '../api/admin/usersApi';
 import { managerUsersApi } from '../api/manager/usersApi';
@@ -15,7 +16,7 @@ export const UserManagement: React.FC = () => {
   const { 
     users,
     total,
-    loading: usersLoading, 
+    loading,
     error: fetchError, 
     filters, 
     handleFilterChange, 
@@ -57,6 +58,25 @@ export const UserManagement: React.FC = () => {
   }, [filters.nameOrKana, filters.role]);
 
   // --- ハンドラー ---
+  const handleEditClick = async (userItem: UserListItem) => {
+    setIsSubmitting(true);
+    try {
+      const isAdmin = authUser?.role === 'ADMIN';
+      const storeId = Array.isArray(authUser?.storeId) ? authUser.storeId[0] : authUser?.storeId;
+      
+      const fullUserData = isAdmin 
+        ? await adminUsersApi.getUser(userItem.id) // 個別取得APIを想定
+        : await managerUsersApi.getUser(storeId!, userItem.id);
+
+      setEditingUser(fullUserData);
+      setIsModalOpen(true);
+    } catch (err) {
+      alert("ユーザー詳細の取得に失敗しました。");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleSubmit = async (data: UserFormData, userId?: string) => {
     setIsSubmitting(true);
     const service = getUserService();
@@ -96,11 +116,6 @@ export const UserManagement: React.FC = () => {
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const handleEditClick = (user: User) => {
-    setEditingUser(user);
-    setIsModalOpen(true);
   };
 
   const handleNewClick = () => {
@@ -178,19 +193,10 @@ export const UserManagement: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50 bg-white">
-              {usersLoading && !isSubmitting ? (
-                <tr>
-                  <td colSpan={4} className="py-24 text-center">
-                    <div className="animate-spin h-10 w-10 border-4 border-green-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-                    <p className="text-gray-400 font-black uppercase tracking-widest text-xs">Loading Data...</p>
-                  </td>
-                </tr>
+              {loading ? (
+                <LoadingRow colSpan={5} /> 
               ) : users.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="py-24 text-center text-gray-400 font-medium">
-                    ユーザーが見つかりませんでした
-                  </td>
-                </tr>
+                <EmptyRow colSpan={5} message="ユーザーデータが登録されていません" />
               ) : (
                 users.map((user) => (
                   <UserCard 

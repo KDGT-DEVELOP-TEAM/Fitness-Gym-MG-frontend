@@ -1,21 +1,29 @@
+export type UserRole = 'ADMIN' | 'TRAINER' | 'MANAGER';
 export interface User {
   id: string; 
   email: string; 
   name: string; 
   kana: string | null;
-  role: 'ADMIN' | 'TRAINER' | 'MANAGER' | string;
+  role: UserRole;
   storeId: string[] | null;
   isActive: boolean; 
 
-  createdAt?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export interface UserFormData {
-  email: string;
+export type UserFormData = Omit<User, 'id' | 'createdAt' | 'updatedAt' | 'isActive'> & {
+  pass?: string; // パスワードは任意（更新時は入力しない場合があるため）
+}
+
+export interface UserStatusUpdate {
+  isActive: boolean;
+}
+
+export interface UserListItem {
+  id: string;
   name: string;
   kana: string | null;
-  pass?: string;
-  role: 'ADMIN' | 'TRAINER' | 'MANAGER';
-  storeId: string[] | null;
-  isActive?: boolean; 
+  role: UserRole;
+  isActive: boolean;
 }

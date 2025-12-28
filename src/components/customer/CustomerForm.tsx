@@ -1,16 +1,15 @@
 // src/components/customers/CustomerForm.tsx
 import React, { useState } from 'react';
-import { Customer, CustomerFormData } from '../../types/customer';
+import { Customer, CustomerFormData, CustomerStatusUpdate } from '../../types/customer';
 
 interface CustomerFormProps {
   initialData?: Customer;
-  onSubmit: (data: CustomerFormData) => Promise<void>;
+  onSubmit: (data: CustomerFormData, status: CustomerStatusUpdate) => Promise<void>;
   onDelete?: (id: string) => Promise<void>;
   isSubmitting: boolean;
 }
 
 export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmit, onDelete, isSubmitting }) => {
-  const isEditMode = !!initialData;
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [formData, setFormData] = useState<CustomerFormData>({
     name: initialData?.name || '',
@@ -24,8 +23,11 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
     medical: initialData?.medical || '',
     taboo: initialData?.taboo || '',
     memo: initialData?.memo || '',
-    isActive: initialData?.isActive ?? true,
     firstPostureGroupId: initialData?.firstPostureGroupId || null,
+  });
+
+  const [status, setStatus] = useState<CustomerStatusUpdate>({
+    isActive: initialData?.isActive ?? true
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -34,12 +36,16 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
     setFormData(prev => ({ ...prev, [name]: finalValue }));
   };
 
+  const handleStatusChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setStatus({ isActive: e.target.checked });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
 
     try {
-      await onSubmit(formData);
+      await onSubmit(formData, status);
     } catch (err: any) {
       // APIからのエラーメッセージ（RuntimeException等）を解析して表示
       const message = err.response?.data?.message || err.message;
@@ -136,8 +142,8 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
         </div>
 
         <div className="flex items-center p-4 bg-gray-50 rounded-2xl border border-gray-100">
-          <input type="checkbox" id="isActive" name="isActive" checked={formData.isActive} onChange={(e) => setFormData(prev => ({...prev, isActive: e.target.checked}))} className="w-5 h-5 text-green-600 rounded" />
-          <label htmlFor="isActive" className="ml-3 text-sm font-bold text-gray-700">顧客ステータスを「有効」にする</label>
+          <input type="checkbox" id="isActive" name="isActive" checked={status.isActive} onChange={handleStatusChange} className="w-5 h-5 text-green-600 rounded" />
+          <label htmlFor="isActive" className="ml-3 text-sm font-bold text-gray-700">顧客ステータスを<span className={status.isActive ? "text-green-600" : "text-gray-400"}>{status.isActive ? "有効" : "無効"}</span>にする</label>
         </div>
       </section>
 

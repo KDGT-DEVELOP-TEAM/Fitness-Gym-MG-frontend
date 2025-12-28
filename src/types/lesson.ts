@@ -18,16 +18,9 @@ export interface Lesson {
   nextTrainerName: string | null;
 }
 
-// 履歴表示用（基本のLesson型で項目が足りているなら、継承しなくてもOKです）
-// 表示項目に絞るなら、以下のように定義します
-export interface LessonHistoryItem {
-  id: string;
-  customerName: string;
-  trainerName: string;
-  storeName: string;
-  startDate: string;
-  endDate: string;
-}
+export type LessonHistoryItem = Pick<
+Lesson,
+'id' | 'customerName' | 'trainerName' | 'storeName' | 'startDate' | 'endDate'>;
 
 // グラフ表示用の型（JavaのLessonChartData / ChartSeriesに合わせる）
 export interface ChartSeries {
@@ -39,4 +32,9 @@ export interface LessonChartData {
   series: ChartSeries[];
   maxCount: number;
   type: 'week' | 'month';
+}
+
+export interface LessonAdmin extends Lesson {
+  createdAt: string;
+  updatedAt: string;
 }

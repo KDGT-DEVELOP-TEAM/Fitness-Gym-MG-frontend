@@ -1,9 +1,9 @@
 import React from 'react';
-import { User } from '../../types/user';
+import { UserListItem } from '../../types/user';
 
 interface UserCardProps {
-  user: User;
-  onEdit: (user: User) => void;
+  user: UserListItem;
+  onEdit: (user: UserListItem) => void;
 }
 
 export const UserCard: React.FC<UserCardProps> = ({ user, onEdit }) => {
@@ -22,7 +22,7 @@ export const UserCard: React.FC<UserCardProps> = ({ user, onEdit }) => {
             {user.name}
           </span>
           <span className="text-[11px] font-bold text-gray-400 uppercase tracking-tight">
-            {user.kana}
+            {user.kana || ''}
           </span>
         </div>
       </td>
@@ -30,8 +30,8 @@ export const UserCard: React.FC<UserCardProps> = ({ user, onEdit }) => {
       {/* 2. 権限ロール */}
       <td className="px-8 py-6 text-center">
         <span className={`px-4 py-1 text-xs font-black uppercase rounded-full tracking-widest ${
-          user.role === 'admin' ? 'bg-red-100 text-red-700' :
-          user.role === 'manager' ? 'bg-orange-100 text-orange-700' : 'bg-yellow-100 text-yellow-700'
+          user.role === 'ADMIN' ? 'bg-red-100 text-red-700' :
+          user.role === 'MANAGER' ? 'bg-orange-100 text-orange-700' : 'bg-yellow-100 text-yellow-700'
         }`}>
           {roleLabels[user.role] || user.role}
         </span>

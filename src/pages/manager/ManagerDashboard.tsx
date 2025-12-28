@@ -3,6 +3,7 @@ import { useLessonHistory } from '../../hooks/useLessonHistory';
 import { useStores } from '../../hooks/useStore';
 import { useAuth } from '../../context/AuthContext';
 import { LessonCard } from '../../components/lesson/LessonCard';
+import { LoadingRow, EmptyRow } from '../../components/common/TableStatusRows';
 import { managerHomeApi, ManagerHomeResponse } from '../../api/manager/homeApi'; 
 
 const ITEMS_PER_PAGE = 10;
