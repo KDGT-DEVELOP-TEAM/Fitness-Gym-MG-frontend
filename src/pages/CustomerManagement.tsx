@@ -79,7 +79,7 @@ if (!service) return;
     
     setIsSubmitting(true);
     const service = getCustomerService();
-if (!service) return;
+    if (!service) return;
     try {
       await service.delete(customerId);
       await refetch(currentPage - 1);
