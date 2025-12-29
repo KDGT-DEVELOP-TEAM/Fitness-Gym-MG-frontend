@@ -5,14 +5,7 @@ import { logger } from '../utils/logger';
 import { isPosturePosition } from '../constants/posture';
 import { lessonApi } from '../api/lessonApi';
 import { postureApi } from '../api/postureApi';
-
-interface PostureImageResponse {
-  id: string;
-  storageKey: string;
-  position: string;
-  takenAt: string;
-  postureGroupId: string;
-}
+import { PostureImage } from '../types/posture';
 
 /**
  * Custom hook to fetch posture images for a lesson
@@ -35,10 +28,15 @@ export const usePostureImagesForLesson = (
 
     setLoading(true);
     try {
-      // REST APIから画像メタデータを取得
+      // バックエンドAPIからレッスン詳細を取得
+      // GET /api/lessons/{lesson_id}
+      // レスポンス: LessonResponse (postureImagesフィールドが含まれる)
       logger.debug('Fetching posture images for lesson', { lessonId }, 'usePostureImagesForLesson');
-      const response = await lessonApi.getLesson(lessonId) as any;
-      const images = response.postureImages || [];
+      const lessonResponse = await lessonApi.getLesson(lessonId);
+      
+      // バックエンドのレスポンス構造: LessonResponse.postureImages (PostureImageResponse[])
+      // PostureImageResponseはcamelCase (storageKey, takenAt, position, consentPublication)
+      const images: PostureImage[] = (lessonResponse as any).postureImages || [];
 
       if (!images || !Array.isArray(images) || images.length === 0) {
         logger.debug('No posture images found for lesson', { lessonId }, 'usePostureImagesForLesson');
@@ -52,7 +50,7 @@ export const usePostureImagesForLesson = (
       let signedUrlMap: Map<string, string> = new Map();
       
       try {
-        const imageIds = images.map((img: any) => img.id).filter(Boolean);
+        const imageIds = images.map((img) => img.id).filter(Boolean);
         if (imageIds.length > 0) {
           logger.debug('Fetching batch signed URLs', { count: imageIds.length }, 'usePostureImagesForLesson');
           
@@ -63,7 +61,7 @@ export const usePostureImagesForLesson = (
           
           if (signedUrlResponse && Array.isArray(signedUrlResponse.urls)) {
             signedUrlMap = new Map(
-              signedUrlResponse.urls.map((u: any) => [u.imageId, u.signedUrl])
+              signedUrlResponse.urls.map((u) => [u.imageId, u.signedUrl])
             );
             logger.debug('Successfully fetched signed URLs', { count: signedUrlMap.size }, 'usePostureImagesForLesson');
           }
@@ -73,9 +71,10 @@ export const usePostureImagesForLesson = (
         // 署名付きURLの生成に失敗しても続行（URLなしで表示）
       }
 
-      const previewResults = images.map((img: PostureImageResponse): PosturePreview | null => {
+      // バックエンドのレスポンス（camelCase）をPosturePreviewに変換
+      const previewResults = images.map((img: PostureImage): PosturePreview | null => {
         if (!img.storageKey) {
-          logger.warn('Missing storage_key for image', { image: img }, 'usePostureImagesForLesson');
+          logger.warn('Missing storageKey for image', { image: img }, 'usePostureImagesForLesson');
           return null;
         }
 
@@ -93,7 +92,7 @@ export const usePostureImagesForLesson = (
         return {
           position,
           url: signedUrl,
-          storageKey: img.storageKey,
+          storageKey: img.storageKey, // camelCase
         };
       });
 

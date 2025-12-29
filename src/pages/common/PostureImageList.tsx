@@ -12,15 +12,6 @@ import { PostureCompareModal } from '../../components/posture/PostureCompareModa
 import { PostureImageListFloatingButtons } from '../../components/posture/PostureImageListFloatingButtons';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import { postureApi } from '../../api/postureApi';
-import { customerApi } from '../../api/customerApi';
-
-interface PostureImageResponse {
-  id: string;
-  storageKey: string;
-  position: string;
-  takenAt: string;
-  postureGroupId: string;
-}
 
 /**
  * Custom hook for managing header state and logic in PostureImageList
@@ -154,28 +145,22 @@ export const usePostureImageList = () => {
       setError(null);
 
       try {
-        // REST APIから姿勢グループを取得
-        const postureGroupsResponse = await customerApi.getProfile(customerId) as any;
-        const postureGroups = postureGroupsResponse.postureGroups || [];
+        // バックエンドAPIから姿勢グループ一覧を取得
+        // GET /api/customers/{customer_id}/posture_groups
+        // レスポンス: PostureGroupResponse[] (各グループにimagesフィールドが含まれる)
+        const postureGroups = await postureApi.getPostureGroups(customerId);
 
-        if (!postureGroupsResponse.data || !Array.isArray(postureGroupsResponse.data) || postureGroupsResponse.data.length === 0) {
+        if (!postureGroups || postureGroups.length === 0) {
           setImages([]);
           setLoading(false);
           return;
         }
 
-        // 各姿勢グループの画像を取得
-        const allImages: PostureImageResponse[] = [];
+        // すべてのグループの画像をフラット化
+        const allImages: PostureImage[] = [];
         for (const group of postureGroups) {
-          try {
-            const imagesResponse = await postureApi.getPostureGroups(customerId) as any;
-            const groupImages = imagesResponse.images || [];
-            if (Array.isArray(groupImages)) {
-              allImages.push(...groupImages);
-            }
-          } catch (err) {
-            logger.warn(`Failed to fetch images for posture group ${group.id}`, err, 'PostureImageList');
-            // 個別のグループ取得エラーは警告として記録し、続行
+          if (group.images && Array.isArray(group.images)) {
+            allImages.push(...group.images);
           }
         }
 
@@ -198,7 +183,7 @@ export const usePostureImageList = () => {
             
             if (signedUrlResponse && Array.isArray(signedUrlResponse.urls)) {
               signedUrlMap = new Map(
-                signedUrlResponse.urls.map((u: any) => [u.imageId, u.signedUrl])
+                signedUrlResponse.urls.map((u) => [u.imageId, u.signedUrl])
               );
             }
           }
@@ -207,7 +192,8 @@ export const usePostureImageList = () => {
           // 署名付きURLの生成に失敗しても続行（URLなしで表示）
         }
 
-        const imagesWithUrls = allImages.map((img: PostureImageResponse): PostureImage | null => {
+        // バックエンドのレスポンス（camelCase）をフロントエンド用のPostureImage型に変換
+        const imagesWithUrls = allImages.map((img): PostureImage | null => {
           if (!img.storageKey) {
             return null;
           }
@@ -223,10 +209,11 @@ export const usePostureImageList = () => {
 
           return {
             id: img.id,
-            storage_key: img.storageKey,
+            storageKey: img.storageKey, // camelCase
             position: position,
-            taken_at: img.takenAt,
-            posture_group_id: img.postureGroupId,
+            takenAt: img.takenAt, // camelCase
+            consentPublication: img.consentPublication,
+            postureGroupId: img.postureGroupId,
             url: signedUrl,
             date: formatDateForGrouping(img.takenAt),
             formattedDateTime: formatDateTimeForCompare(img.takenAt),

@@ -25,15 +25,17 @@ export const Login: React.FC = () => {
       const userData = await login(email, password);
       
       // ロールベースのリダイレクト
+      // 注意: /admin/home、/manager/home、/trainer/homeは他の担当者が実装予定のため、
+      // 一時的に/admin、/manager、/trainerにリダイレクト（これらは/403にリダイレクトされます）
       switch (userData.role) {
         case 'ADMIN':
-          navigate('/admin/home');
+          navigate('/admin');
           break;
         case 'MANAGER':
-          navigate('/manager/home');
+          navigate('/manager');
           break;
         case 'TRAINER':
-          navigate('/trainer/home');
+          navigate('/trainer');
           break;
         default:
           navigate('/login');

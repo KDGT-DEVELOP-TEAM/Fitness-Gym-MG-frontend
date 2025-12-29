@@ -92,7 +92,7 @@ export const PostureImageGrid: React.FC<PostureImageGridProps> = ({
                   {/* 下部オーバーレイ */}
                   <div className="absolute bottom-0 left-0 right-0 bg-white bg-opacity-60 rounded-b-lg px-4 py-4 flex items-center justify-between">
                     <div className="text-sm font-medium text-gray-800">
-                      {image.taken_at ? formatDateForDisplay(image.taken_at) : ''}
+                      {image.takenAt ? formatDateForDisplay(image.takenAt) : ''}
                     </div>
                     <div
                       className={`inline-block px-4 py-2 rounded-full text-sm font-bold ${positionColors[image.position]}`}

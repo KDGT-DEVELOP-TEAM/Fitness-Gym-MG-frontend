@@ -33,7 +33,7 @@ export const PostureCompareModal: React.FC<PostureCompareModalProps> = ({
             className="text-gray-500 hover:text-gray-700 text-3xl"
             type="button"
           >
-            ×
+            
           </button>
         </div>
         <div className="flex items-center gap-6">

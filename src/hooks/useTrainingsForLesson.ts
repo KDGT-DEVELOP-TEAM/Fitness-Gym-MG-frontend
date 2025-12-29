@@ -2,20 +2,19 @@ import { useState, useEffect } from 'react';
 import { logger } from '../utils/logger';
 import { lessonApi } from '../api/lessonApi';
 import { handleApiError } from '../utils/errorHandler';
-
-interface Training {
-  name: string;
-  reps: number;
-}
+import { TrainingResponse } from '../types/lesson';
 
 /**
  * Custom hook to fetch trainings for a lesson
+ * 
+ * LessonResponseにはtrainingsフィールドが含まれているため、
+ * lessonApi.getLessonから取得したレスポンスからtrainingsを抽出します。
  * 
  * @param lessonId - Lesson ID
  * @returns Trainings array, loading state
  */
 export const useTrainingsForLesson = (lessonId: string | undefined) => {
-  const [trainings, setTrainings] = useState<Training[]>([]);
+  const [trainings, setTrainings] = useState<TrainingResponse[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -26,8 +25,9 @@ export const useTrainingsForLesson = (lessonId: string | undefined) => {
     const loadTrainings = async () => {
       setLoading(true);
       try {
-        const response = await lessonApi.getLesson(lessonId) as any;
-        const trainingsData = response.trainings || [];
+        // バックエンドのLessonResponseにはtrainingsフィールドが含まれている
+        const lessonResponse = await lessonApi.getLesson(lessonId);
+        const trainingsData = lessonResponse.trainings || [];
 
         if (!Array.isArray(trainingsData)) {
           logger.warn('Invalid trainings data format', { data: trainingsData }, 'useTrainingsForLesson');
@@ -35,7 +35,9 @@ export const useTrainingsForLesson = (lessonId: string | undefined) => {
           return;
         }
 
-        setTrainings(trainingsData);
+        // orderNoでソート（バックエンドから順序が保証されているが、念のため）
+        const sortedTrainings = [...trainingsData].sort((a, b) => (a.orderNo || 0) - (b.orderNo || 0));
+        setTrainings(sortedTrainings);
       } catch (err) {
         const appError = handleApiError(err);
         logger.error('Error fetching trainings', appError, 'useTrainingsForLesson');

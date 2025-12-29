@@ -191,17 +191,12 @@ export const LessonCreate: React.FC = () => {
           return;
         }
 
-        // FormDataを作成してバックエンドに送信
-        const uploadFormData = new FormData();
-        uploadFormData.append('file', blob, `${position}.jpg`);
-        uploadFormData.append('postureGroupId', groupId);
-        uploadFormData.append('position', position);
-        uploadFormData.append('consentPublication', 'false');
-
         logger.debug('Uploading image via backend', { groupId, position, blobSize: blob.size }, 'LessonForm');
         
         try {
-          const response = await postureApi.uploadImage(blob as File, groupId, position);
+          // バックエンド仕様に合わせてuploadImageを呼び出し
+          // consentPublicationはbooleanで送信（デフォルト: false）
+          const response = await postureApi.uploadImage(blob as File, groupId, position, false);
           
           if (!response || !response.signedUrl) {
             setError('画像のアップロードに失敗しました');
@@ -271,6 +266,12 @@ export const LessonCreate: React.FC = () => {
       return;
     }
 
+    // Validate required date fields
+    if (!validateRequired(formData.startDate) || !validateRequired(formData.endDate)) {
+      setError('開始時間と終了時間は必須です');
+      return;
+    }
+
     // Validate date range
     if (formData.startDate && formData.endDate && !validateDateRange(formData.startDate, formData.endDate)) {
       setError(ERROR_MESSAGES.DATE_RANGE_ERROR);
@@ -301,16 +302,27 @@ export const LessonCreate: React.FC = () => {
 
     setLoading(true);
     try {
-      const created = await lessonApi.createLesson(formData.customerId, { 
-        customerId: formData.customerId,
+      // バックエンドのLessonRequest仕様に合わせてリクエストを構築
+      const lessonRequest = {
         storeId: formData.storeId,
         trainerId: formData.userId,
-        lessonDate: formData.startDate || new Date().toISOString(),
-        trainings: trainings.map(t => ({
-          menuName: t.name,
+        condition: formData.condition || null,
+        weight: formData.weight ?? null,
+        meal: formData.meal || null,
+        memo: formData.memo || null,
+        startDate: formData.startDate!, // 必須（バリデーション済み）
+        endDate: formData.endDate!, // 必須（バリデーション済み）
+        nextDate: formData.nextDate || null,
+        nextStoreId: formData.nextStoreId || null,
+        nextTrainerId: formData.nextUserId || null,
+        trainings: trainings.map((t, idx) => ({
+          orderNo: t.orderNo ?? (idx + 1), // デフォルト値はインデックス+1
+          name: t.name,
           reps: t.reps
         }))
-      });
+      };
+
+      const created = await lessonApi.createLesson(formData.customerId, lessonRequest);
       if (created?.id) {
         await linkPostureGroupToLesson(created.id);
       }
@@ -467,6 +479,7 @@ export const LessonCreate: React.FC = () => {
                   className={`${FORM_STYLES.input} flex-1`}
               value={formData.endDate ?? ''}
               onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+              required
             />
               </div>
             </div>

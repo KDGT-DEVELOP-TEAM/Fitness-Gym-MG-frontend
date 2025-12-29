@@ -20,6 +20,8 @@ export const LessonDetail: React.FC = () => {
 
   const loading = lessonLoading || imagesLoading || trainingsLoading;
 
+  // LessonResponseにはstoreName, trainerName, customerNameが含まれているため、
+  // findNameは使用しない（後方互換性のため残す）
   const findName = (list: Option[], targetId?: string | null) =>
     list.find((o) => o.id === targetId)?.name ?? '';
 
@@ -61,7 +63,7 @@ export const LessonDetail: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 md:gap-y-5 md:gap-x-12">
             <div className="flex flex-col gap-1">
               <label className={FORM_STYLES.label}>顧客：</label>
-              <input className={FORM_STYLES.inputReadOnly} value={findName(customers, lesson.customerId)} readOnly />
+              <input className={FORM_STYLES.inputReadOnly} value={lesson.customerName || ''} readOnly />
             </div>
             <div className="flex flex-col gap-1">
               <label className={FORM_STYLES.label}>体重 (kg)：</label>
@@ -72,6 +74,17 @@ export const LessonDetail: React.FC = () => {
                 placeholder="—"
               />
             </div>
+            {lesson.bmi !== null && lesson.bmi !== undefined && (
+              <div className="flex flex-col gap-1">
+                <label className={FORM_STYLES.label}>BMI：</label>
+                <input
+                  className={FORM_STYLES.inputReadOnly}
+                  value={lesson.bmi.toFixed(1)}
+                  readOnly
+                  placeholder="—"
+                />
+              </div>
+            )}
           </div>
         </div>
 
@@ -80,11 +93,11 @@ export const LessonDetail: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 md:gap-y-5 md:gap-x-12">
             <div className="flex flex-col gap-1">
               <label className={FORM_STYLES.label}>担当：</label>
-              <input className={FORM_STYLES.inputReadOnly} value={findName(users, lesson.userId)} readOnly />
+              <input className={FORM_STYLES.inputReadOnly} value={lesson.trainerName || ''} readOnly />
             </div>
             <div className="flex flex-col gap-1">
               <label className={FORM_STYLES.label}>店舗：</label>
-              <input className={FORM_STYLES.inputReadOnly} value={findName(stores, lesson.storeId)} readOnly />
+              <input className={FORM_STYLES.inputReadOnly} value={lesson.storeName || ''} readOnly />
             </div>
           </div>
         </div>
@@ -127,11 +140,11 @@ export const LessonDetail: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6">
             <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
               <label className={FORM_STYLES.label}>次回店舗：</label>
-              <input className={`${FORM_STYLES.inputReadOnly} md:flex-1`} value={findName(stores, lesson.nextStoreId)} readOnly />
+              <input className={`${FORM_STYLES.inputReadOnly} md:flex-1`} value={lesson.nextStoreName || findName(stores, lesson.nextStoreId)} readOnly />
             </div>
             <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
               <label className={FORM_STYLES.label}>次回トレーナー：</label>
-              <input className={`${FORM_STYLES.inputReadOnly} md:flex-1`} value={findName(users, lesson.nextUserId)} readOnly />
+              <input className={`${FORM_STYLES.inputReadOnly} md:flex-1`} value={lesson.nextTrainerName || findName(users, lesson.nextUserId)} readOnly />
             </div>
           </div>
         </div>

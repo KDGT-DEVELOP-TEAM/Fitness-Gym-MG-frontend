@@ -20,14 +20,56 @@ export interface PostureComparison {
   improvements?: string[];
 }
 
+/**
+ * バックエンドのPostureImageResponseに対応する型
+ * フィールド名はバックエンド仕様（camelCase）に合わせる
+ */
 export interface PostureImage {
   id: string;
-  storage_key: string;
-  position: 'front' | 'right' | 'back' | 'left';
-  taken_at: string;
-  posture_group_id: string;
-  url?: string; // 生成された署名付きURL
-  date?: string; // フォーマットされた日付
-  formattedDateTime?: string; // 比較モーダル用の日時表示
+  storageKey: string; // バックエンド: storageKey (camelCase)
+  position: 'front' | 'right' | 'back' | 'left'; // バックエンド: position (String)
+  takenAt: string; // バックエンド: takenAt (OffsetDateTime)
+  consentPublication: boolean; // バックエンド: consentPublication
+  // フロントエンド用の追加フィールド
+  postureGroupId?: string; // バックエンド: postureGroupId (PostureImageUploadResponseに含まれる)
+  url?: string; // 生成された署名付きURL（フロントエンドで追加）
+  date?: string; // フォーマットされた日付（フロントエンドで追加）
+  formattedDateTime?: string; // 比較モーダル用の日時表示（フロントエンドで追加）
+}
+
+/**
+ * バックエンドのPostureGroupResponseに対応する型
+ */
+export interface PostureGroupResponse {
+  id: string;
+  lessonId: string;
+  lessonStartDate: string; // OffsetDateTime
+  capturedAt: string; // OffsetDateTime
+  images: PostureImage[]; // PostureImageResponse[]
+}
+
+/**
+ * バックエンドのPostureImageUploadResponseに対応する型
+ */
+export interface PostureImageUploadResponse {
+  id: string;
+  postureGroupId: string;
+  storageKey: string;
+  position: string; // "front", "right", "back", "left"
+  takenAt: string; // OffsetDateTime
+  createdAt: string; // OffsetDateTime
+  signedUrl: string;
+  consentPublication: boolean;
+}
+
+/**
+ * バックエンドのBatchSignedUrlResponseに対応する型
+ */
+export interface BatchSignedUrlResponse {
+  urls: Array<{
+    imageId: string;
+    signedUrl: string;
+    expiresAt: string; // OffsetDateTime
+  }>;
 }
 
