@@ -1,9 +1,10 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react';
 import { useLessonHistory } from '../../hooks/useLessonHistory';
 import { useStores } from '../../hooks/useStore';
 import { LessonCard } from '../../components/lesson/LessonCard';
 import { LoadingRow, EmptyRow } from '../../components/common/TableStatusRows';
-import { adminHomeApi, AdminHomeResponse } from '../../api/admin/homeApi'; 
+import { adminHomeApi } from '../../api/admin/homeApi'; 
+import { AdminHomeResponse } from '../../types/admin/home'
 
 const ITEMS_PER_PAGE = 10;
 
@@ -14,17 +15,21 @@ export const AdminDashboard: React.FC = () => {
   const [selectedStoreId, setSelectedStoreId] = useState<'all' | string>('all');
   const [viewMode, setViewMode] = useState<'week' | 'month'>('week');
   const [currentPage, setCurrentPage] = useState(1);
-  
   const [homeData, setHomeData] = useState<AdminHomeResponse | null>(null);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   useEffect(() => {
     adminHomeApi.getHome()
       .then(data => setHomeData(data))
-      .catch(err => console.error("Admin Home API Fetch Error:", err));
+      .catch(err => {
+        console.error("Admin Home API Fetch Error:", err);
+        setApiError("ダッシュボードデータの取得に失敗しました。");
+        alert("統計情報の取得に失敗しました。ページを再読み込みしてください。");
+      });
   }, []);
 
   // --- 1. バックエンド連携フック (既存維持) ---
-  const { history, chartData, total, loading, error, refetch } = useLessonHistory(
+  const { history, chartData, total, loading, error: historyError, refetch } = useLessonHistory(
     selectedStoreId, 
     viewMode
   );
@@ -32,7 +37,17 @@ export const AdminDashboard: React.FC = () => {
   // ページ変更時や条件変更時にバックエンドへ再リクエスト
   useEffect(() => {
     refetch(currentPage - 1);
-  }, [currentPage, selectedStoreId, viewMode, refetch]);
+  }, [currentPage, refetch]);
+
+  const handleStoreChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedStoreId(e.target.value);
+    setCurrentPage(1); // 条件変更時は必ず1ページ目へ
+  };
+
+  const handleViewModeChange = (mode: 'week' | 'month') => {
+    setViewMode(mode);
+    setCurrentPage(1); // 条件変更時は必ず1ページ目へ
+  };
 
   // 表示店舗名の取得ロジック
   const currentStoreDisplay = useMemo(() => {
@@ -44,16 +59,22 @@ export const AdminDashboard: React.FC = () => {
   const totalPages = Math.ceil(total / ITEMS_PER_PAGE) || 1;
 
   // グラフの最新へのスクロール制御
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (scrollContainerRef.current && chartData) {
-      const timer = setTimeout(() => {
-        scrollContainerRef.current!.scrollLeft = scrollContainerRef.current!.scrollWidth;
-      }, 100);
-      return () => clearTimeout(timer);
+      // requestAnimationFrame を組み合わせて描画タイミングを同期
+      const scrollToEnd = () => {
+        if (scrollContainerRef.current) {
+          scrollContainerRef.current.scrollLeft = scrollContainerRef.current.scrollWidth;
+        }
+      };
+      const rafId = requestAnimationFrame(scrollToEnd);
+      return () => cancelAnimationFrame(rafId);
     }
   }, [chartData]);
 
-  if (error) return <div className="p-10 text-red-500 text-center font-bold">Error: {error}</div>;
+  // ① どちらのエラーも画面に表示
+  const displayError = apiError || historyError;
+  if (displayError) return <div className="p-10 text-red-500 text-center font-bold">⚠️ {displayError}</div>;
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">

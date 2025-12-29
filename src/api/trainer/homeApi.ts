@@ -1,11 +1,7 @@
 import axiosInstance from '../axiosConfig';
-
-export interface TrainerHomeResponse {
-  // 実際のレスポンス型に合わせて定義
-  [key: string]: any;
-}
+import { TrainerHomeResponse } from '../../types/trainer/home';
 
 export const trainerHomeApi = {
   getHome: (): Promise<TrainerHomeResponse> =>
-    axiosInstance.get<TrainerHomeResponse>('/api/trainers/home').then(res => res.data),
+    axiosInstance.get<TrainerHomeResponse>('/trainers/home').then(res => res.data),
 };

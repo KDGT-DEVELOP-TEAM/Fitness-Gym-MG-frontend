@@ -18,6 +18,8 @@ export interface Lesson {
   nextTrainerName: string | null;
 }
 
+export type LessonFormData = Omit<Lesson, 'id' >;
+
 export type LessonHistoryItem = Pick<
 Lesson,
 'id' | 'customerName' | 'trainerName' | 'storeName' | 'startDate' | 'endDate'>;

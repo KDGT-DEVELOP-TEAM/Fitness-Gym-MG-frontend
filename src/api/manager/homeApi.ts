@@ -1,11 +1,7 @@
 import axiosInstance from '../axiosConfig';
-
-export interface ManagerHomeResponse {
-  // 実際のレスポンス型に合わせて定義
-  [key: string]: any;
-}
+import { ManagerHomeResponse } from '../../types/manager/home';
 
 export const managerHomeApi = {
   getHome: (storeId: string): Promise<ManagerHomeResponse> =>
-    axiosInstance.get<ManagerHomeResponse>(`/api/stores/${storeId}/manager/home`).then(res => res.data),
+    axiosInstance.get<ManagerHomeResponse>(`/stores/${storeId}/manager/home`).then(res => res.data),
 };

@@ -1,46 +1,30 @@
 import axiosInstance from '../axiosConfig';
 import { convertPageResponse, PaginatedResponse, SpringPage } from '../../utils/pagination';
-import { User } from '../../types/user';
-
-export interface UserListParams {
-  page?: number;
-  size?: number;
-  name?: string;
-  role?: string;
-  active?: boolean;
-}
-
-// export interface User {
-//   id: string;
-//   email: string;
-//   name: string;
-//   role: 'ADMIN' | 'MANAGER' | 'TRAINER';
-//   createdAt: string;
-// }
+import { User, UserFormData, UserListParams } from '../../types/user';
 
 export const adminUsersApi = {
   getUsers: (params?: UserListParams): Promise<PaginatedResponse<User>> => {
-    const queryString = new URLSearchParams(params as any).toString();
-    return axiosInstance.get<SpringPage<User>>(`/api/admin/users?${queryString}`)
+    const query = new URLSearchParams(params as Record<string, string>).toString();
+    return axiosInstance.get<SpringPage<User>>(`/admin/users?${query}`)
       .then(res => convertPageResponse(res.data));
   },
 
   getUser: (userId: string): Promise<User> =>
-    axiosInstance.get<User>(`/api/admin/users/${userId}`).then(res => res.data),
+    axiosInstance.get<User>(`/admin/users/${userId}`).then(res => res.data),
 
-  createUser: (userData: any): Promise<User> =>
-    axiosInstance.post<User>('/api/admin/users', userData).then(res => res.data),
+  createUser: (userData: UserFormData): Promise<User> =>
+    axiosInstance.post<User>('/admin/users', userData).then(res => res.data),
 
-  updateUser: (userId: string, userData: any): Promise<User> =>
-    axiosInstance.patch<User>(`/api/admin/users/${userId}`, userData).then(res => res.data),
+  updateUser: (userId: string, userData: UserFormData): Promise<User> =>
+    axiosInstance.patch<User>(`/admin/users/${userId}`, userData).then(res => res.data),
 
   // 有効無効切り替えは編集モーダル内(update)でしか行わないため、コメントアウト
   // enableUser: (userId: string): Promise<User> =>
-  //   axiosInstance.patch<User>(`/api/admin/users/${userId}/enable`).then(res => res.data),
+  //   axiosInstance.patch<User>(`/admin/users/${userId}/enable`).then(res => res.data),
 
   // disableUser: (userId: string): Promise<User> =>
-  //   axiosInstance.patch<User>(`/api/admin/users/${userId}/disable`).then(res => res.data),
+  //   axiosInstance.patch<User>(`/admin/users/${userId}/disable`).then(res => res.data),
 
   deleteUser: (userId: string): Promise<void> =>
-    axiosInstance.delete<void>(`/api/admin/users/${userId}`).then(res => res.data),
+    axiosInstance.delete<void>(`/admin/users/${userId}`).then(res => res.data),
 };

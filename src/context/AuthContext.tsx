@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import axios from 'axios';
 import { User } from '../types/user';
 import { authApi } from '../api/authApi'; 
 
@@ -25,8 +26,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (token) {
         try {
           const currentUser = await authApi.checkAuth();
-          setUser(currentUser as any); // 必要に応じて型をキャスト
-        } catch (error) {
+          setUser(currentUser);
+        } catch (error: unknown) {
           localStorage.removeItem('token');
           setUser(null);
         }
@@ -41,10 +42,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setActionLoading(true);
     try {
       const userData = await authApi.login({ email, password });
-      
-      setUser(userData as any);
-    } catch (error: any) {
-      console.error('Login failed:', error);
+      setUser(userData);
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        console.error('Login failed:', error.response?.data?.message || error.message);
+      }
       throw error;
     } finally {
       setActionLoading(false);
@@ -57,7 +59,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       // サーバー側でトークン無効化処理などが必要な場合は呼び出し
       await authApi.logout();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Logout API failed:', error);
     } finally {
       // APIの成否に関わらず、フロント側の認証情報は必ずクリアする

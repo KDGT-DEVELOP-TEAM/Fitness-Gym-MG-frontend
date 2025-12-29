@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Lesson } from '../types/lesson';
+import { Lesson, LessonHistoryItem } from '../types/lesson';
 import { lessonApi } from '../api/lessonApi';
 import { PaginationParams } from '../types/common';
 
@@ -18,7 +18,7 @@ export const useLesson = (id?: string) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await lessonApi.getById(lessonId);
+      const data = await lessonApi.getLesson(lessonId);
       setLesson(data);
     } catch (err) {
       setError(err as Error);
@@ -31,7 +31,7 @@ export const useLesson = (id?: string) => {
 };
 
 export const useLessons = (params?: PaginationParams) => {
-  const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [lessons, setLessons] = useState<LessonHistoryItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
@@ -43,8 +43,11 @@ export const useLessons = (params?: PaginationParams) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await lessonApi.getAll(params);
-      setLessons(data.data);
+      const response = await lessonApi.getHistory({
+        page: params?.page,
+        size: params?.limit
+      });
+      setLessons(response.data);
     } catch (err) {
       setError(err as Error);
     } finally {

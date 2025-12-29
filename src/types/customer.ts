@@ -22,3 +22,31 @@ export type CustomerFormData = Omit<Customer, 'id' | 'createdAt' | 'isActive' >;
 export interface CustomerStatusUpdate {
   isActive: boolean;
   }
+
+export interface CustomerListItem {
+  id: string;
+  name: string;
+  kana: string | null;
+  birthday: string;
+  isActive: boolean;
+}
+
+export interface CustomerListParams {
+  page?: number;
+  size?: number;
+  name?: string;
+  kana?: string;
+  isActive?: boolean;
+}
+
+export interface VitalRecord {
+  measuredAt: string;
+  height?: number;
+  weight?: number;
+  bodyFatRate?: number;
+  }
+  
+  export interface VitalsHistory {
+  customerId: string;
+  records: VitalRecord[];
+  }

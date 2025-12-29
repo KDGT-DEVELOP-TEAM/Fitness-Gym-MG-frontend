@@ -1,6 +1,7 @@
 // src/hooks/useStore.ts
 import { useState, useEffect } from 'react';
-import { storeApi, Store } from '../api/storeApi';
+import { storeApi } from '../api/storeApi';
+import { Store } from '../types/store';
 
 export const useStores = () => {
   const [stores, setStores] = useState<Store[]>([]);

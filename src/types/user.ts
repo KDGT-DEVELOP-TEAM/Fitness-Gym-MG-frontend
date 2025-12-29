@@ -27,3 +27,11 @@ export interface UserListItem {
   role: UserRole;
   isActive: boolean;
 }
+
+export interface UserListParams {
+  page?: number;
+  size?: number;
+  name?: string;
+  role?: string;
+  active?: boolean;
+}

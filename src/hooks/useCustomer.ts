@@ -1,6 +1,12 @@
 import { useState, useCallback } from 'react';
-import { adminCustomersApi, CustomerListParams } from '../api/admin/customersApi';
+import axios from 'axios';
+import { adminCustomersApi } from '../api/admin/customersApi';
+import { CustomerListParams } from '../types/customer'
 import { Customer, CustomerFormData } from '../types/customer';
+
+interface ApiError {
+  message: string;
+}
 
 export const useCustomers = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -22,8 +28,13 @@ export const useCustomers = () => {
       const response = await adminCustomersApi.getCustomers(params);
       setCustomers(response.data);
       setTotal(response.total);
-    } catch (err: any) {
-      setError(err.response?.data?.message || err.message);
+    } catch (err: unknown) {
+      let errorMessage = 'データの取得に失敗しました';
+      if (axios.isAxiosError<ApiError>(err)) {
+        errorMessage = err.response?.data?.message || err.message;
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
+      }
     } finally {
       setLoading(false);
     }

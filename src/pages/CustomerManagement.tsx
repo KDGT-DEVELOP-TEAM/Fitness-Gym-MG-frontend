@@ -29,6 +29,7 @@ export const CustomerManagement: React.FC = () => {
 
   // --- API Selector ---
   const getCustomerService = useCallback(() => {
+    if (!authUser) return null;
     const isAdmin = authUser?.role?.toUpperCase() === 'ADMIN';
     const storeId = Array.isArray(authUser?.storeId) ? authUser.storeId[0] : authUser?.storeId;
 
@@ -56,6 +57,7 @@ export const CustomerManagement: React.FC = () => {
   const handleSubmit = async (formData: CustomerFormData) => {
     setIsSubmitting(true);
     const service = getCustomerService();
+if (!service) return;
     try {
       if (selectedCustomer) {
         await service.update(selectedCustomer.id, formData);
@@ -77,6 +79,7 @@ export const CustomerManagement: React.FC = () => {
     
     setIsSubmitting(true);
     const service = getCustomerService();
+if (!service) return;
     try {
       await service.delete(customerId);
       await refetch(currentPage - 1);
@@ -172,7 +175,7 @@ export const CustomerManagement: React.FC = () => {
                       const age = new Date().getFullYear() - new Date(b).getFullYear();
                       return isNaN(age) ? 0 : age;
                     }}
-                    onEdit={handleEditClick} 
+                    onEdit={(c) => handleEditClick(c as Customer)} 
                   />
               )))}
             </tbody>

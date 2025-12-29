@@ -1,5 +1,6 @@
 // src/components/customers/CustomerForm.tsx
 import React, { useState } from 'react';
+import axios from 'axios';
 import { Customer, CustomerFormData, CustomerStatusUpdate } from '../../types/customer';
 
 interface CustomerFormProps {
@@ -7,6 +8,10 @@ interface CustomerFormProps {
   onSubmit: (data: CustomerFormData, status: CustomerStatusUpdate) => Promise<void>;
   onDelete?: (id: string) => Promise<void>;
   isSubmitting: boolean;
+}
+
+interface ApiErrorResponse {
+  message: string;
 }
 
 export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmit, onDelete, isSubmitting }) => {
@@ -46,16 +51,23 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
 
     try {
       await onSubmit(formData, status);
-    } catch (err: any) {
-      // APIからのエラーメッセージ（RuntimeException等）を解析して表示
-      const message = err.response?.data?.message || err.message;
+    } catch (err: unknown) {
+      let message = "保存中にエラーが発生しました。";
+
+      if (axios.isAxiosError<ApiErrorResponse>(err)) {
+        // Axiosエラーの場合、サーバーからのレスポンスメッセージを優先
+        message = err.response?.data?.message || err.message;
+      } else if (err instanceof Error) {
+        // 標準のエラーオブジェクトの場合
+        message = err.message;
+      }
       
       if (message.includes("関連データが存在するため")) {
         setErrorMsg("この顧客にはレッスン履歴があるため削除できません。先にステータスを無効にしてください。");
       } else if (message.includes("有効顧客は削除できません")) {
         setErrorMsg("有効なステータスのままでは削除できません。");
       } else {
-        setErrorMsg(message || "保存中にエラーが発生しました。");
+        setErrorMsg(message);
       }
     }
   };

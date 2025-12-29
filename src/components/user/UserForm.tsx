@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { User, UserFormData, UserStatusUpdate } from '../../types/user'; 
 import { Store } from '../../types/store';
 
@@ -9,6 +10,10 @@ interface UserFormProps {
   onDelete?: (id: string) => Promise<void>; 
   isSubmitting: boolean;
 }
+
+interface ApiErrorResponse {
+    message: string;
+  }
 
 const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDelete, isSubmitting }) => {
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -62,9 +67,15 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
 
         try {
             await onSubmit(dataToSubmit, status);
-          } catch (err: any) {
-            // APIからのエラーメッセージ（RuntimeException等）を解析して表示
-            const message = err.response?.data?.message || err.message;
+          } catch (err: unknown) {
+            let message = "保存中にエラーが発生しました。";
+
+            // axiosの型ガードを使用して安全にメッセージを抽出
+            if (axios.isAxiosError<ApiErrorResponse>(err)) {
+                message = err.response?.data?.message || err.message;
+            } else if (err instanceof Error) {
+                message = err.message;
+            }
             
             // バックエンドの例外メッセージに応じた日本語化
             if (message.includes("関連データが存在するため")) {

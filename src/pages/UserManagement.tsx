@@ -4,7 +4,7 @@ import { useStores } from '../hooks/useStore';
 import { UserCard } from '../components/user/UserCard'; 
 import UserFormModal from '../components/user/UserFormModal'; 
 import { LoadingRow, EmptyRow } from '../components/common/TableStatusRows';
-import { User, UserFormData, UserListItem } from '../types/user';
+import { User, UserRole, UserFormData, UserListItem } from '../types/user';
 import { useAuth } from '../context/AuthContext';
 import { adminUsersApi } from '../api/admin/usersApi';
 import { managerUsersApi } from '../api/manager/usersApi';
@@ -32,9 +32,12 @@ export const UserManagement: React.FC = () => {
   // --- API セレクター ---
   // ロールと所属店舗に基づいて、叩くべきAPIエンドポイントを動的に切り替える
   const getUserService = useCallback(() => {
+    if (!authUser) return null;
     const isAdmin = authUser?.role?.toUpperCase() === 'ADMIN';
     // 店長の場合、所属している最初の店舗IDを使用（兼任対応が必要な場合はロジック調整）
-    const storeId = Array.isArray(authUser?.storeId) ? authUser.storeId[0] : authUser?.storeId;
+    const storeId = Array.isArray(authUser.storeId) 
+    ? authUser.storeId[0] 
+    : authUser.storeId;
 
     return {
       create: (data: UserFormData) => 
@@ -59,6 +62,7 @@ export const UserManagement: React.FC = () => {
 
   // --- ハンドラー ---
   const handleEditClick = async (userItem: UserListItem) => {
+    if (!authUser) return null;
     setIsSubmitting(true);
     try {
       const isAdmin = authUser?.role === 'ADMIN';
@@ -77,15 +81,15 @@ export const UserManagement: React.FC = () => {
     }
   };
 
-  const handleSubmit = async (data: UserFormData, userId?: string) => {
+  const handleSubmit = async (data: UserFormData) => {
     setIsSubmitting(true);
     const service = getUserService();
-    const targetId = userId || editingUser?.id;
+    if (!service) return;
 
     try {
-      if (targetId) {
+      if (editingUser) {
         // 更新処理（adminUsersApi.updateUser または managerUsersApi.updateUser）
-        await service.update(targetId, data);
+        await service.update(editingUser.id, data);
       } else {
         // 新規作成処理
         await service.create(data);
@@ -106,6 +110,7 @@ export const UserManagement: React.FC = () => {
     
     setIsSubmitting(true);
     const service = getUserService();
+    if (!service) return;
     try {
       await service.delete(userId);
       await refetchUsers(currentPage - 1); 
@@ -163,7 +168,7 @@ export const UserManagement: React.FC = () => {
         
         <select
           value={filters.role}
-          onChange={(e) => handleFilterChange({ role: e.target.value })}
+          onChange={(e) => handleFilterChange({ role: e.target.value as UserRole | "all" })}
           className="h-14 px-6 bg-white border-2 border-gray-50 rounded-2xl text-sm font-black text-gray-600 focus:border-green-500 focus:ring-0 outline-none cursor-pointer shadow-sm transition-all"
         >
           <option value="all">全てのロール</option>

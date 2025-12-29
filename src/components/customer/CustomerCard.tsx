@@ -1,10 +1,10 @@
 import React from 'react';
-import { Customer } from '../../types/customer';
+import { CustomerListItem } from '../../types/customer';
 
 interface CustomerCardProps {
-  customer: Customer;
+  customer: CustomerListItem;
   calculateAge: (birthday: string) => number;
-  onEdit: (customer: Customer) => void;
+  onEdit: (customer: CustomerListItem) => void;
 }
 
 export const CustomerCard: React.FC<CustomerCardProps> = ({ customer, calculateAge, onEdit }) => {
