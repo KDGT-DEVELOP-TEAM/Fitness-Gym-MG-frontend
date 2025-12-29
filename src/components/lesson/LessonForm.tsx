@@ -14,12 +14,12 @@ export const LessonForm: React.FC<LessonFormProps> = ({
 }) => {
   const [formData, setFormData] = useState<LessonFormData>(
     initialData || {
+      storeId: '',
+      userId: '',
       customerId: '',
-      instructorId: '',
-      date: '',
-      startTime: '',
-      endTime: '',
-      notes: '',
+      memo: '',
+      startDate: '',
+      endDate: '',
     }
   );
   const [loading, setLoading] = useState(false);
@@ -37,6 +37,26 @@ export const LessonForm: React.FC<LessonFormProps> = ({
   return (
     <form onSubmit={handleSubmit} className="space-y-4 max-w-md">
       <div>
+        <label className="block text-sm font-medium">店舗ID</label>
+        <input
+          type="text"
+          value={formData.storeId}
+          onChange={(e) => setFormData({ ...formData, storeId: e.target.value })}
+          required
+          className="mt-1 block w-full px-3 py-2 border rounded-md"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium">担当ID</label>
+        <input
+          type="text"
+          value={formData.userId}
+          onChange={(e) => setFormData({ ...formData, userId: e.target.value })}
+          required
+          className="mt-1 block w-full px-3 py-2 border rounded-md"
+        />
+      </div>
+      <div>
         <label className="block text-sm font-medium">顧客ID</label>
         <input
           type="text"
@@ -47,50 +67,29 @@ export const LessonForm: React.FC<LessonFormProps> = ({
         />
       </div>
       <div>
-        <label className="block text-sm font-medium">インストラクターID</label>
+        <label className="block text-sm font-medium">開始日時</label>
         <input
-          type="text"
-          value={formData.instructorId}
-          onChange={(e) => setFormData({ ...formData, instructorId: e.target.value })}
+          type="datetime-local"
+          value={formData.startDate ?? ''}
+          onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
           required
           className="mt-1 block w-full px-3 py-2 border rounded-md"
         />
       </div>
       <div>
-        <label className="block text-sm font-medium">日付</label>
+        <label className="block text-sm font-medium">終了日時</label>
         <input
-          type="date"
-          value={formData.date}
-          onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-          required
+          type="datetime-local"
+          value={formData.endDate ?? ''}
+          onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
           className="mt-1 block w-full px-3 py-2 border rounded-md"
         />
       </div>
       <div>
-        <label className="block text-sm font-medium">開始時間</label>
-        <input
-          type="time"
-          value={formData.startTime}
-          onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
-          required
-          className="mt-1 block w-full px-3 py-2 border rounded-md"
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-medium">終了時間</label>
-        <input
-          type="time"
-          value={formData.endTime}
-          onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
-          required
-          className="mt-1 block w-full px-3 py-2 border rounded-md"
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-medium">備考</label>
+        <label className="block text-sm font-medium">メモ</label>
         <textarea
-          value={formData.notes}
-          onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+          value={formData.memo ?? ''}
+          onChange={(e) => setFormData({ ...formData, memo: e.target.value })}
           className="mt-1 block w-full px-3 py-2 border rounded-md"
         />
       </div>

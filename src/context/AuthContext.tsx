@@ -1,12 +1,20 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User } from '../types/auth';
 import { authApi } from '../api/authApi';
+import { storage } from '../utils/storage';
+import { logger } from '../utils/logger';
+
+interface User {
+  userId: string;
+  email: string;
+  name: string;
+  role: 'ADMIN' | 'MANAGER' | 'TRAINER';
+}
 
 interface AuthContextType {
   user: User | null;
   authLoading: boolean;
   actionLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
 }
@@ -15,42 +23,37 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [authLoading, setAuthLoading] = useState(true); // 認証初期化中
-  const [actionLoading, setActionLoading] = useState(false); // アクション実行中（login/logoutなど）
+  const [authLoading, setAuthLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
-    const initAuth = async () => {
-      const token = localStorage.getItem('token');
-
-      if (token) {
-        try {
-          // getCurrentUser()が成功して初めて認証済みと判断
-          const currentUser = await authApi.getCurrentUser();
-          setUser(currentUser);
-        } catch (error) {
-          // トークンがあっても getCurrentUser() が失敗したら未認証
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          setUser(null);
-        }
+    const init = async () => {
+      try {
+        // セッションCookieの確認
+        const userData = await authApi.checkAuth();
+        setUser(userData);
+        storage.setUser(userData); // オプショナル
+      } catch (error) {
+        logger.debug('No active session', {}, 'AuthContext');
+        setUser(null);
+      } finally {
+        setAuthLoading(false);
       }
-      setAuthLoading(false);
     };
 
-    initAuth();
+    init();
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<User> => {
     setActionLoading(true);
     try {
-      // ログイン実行
-      const response = await authApi.login({ email, password });
-      localStorage.setItem('token', response.token);
-
-      // getCurrentUser()で認証を確定
-      const currentUser = await authApi.getCurrentUser();
-      setUser(currentUser);
-      localStorage.setItem('user', JSON.stringify(currentUser));
+      const userData = await authApi.login({ email, password });
+      setUser(userData);
+      storage.setUser(userData); // オプショナル
+      return userData;
+    } catch (error) {
+      logger.error('Login failed', error, 'AuthContext');
+      throw error;
     } finally {
       setActionLoading(false);
     }
@@ -60,13 +63,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setActionLoading(true);
     try {
       await authApi.logout();
-    } catch (error) {
-      // ログアウトAPIが失敗してもローカルの状態はクリア
-      console.error('Logout API failed:', error);
-    } finally {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
       setUser(null);
+      storage.clear();
+    } catch (error) {
+      logger.error('Logout failed', error, 'AuthContext');
+      throw error;
+    } finally {
       setActionLoading(false);
     }
   };
@@ -79,7 +81,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         actionLoading,
         login,
         logout,
-        isAuthenticated: !!user, // userがあれば認証済み
+        isAuthenticated: !!user,
       }}
     >
       {children}
@@ -87,11 +89,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   );
 };
 
-export const useAuth = (): AuthContextType => {
+export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+  if (!context) {
+    throw new Error('useAuth must be used within AuthProvider');
   }
   return context;
 };
-
