@@ -1,6 +1,6 @@
 import React from 'react';
 import { userApi } from '../api/userApi';
-import { User } from '../types/user';
+import { User } from '../types/api/user';
 import { useState, useEffect } from 'react';
 
 export const UserList: React.FC = () => {

@@ -1,5 +1,6 @@
 import axiosInstance from './axiosConfig';
-import { User, UserFormData } from '../types/user';
+import { User, UserRequest, UserListParams } from '../types/api/user';
+import { UserFormData } from '../types/form/user';
 import { PaginatedResponse, PaginationParams } from '../types/common';
 
 export const userApi = {

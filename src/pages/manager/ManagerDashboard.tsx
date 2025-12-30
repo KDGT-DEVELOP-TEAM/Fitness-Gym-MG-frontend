@@ -19,9 +19,9 @@ export const ManagerDashboard: React.FC = () => {
   const [apiError, setApiError] = useState<string | null>(null);
 
   const storeId = useMemo(() => {
-    if (!user?.storeId) return '';
-    return Array.isArray(user.storeId) ? user.storeId[0] : user.storeId;
-  }, [user?.storeId]);
+    if (!user?.storeIds) return '';
+    return Array.isArray(user.storeIds) ? user.storeIds[0] : user.storeIds;
+  }, [user?.storeIds]);
 
   // --- 🔑 Home API の呼び出し (店舗IDが確定したら実行) ---
   useEffect(() => {

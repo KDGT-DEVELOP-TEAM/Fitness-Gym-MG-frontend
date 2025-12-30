@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { User, UserFormData, UserStatusUpdate } from '../../types/user'; 
+import { User } from '../../types/api/user'; 
+import { UserFormData, UserStatusUpdate } from '../../types/form/user';
 import { Store } from '../../types/store';
 
 interface UserFormProps {
@@ -21,10 +22,10 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
     const [formData, setFormData] = useState<UserFormData>({
         email: '',
         name: '',
-        kana: null,
+        kana: '',
         pass: '',
         role: 'TRAINER',
-        storeId: [],
+        storeIds: [],
       });
 
     const [status, setStatus] = useState<UserStatusUpdate>({
@@ -39,7 +40,7 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
                 kana: initialData.kana,
                 pass: '', 
                 role: initialData.role as UserFormData['role'],
-                storeId: initialData.storeId || [],
+                storeIds: initialData.storeIds || [],
             });
             setStatus({ isActive: initialData.isActive });
         }
@@ -60,9 +61,8 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
         // 🔑 提出データの整形
         const dataToSubmit: UserFormData = {
             ...formData,
-            kana: formData.kana || null,
             // 💡 storeIdの制約: manager以外は空配列にする
-            storeId: formData.role === 'MANAGER' ? formData.storeId : [],
+            storeIds: formData.role === 'MANAGER' ? formData.storeIds : [],
         };
 
         try {
@@ -138,7 +138,7 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
                 {/* Kana */}
                 <div>
                     <label className="block text-sm font-bold text-gray-700 mb-1">ふりがな <RequiredBadge /></label>
-                    <input type="text" name="kana" value={formData.kana || ''} onChange={handleChange} className="w-full border p-2 rounded shadow-sm" />
+                    <input type="text" name="kana" value={formData.kana} onChange={handleChange} className="w-full border p-2 rounded shadow-sm" />
                 </div>
             </div>
             
@@ -161,7 +161,7 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto p-1">
                         {stores.map((store) => {
                             // formData.storeId が undefined や null の場合の安全策
-                            const currentStoreIds = formData.storeId || [];
+                            const currentStoreIds = formData.storeIds || [];
                             const isSelected = currentStoreIds.includes(store.id);
 
                             return (
@@ -182,7 +182,7 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
                                             const newIds = isSelected
                                                 ? currentStoreIds.filter(id => id !== store.id)
                                                 : [...currentStoreIds, store.id];
-                                            setFormData({ ...formData, storeId: newIds });
+                                            setFormData({ ...formData, storeIds: newIds });
                                         }}
                                     />
                                     <div className={`w-5 h-5 mr-3 rounded-md border flex items-center justify-center transition-colors ${isSelected ? 'bg-green-600 border-green-600' : 'bg-white border-gray-300'}`}>

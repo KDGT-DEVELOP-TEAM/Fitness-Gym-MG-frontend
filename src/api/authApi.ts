@@ -1,6 +1,6 @@
 import axiosInstance from './axiosConfig';
 import { storage } from '../utils/storage';
-import { User } from '../types/user';
+import { User } from '../types/api/user';
 
 export interface LoginRequest {
   email: string;

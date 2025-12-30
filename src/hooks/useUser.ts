@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { adminUsersApi } from '../api/admin/usersApi';
-import { User, UserFormData, UserListParams } from '../types/user';
+import { User, UserRequest, UserListParams } from '../types/api/user';
+import { UserFormData } from '../types/form/user';
 
 export const useUser = () => {
   const [users, setUsers] = useState<User[]>([]);

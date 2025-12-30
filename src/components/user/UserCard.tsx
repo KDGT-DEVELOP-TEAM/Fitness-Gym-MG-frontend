@@ -1,5 +1,5 @@
 import React from 'react';
-import { UserListItem } from '../../types/user';
+import { UserListItem } from '../../types/api/user';
 
 interface UserCardProps {
   user: UserListItem;

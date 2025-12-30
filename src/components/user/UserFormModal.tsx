@@ -1,6 +1,7 @@
 import React from 'react';
 import UserForm from './UserForm';
-import { User, UserFormData, UserStatusUpdate } from '../../types/user';
+import { User } from '../../types/api/user'; 
+import { UserFormData, UserStatusUpdate } from '../../types/form/user';
 import { Store } from '../../types/store'; 
 
 interface UserFormModalProps {

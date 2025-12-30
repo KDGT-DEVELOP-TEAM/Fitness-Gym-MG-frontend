@@ -4,7 +4,8 @@ import { useStores } from '../hooks/useStore';
 import { UserCard } from '../components/user/UserCard'; 
 import UserFormModal from '../components/user/UserFormModal'; 
 import { LoadingRow, EmptyRow } from '../components/common/TableStatusRows';
-import { User, UserRole, UserFormData, UserListItem } from '../types/user';
+import { UserRole, User, UserRequest, UserListItem, UserListParams } from '../types/api/user';
+import { UserFormData } from '../types/form/user';
 import { useAuth } from '../context/AuthContext';
 import { adminUsersApi } from '../api/admin/usersApi';
 import { managerUsersApi } from '../api/manager/usersApi';
@@ -35,9 +36,9 @@ export const UserManagement: React.FC = () => {
     if (!authUser) return null;
     const isAdmin = authUser?.role?.toUpperCase() === 'ADMIN';
     // 店長の場合、所属している最初の店舗IDを使用（兼任対応が必要な場合はロジック調整）
-    const storeId = Array.isArray(authUser.storeId) 
-    ? authUser.storeId[0] 
-    : authUser.storeId;
+    const storeId = Array.isArray(authUser.storeIds) 
+    ? authUser.storeIds[0] 
+    : authUser.storeIds;
 
     return {
       create: (data: UserFormData) => 
@@ -66,7 +67,7 @@ export const UserManagement: React.FC = () => {
     setIsSubmitting(true);
     try {
       const isAdmin = authUser?.role === 'ADMIN';
-      const storeId = Array.isArray(authUser?.storeId) ? authUser.storeId[0] : authUser?.storeId;
+      const storeId = Array.isArray(authUser?.storeIds) ? authUser.storeIds[0] : authUser?.storeIds;
       
       const fullUserData = isAdmin 
         ? await adminUsersApi.getUser(userItem.id) // 個別取得APIを想定

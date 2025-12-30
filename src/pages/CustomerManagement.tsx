@@ -31,7 +31,7 @@ export const CustomerManagement: React.FC = () => {
   const getCustomerService = useCallback(() => {
     if (!authUser) return null;
     const isAdmin = authUser?.role?.toUpperCase() === 'ADMIN';
-    const storeId = Array.isArray(authUser?.storeId) ? authUser.storeId[0] : authUser?.storeId;
+    const storeId = Array.isArray(authUser?.storeIds) ? authUser.storeIds[0] : authUser?.storeIds;
 
     return {
       create: (data: CustomerFormData) => 
