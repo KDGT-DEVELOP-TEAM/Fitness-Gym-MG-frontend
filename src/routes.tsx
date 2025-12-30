@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useParams, Outlet } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { MainLayout } from './components/common/MainLayout';
 import { Loading } from './components/common/Loading';
@@ -41,16 +41,31 @@ const defaultMenuItems = [
   { path: ROUTES.CUSTOMER_SELECT, label: 'Home', icon: <HiHome className="w-5 h-5" /> },
 ];
 
-const PrivateRoute: React.FC<{ children: React.ReactElement }> = ({ children }) => {
-  const { authLoading, isAuthenticated } = useAuth();
+// ロールベース認可コンポーネント
+const ProtectedRoute: React.FC<{ roles: string[] }> = ({ roles }) => {
+  const { authLoading, isAuthenticated, user } = useAuth();
 
   if (authLoading) {
     return <Loading />;
   }
 
-  // 開発中: 認証をスキップ
-  return children;
-  // return isAuthenticated ? children : <Navigate to={ROUTES.LOGIN} replace />;
+  if (!isAuthenticated) {
+    return <Navigate to={ROUTES.LOGIN} replace />;
+  }
+
+  // ユーザーのロールが許可されたロールに含まれているかチェック
+  if (user && !roles.includes(user.role)) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">アクセス拒否</h1>
+          <p className="text-gray-600">このページにアクセスする権限がありません。</p>
+        </div>
+      </div>
+    );
+  }
+
+  return <Outlet />;
 };
 
 // 顧客関連ページ用の共通レイアウトコンポーネント
@@ -67,106 +82,99 @@ const AppRoutes: React.FC = () => {
       <AuthProvider>
         <Routes>
           <Route path={ROUTES.LOGIN} element={<Login />} />
-          <Route
-            path={ROUTES.CUSTOMER_SELECT}
-            element={
-              <PrivateRoute>
+
+          {/* ADMIN, MANAGER, TRAINER がアクセス可能 */}
+          <Route element={<ProtectedRoute roles={['ADMIN', 'MANAGER', 'TRAINER']} />}>
+            <Route
+              path={ROUTES.CUSTOMER_SELECT}
+              element={
                 <MainLayout menuItems={customerSelectMenuItems}>
                   <CustomerSelect />
                 </MainLayout>
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path={ROUTES.LESSON_FORM}
-            element={
-              <PrivateRoute>
+              }
+            />
+            <Route
+              path={ROUTES.LESSON_FORM}
+              element={
                 <MainLayout menuItems={defaultMenuItems}>
                   <LessonForm />
                 </MainLayout>
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path={ROUTES.LESSON_HISTORY}
-            element={
-              <PrivateRoute>
+              }
+            />
+            <Route
+              path={ROUTES.LESSON_HISTORY}
+              element={
                 <CustomerRelatedLayout>
                   <LessonHistory />
                 </CustomerRelatedLayout>
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path={ROUTES.CUSTOMER_PROFILE}
-            element={
-              <PrivateRoute>
+              }
+            />
+            <Route
+              path={ROUTES.CUSTOMER_PROFILE}
+              element={
                 <CustomerRelatedLayout>
                   <CustomerProfile />
                 </CustomerRelatedLayout>
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path={ROUTES.POSTURE_LIST}
-            element={
-              <PrivateRoute>
+              }
+            />
+            <Route
+              path={ROUTES.POSTURE_LIST}
+              element={
                 <CustomerRelatedLayout>
                   <PostureList />
                 </CustomerRelatedLayout>
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path={ROUTES.POSTURE_COMPARE}
-            element={
-              <PrivateRoute>
+              }
+            />
+            <Route
+              path={ROUTES.POSTURE_COMPARE}
+              element={
                 <MainLayout menuItems={defaultMenuItems}>
                   <PostureCompare />
                 </MainLayout>
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path={ROUTES.CUSTOMER_MANAGEMENT}
-            element={
-              <PrivateRoute>
-                <MainLayout menuItems={defaultMenuItems}>
-                  <CustomerManagement />
-                </MainLayout>
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path={ROUTES.CUSTOMER_LIST}
-            element={
-              <PrivateRoute>
-                <MainLayout menuItems={defaultMenuItems}>
-                  <CustomerList />
-                </MainLayout>
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path={ROUTES.USER_MANAGEMENT}
-            element={
-              <PrivateRoute>
+              }
+            />
+          </Route>
+
+          {/* ADMIN のみアクセス可能 */}
+          <Route element={<ProtectedRoute roles={['ADMIN']} />}>
+            <Route
+              path={ROUTES.USER_MANAGEMENT}
+              element={
                 <MainLayout menuItems={defaultMenuItems}>
                   <UserManagement />
                 </MainLayout>
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path={ROUTES.USER_LIST}
-            element={
-              <PrivateRoute>
+              }
+            />
+            <Route
+              path={ROUTES.USER_LIST}
+              element={
                 <MainLayout menuItems={defaultMenuItems}>
                   <UserList />
                 </MainLayout>
-              </PrivateRoute>
-            }
-          />
+              }
+            />
+          </Route>
+
+          {/* ADMIN, MANAGER がアクセス可能 */}
+          <Route element={<ProtectedRoute roles={['ADMIN', 'MANAGER']} />}>
+            <Route
+              path={ROUTES.CUSTOMER_MANAGEMENT}
+              element={
+                <MainLayout menuItems={defaultMenuItems}>
+                  <CustomerManagement />
+                </MainLayout>
+              }
+            />
+            <Route
+              path={ROUTES.CUSTOMER_LIST}
+              element={
+                <MainLayout menuItems={defaultMenuItems}>
+                  <CustomerList />
+                </MainLayout>
+              }
+            />
+          </Route>
+
           <Route path="/" element={<Navigate to={ROUTES.CUSTOMER_SELECT} replace />} />
         </Routes>
       </AuthProvider>

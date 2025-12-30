@@ -24,7 +24,7 @@ export const lessonApi = {
   },
 
   update: async (id: string, data: Partial<LessonFormData>): Promise<Lesson> => {
-    const response = await axiosInstance.put<Lesson>(`/lessons/${id}`, data);
+    const response = await axiosInstance.patch<Lesson>(`/lessons/${id}`, data);
     return response.data;
   },
 
