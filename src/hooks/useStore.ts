@@ -1,5 +1,5 @@
-// src/hooks/useStore.ts
 import { useState, useEffect } from 'react';
+import axios from 'axios';
 import { storeApi } from '../api/storeApi';
 import { Store } from '../types/store';
 
@@ -15,9 +15,16 @@ export const useStores = () => {
       try {
         const data = await storeApi.getStores();
         setStores(data);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('店舗一覧の取得に失敗しました:', err);
-        setError(err.response?.data?.message || '店舗情報を取得できませんでした');
+
+        if (axios.isAxiosError(err)) {
+          setError(err.response?.data?.message || err.message);
+        } else if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError('店舗情報を取得できませんでした');
+        }
       } finally {
         setLoading(false);
       }
@@ -26,5 +33,9 @@ export const useStores = () => {
     fetchStores();
   }, []);
 
-  return { stores, loading, error };
+  return {
+    stores,
+    loading,
+    error,
+  };
 };

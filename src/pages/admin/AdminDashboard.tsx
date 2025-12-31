@@ -158,16 +158,12 @@ export const AdminDashboard: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50 bg-white">
-              {loading ? (
-                <LoadingRow colSpan={6} />
-              ) : history.length === 0 ? (
-                <EmptyRow colSpan={6} message="レッスン履歴はありません" />
+            {loading ? (
+                <LoadingRow colSpan={4} />
+              ) : history.length > 0 ? (
+                history.map(lesson => <LessonCard key={lesson.id} lesson={lesson} />)
               ) : (
-                <tr>
-                  <td colSpan={4} className="py-24 text-center text-gray-400 font-medium italic">
-                    実施済みのレッスン履歴が見つかりませんでした。
-                  </td>
-                </tr>
+                <EmptyRow colSpan={4} message="実施済みのレッスン履歴が見つかりませんでした。" />
               )}
             </tbody>
           </table>

@@ -3,7 +3,7 @@ import { useCustomers } from '../hooks/useCustomer';
 import { CustomerCard } from '../components/customer/CustomerCard';
 import { CustomerFormModal } from '../components/customer/CustomerFormModal';
 import { LoadingRow, EmptyRow } from '../components/common/TableStatusRows';
-import { Customer, CustomerFormData } from '../types/customer';
+import { Customer, CustomerRequest } from '../types/api/customer';
 import { useAuth } from '../context/AuthContext';
 import { adminCustomersApi } from '../api/admin/customersApi';
 import { managerCustomersApi } from '../api/manager/customersApi';
@@ -34,9 +34,9 @@ export const CustomerManagement: React.FC = () => {
     const storeId = Array.isArray(authUser?.storeIds) ? authUser.storeIds[0] : authUser?.storeIds;
 
     return {
-      create: (data: CustomerFormData) => 
+      create: (data: CustomerRequest) => 
         isAdmin ? adminCustomersApi.createCustomer(data) : managerCustomersApi.createCustomer(storeId!, data),
-      update: (id: string, data: CustomerFormData) => 
+      update: (id: string, data: CustomerRequest) => 
         isAdmin ? adminCustomersApi.updateCustomer(id, data) : managerCustomersApi.updateCustomer(storeId!, id, data),
       delete: (id: string) => 
         isAdmin ? adminCustomersApi.deleteCustomer(id) : managerCustomersApi.deleteCustomer(storeId!, id),
@@ -54,7 +54,7 @@ export const CustomerManagement: React.FC = () => {
   }, [searchQuery]);
 
   // --- Handlers ---
-  const handleSubmit = async (formData: CustomerFormData) => {
+  const handleSubmit = async (formData: CustomerRequest) => {
     setIsSubmitting(true);
     const service = getCustomerService();
 if (!service) return;

@@ -1,87 +1,134 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import axios from 'axios';
 import { Lesson, LessonHistoryItem } from '../types/lesson';
 import { lessonApi } from '../api/lessonApi';
 import { PaginationParams } from '../types/common';
 
+/* =========================
+ * 単一 Lesson 取得
+ * ========================= */
 export const useLesson = (id?: string) => {
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (id) {
-      fetchLesson(id);
-    }
-  }, [id]);
-
-  const fetchLesson = async (lessonId: string) => {
+  const fetchLesson = useCallback(async (lessonId: string) => {
     setLoading(true);
     setError(null);
     try {
       const data = await lessonApi.getLesson(lessonId);
       setLesson(data);
-    } catch (err) {
-      setError(err as Error);
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message || err.message);
+      } else if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('不明なエラーが発生しました');
+      }
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  return { lesson, loading, error, refetch: () => id && fetchLesson(id) };
+  useEffect(() => {
+    if (id) {
+      fetchLesson(id);
+    }
+  }, [id, fetchLesson]);
+
+  return {
+    lesson,
+    loading,
+    error,
+    refetch: () => {
+      if (id) {
+        return fetchLesson(id);
+      }
+      return Promise.resolve();
+    },
+  };
 };
 
+/* =========================
+ * Lesson 履歴一覧（ページング）
+ * ========================= */
 export const useLessons = (params?: PaginationParams) => {
   const [lessons, setLessons] = useState<LessonHistoryItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchLessons();
-  }, [params?.page, params?.limit]);
-
-  const fetchLessons = async () => {
+  const fetchLessons = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const response = await lessonApi.getHistory({
         page: params?.page,
-        size: params?.limit
+        size: params?.limit,
       });
       setLessons(response.data);
-    } catch (err) {
-      setError(err as Error);
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message || err.message);
+      } else if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('不明なエラーが発生しました');
+      }
     } finally {
       setLoading(false);
     }
-  };
-
-  return { lessons, loading, error, refetch: fetchLessons };
-};
-
-export const useLessonsByCustomer = (customerId: string) => {
-  const [lessons, setLessons] = useState<Lesson[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+  }, [params?.page, params?.limit]);
 
   useEffect(() => {
-    if (customerId) {
-      fetchLessons();
-    }
-  }, [customerId]);
+    fetchLessons();
+  }, [fetchLessons]);
 
-  const fetchLessons = async () => {
+  return {
+    lessons,
+    loading,
+    error,
+    refetch: fetchLessons,
+  };
+};
+
+/* =========================
+ * 顧客別 Lesson 一覧
+ * ========================= */
+export const useLessonsByCustomer = (customerId?: string) => {
+  const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchLessons = useCallback(async () => {
+    if (!customerId) return;
+
     setLoading(true);
     setError(null);
     try {
       const data = await lessonApi.getByCustomerId(customerId);
       setLessons(data);
-    } catch (err) {
-      setError(err as Error);
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message || err.message);
+      } else if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('不明なエラーが発生しました');
+      }
     } finally {
       setLoading(false);
     }
+  }, [customerId]);
+
+  useEffect(() => {
+    fetchLessons();
+  }, [fetchLessons]);
+
+  return {
+    lessons,
+    loading,
+    error,
+    refetch: fetchLessons,
   };
-
-  return { lessons, loading, error, refetch: fetchLessons };
 };
-

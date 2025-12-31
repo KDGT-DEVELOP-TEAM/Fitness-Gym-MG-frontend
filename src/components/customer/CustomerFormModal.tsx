@@ -1,12 +1,12 @@
 import React from 'react';
-import { Customer, CustomerFormData, CustomerStatusUpdate } from '../../types/customer';
+import { Customer, CustomerRequest } from '../../types/api/customer';
 import { CustomerForm } from './CustomerForm';
 
 interface CustomerFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialData?: Customer;
-  onSubmit: (data: CustomerFormData, status: CustomerStatusUpdate) => Promise<void>;
+  onSubmit: (data: CustomerRequest) => Promise<void>;
   onDelete?: (id: string) => Promise<void>;
   isSubmitting: boolean;
 }
@@ -23,7 +23,6 @@ export const CustomerFormModal: React.FC<CustomerFormModalProps> = ({ isOpen, on
   return (
     <div onClick={handleSafeClose} className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-center items-center p-4">
       <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl relative overflow-hidden animate-in zoom-in-95 duration-200">
-        <button onClick={onClose} className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 z-10">
         {!isSubmitting && (
           <button 
             onClick={onClose} 
@@ -34,7 +33,7 @@ export const CustomerFormModal: React.FC<CustomerFormModalProps> = ({ isOpen, on
             </svg>
           </button>
         )}
-        </button>
+        
         <div className="p-10">
           <h2 className="text-2xl font-black text-gray-900 mb-8">{initialData ? '顧客情報の編集' : '新規顧客の登録'}</h2>
           <CustomerForm initialData={initialData} onSubmit={onSubmit} onDelete={onDelete} isSubmitting={isSubmitting} />

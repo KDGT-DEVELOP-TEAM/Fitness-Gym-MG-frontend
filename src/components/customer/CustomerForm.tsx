@@ -1,11 +1,11 @@
-// src/components/customers/CustomerForm.tsx
 import React, { useState } from 'react';
 import axios from 'axios';
-import { Customer, CustomerFormData, CustomerStatusUpdate } from '../../types/customer';
+import { Customer, CustomerRequest } from '../../types/api/customer';
+import { CustomerFormData } from '../../types/form/customer';
 
 interface CustomerFormProps {
   initialData?: Customer;
-  onSubmit: (data: CustomerFormData, status: CustomerStatusUpdate) => Promise<void>;
+  onSubmit: (data: CustomerRequest) => Promise<void>;
   onDelete?: (id: string) => Promise<void>;
   isSubmitting: boolean;
 }
@@ -16,33 +16,33 @@ interface ApiErrorResponse {
 
 export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmit, onDelete, isSubmitting }) => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [formData, setFormData] = useState<CustomerFormData>({
+  
+  const [formData, setFormData] = useState<CustomerFormData & { isActive: boolean }>({
     name: initialData?.name || '',
     kana: initialData?.kana || '',
     gender: initialData?.gender || '男',
     birthday: initialData?.birthday || '',
-    height: initialData?.height || null,
+    height: initialData?.height || 0,
     email: initialData?.email || '',
     phone: initialData?.phone || '',
     address: initialData?.address || '',
     medical: initialData?.medical || '',
     taboo: initialData?.taboo || '',
     memo: initialData?.memo || '',
-    firstPostureGroupId: initialData?.firstPostureGroupId || null,
-  });
-
-  const [status, setStatus] = useState<CustomerStatusUpdate>({
-    isActive: initialData?.isActive ?? true
+    isActive: initialData?.isActive ?? true, // フォーム内で管理
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
-    const finalValue = type === 'checkbox' ? (e.target as HTMLInputElement).checked : value;
-    setFormData(prev => ({ ...prev, [name]: finalValue }));
-  };
+    let finalValue: any = value;
 
-  const handleStatusChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setStatus({ isActive: e.target.checked });
+    if (type === 'checkbox') {
+      finalValue = (e.target as HTMLInputElement).checked;
+    } else if (name === 'height') {
+      finalValue = value === '' ? 0 : parseFloat(value);
+    }
+
+    setFormData(prev => ({ ...prev, [name]: finalValue }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -50,25 +50,29 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
     setErrorMsg(null);
 
     try {
-      await onSubmit(formData, status);
+      // フォーム用データを API リクエスト用に整形
+      const requestData: CustomerRequest = {
+        name: formData.name,
+        kana: formData.kana,
+        gender: formData.gender,
+        birthday: formData.birthday,
+        height: formData.height,
+        email: formData.email,
+        phone: formData.phone,
+        address: formData.address,
+        medical: formData.medical || undefined,
+        taboo: formData.taboo || undefined,
+        memo: formData.memo || undefined,
+        isActive: formData.isActive,
+      };
+
+      await onSubmit(requestData);
     } catch (err: unknown) {
       let message = "保存中にエラーが発生しました。";
-
       if (axios.isAxiosError<ApiErrorResponse>(err)) {
-        // Axiosエラーの場合、サーバーからのレスポンスメッセージを優先
         message = err.response?.data?.message || err.message;
-      } else if (err instanceof Error) {
-        // 標準のエラーオブジェクトの場合
-        message = err.message;
       }
-      
-      if (message.includes("関連データが存在するため")) {
-        setErrorMsg("この顧客にはレッスン履歴があるため削除できません。先にステータスを無効にしてください。");
-      } else if (message.includes("有効顧客は削除できません")) {
-        setErrorMsg("有効なステータスのままでは削除できません。");
-      } else {
-        setErrorMsg(message);
-      }
+      setErrorMsg(message);
     }
   };
 
@@ -154,8 +158,8 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
         </div>
 
         <div className="flex items-center p-4 bg-gray-50 rounded-2xl border border-gray-100">
-          <input type="checkbox" id="isActive" name="isActive" checked={status.isActive} onChange={handleStatusChange} className="w-5 h-5 text-green-600 rounded" />
-          <label htmlFor="isActive" className="ml-3 text-sm font-bold text-gray-700">顧客ステータスを<span className={status.isActive ? "text-green-600" : "text-gray-400"}>{status.isActive ? "有効" : "無効"}</span>にする</label>
+          <input type="checkbox" id="isActive" name="isActive" checked={formData.isActive} onChange={handleChange} className="w-5 h-5 text-green-600 rounded" />
+          <label htmlFor="isActive" className="ml-3 text-sm font-bold text-gray-700">顧客ステータスを<span className={formData.isActive ? "text-green-600" : "text-gray-400"}>{formData.isActive ? "有効" : "無効"}</span>にする</label>
         </div>
       </section>
 

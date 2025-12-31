@@ -1,5 +1,5 @@
 import axiosInstance from '../axiosConfig';
-import { Customer } from '../../types/customer';
+import { Customer } from '../../types/api/customer';
 
 export const trainerCustomersApi = {
   getCustomers: (storeId: string): Promise<Customer[]> =>

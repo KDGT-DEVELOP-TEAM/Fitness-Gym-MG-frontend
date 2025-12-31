@@ -1,5 +1,5 @@
 import React from 'react';
-import { CustomerListItem } from '../../types/customer';
+import { CustomerListItem } from '../../types/api/customer';
 
 interface CustomerCardProps {
   customer: CustomerListItem;

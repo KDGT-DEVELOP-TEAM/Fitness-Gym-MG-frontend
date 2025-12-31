@@ -1,6 +1,5 @@
 import axiosInstance from './axiosConfig';
-import { User, UserRequest, UserListParams } from '../types/api/user';
-import { UserFormData } from '../types/form/user';
+import { User, UserRequest } from '../types/api/user';
 import { PaginatedResponse, PaginationParams } from '../types/common';
 
 export const userApi = {
@@ -14,12 +13,12 @@ export const userApi = {
     return response.data;
   },
 
-  create: async (data: UserFormData): Promise<User> => {
+  create: async (data: UserRequest): Promise<User> => {
     const response = await axiosInstance.post<User>('/users', data);
     return response.data;
   },
 
-  update: async (id: string, data: Partial<UserFormData>): Promise<User> => {
+  update: async (id: string, data: Partial<UserRequest>): Promise<User> => {
     const response = await axiosInstance.put<User>(`/users/${id}`, data);
     return response.data;
   },

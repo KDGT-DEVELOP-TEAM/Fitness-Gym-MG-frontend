@@ -3,9 +3,9 @@ import { useLessonHistory } from '../../hooks/useLessonHistory';
 import { useStores } from '../../hooks/useStore';
 import { useAuth } from '../../context/AuthContext';
 import { LessonCard } from '../../components/lesson/LessonCard';
+import { managerHomeApi } from '../../api/manager/homeApi';
 import { LoadingRow, EmptyRow } from '../../components/common/TableStatusRows';
-import { managerHomeApi } from '../../api/manager/homeApi'; 
-import { ManagerHomeResponse } from '../../types/manager/home'
+import { ManagerHomeResponse } from '../../types/manager/home';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -13,9 +13,10 @@ export const ManagerDashboard: React.FC = () => {
   const { user } = useAuth();
   const { stores } = useStores();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
   const [currentPage, setCurrentPage] = useState(1);
   const [viewMode, setViewMode] = useState<'week' | 'month'>('week');
-  const [homeData, setHomeData] = useState<ManagerHomeResponse | null>(null);
+  const [homeData, setHomeData] = useState<ManagerHomeResponse | null>(null); // 今後使用予定
   const [apiError, setApiError] = useState<string | null>(null);
 
   const storeId = useMemo(() => {
@@ -23,56 +24,67 @@ export const ManagerDashboard: React.FC = () => {
     return Array.isArray(user.storeIds) ? user.storeIds[0] : user.storeIds;
   }, [user?.storeIds]);
 
-  // --- 🔑 Home API の呼び出し (店舗IDが確定したら実行) ---
+  // --- Home API 呼び出し ---
   useEffect(() => {
-    if (storeId) {
-      managerHomeApi.getHome(storeId)
-        .then(data => setHomeData(data))
-        .catch(err => {
-          console.error("Admin Home API Fetch Error:", err);
-          setApiError("ダッシュボードデータの取得に失敗しました。");
-          alert("統計情報の取得に失敗しました。ページを再読み込みしてください。");
-        });
-    }
+    if (!storeId) return;
+
+    managerHomeApi.getHome(storeId)
+      .then(data => setHomeData(data))
+      .catch(err => {
+        console.error("Manager Home API Fetch Error:", err);
+        setApiError("ダッシュボードデータの取得に失敗しました。");
+      });
   }, [storeId]);
 
   const currentStoreName = useMemo(() => {
     return stores.find(s => s.id === storeId)?.name || '所属店舗';
   }, [stores, storeId]);
 
-  // --- 1. バックエンド連携フック (既存維持) ---
+  // --- バックエンド連携フック ---
   const { history, chartData, total, loading, error: historyError, refetch } = useLessonHistory(
     storeId, 
     viewMode
   );
 
+  // storeId や viewMode 変更時にページリセット
   useEffect(() => {
+    setCurrentPage(1);
+  }, [storeId, viewMode]);
+
+  // ページ番号変更時に refetch
+  useEffect(() => {
+    if (!storeId) return;
     refetch(currentPage - 1);
-  }, [currentPage, refetch]);
+  }, [currentPage, refetch, storeId]);
 
   const handleViewModeChange = (mode: 'week' | 'month') => {
     setViewMode(mode);
-    setCurrentPage(1); // 条件変更時は必ず1ページ目へ
+    setCurrentPage(1);
   };
 
   const totalPages = Math.ceil(total / ITEMS_PER_PAGE) || 1;
 
+  // グラフスクロール安定化
   useLayoutEffect(() => {
     if (scrollContainerRef.current && chartData) {
-      // requestAnimationFrame を組み合わせて描画タイミングを同期
-      const scrollToEnd = () => {
+      const rafId = requestAnimationFrame(() => {
         if (scrollContainerRef.current) {
           scrollContainerRef.current.scrollLeft = scrollContainerRef.current.scrollWidth;
         }
-      };
-      const rafId = requestAnimationFrame(scrollToEnd);
+      });
       return () => cancelAnimationFrame(rafId);
     }
   }, [chartData]);
 
-  // ① どちらのエラーも画面に表示
+  // API / history エラーをまとめて表示
   const displayError = apiError || historyError;
-  if (displayError) return <div className="p-10 text-red-500 text-center font-bold">⚠️ {displayError}</div>;
+  if (displayError) {
+    return (
+      <div className="p-10 text-red-500 text-center font-bold">
+        ⚠️ {displayError}
+      </div>
+    );
+  }
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
@@ -148,21 +160,12 @@ export const ManagerDashboard: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50 bg-white">
-              {loading ? (
-                <tr>
-                  <td colSpan={4} className="py-24 text-center">
-                    <div className="animate-spin h-10 w-10 border-4 border-green-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-                    <p className="text-gray-400 font-black uppercase tracking-widest text-xs">Synchronizing History...</p>
-                  </td>
-                </tr>
+            {loading ? (
+                <LoadingRow colSpan={4} />
               ) : history.length > 0 ? (
-                history.map((lesson) => <LessonCard key={lesson.id} lesson={lesson} />)
+                history.map(lesson => <LessonCard key={lesson.id} lesson={lesson} />)
               ) : (
-                <tr>
-                  <td colSpan={4} className="py-24 text-center text-gray-400 font-medium italic">
-                    実施済みのレッスン履歴が見つかりませんでした。
-                  </td>
-                </tr>
+                <EmptyRow colSpan={4} message="実施済みのレッスン履歴が見つかりませんでした。" />
               )}
             </tbody>
           </table>

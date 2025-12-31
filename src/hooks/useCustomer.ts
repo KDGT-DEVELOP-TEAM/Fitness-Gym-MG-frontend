@@ -1,8 +1,7 @@
 import { useState, useCallback } from 'react';
 import axios from 'axios';
 import { adminCustomersApi } from '../api/admin/customersApi';
-import { CustomerListParams } from '../types/customer'
-import { Customer, CustomerFormData } from '../types/customer';
+import { Customer, CustomerRequest, CustomerListParams } from '../types/api/customer';
 
 interface ApiError {
   message: string;
@@ -15,7 +14,6 @@ export const useCustomers = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // 1. 取得：APIを呼んで結果をセットするだけ
   const fetchCustomers = useCallback(async (page: number = 0) => {
     setLoading(true);
     setError(null);
@@ -32,18 +30,16 @@ export const useCustomers = () => {
       let errorMessage = 'データの取得に失敗しました';
       if (axios.isAxiosError<ApiError>(err)) {
         errorMessage = err.response?.data?.message || err.message;
-      } else if (err instanceof Error) {
-        errorMessage = err.message;
       }
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
   }, [searchQuery]);
 
-  // 2. 作成・更新・削除：APIを直接呼ぶだけ
-  // 成功後の再取得（refetch）はコンポーネント側の .then() で行わせる方針に統一します
-  const createCustomer = (formData: CustomerFormData) => adminCustomersApi.createCustomer(formData);
-  const updateCustomer = (formData: CustomerFormData, id: string) => adminCustomersApi.updateCustomer(id, formData);
+  // CustomerRequest 型を受け取るように修正
+  const createCustomer = (data: CustomerRequest) => adminCustomersApi.createCustomer(data);
+  const updateCustomer = (id: string, data: CustomerRequest) => adminCustomersApi.updateCustomer(id, data);
   const deleteCustomer = (id: string) => adminCustomersApi.deleteCustomer(id);
 
   return {

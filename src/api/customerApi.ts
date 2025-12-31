@@ -1,5 +1,5 @@
 import axiosInstance from './axiosConfig';
-import { Customer,VitalRecord,VitalsHistory } from '../types/customer';
+import { Customer,VitalRecord,VitalsHistory } from '../types/api/customer';
 
 export const customerApi = {
   getProfile: (customerId: string): Promise<Customer> =>

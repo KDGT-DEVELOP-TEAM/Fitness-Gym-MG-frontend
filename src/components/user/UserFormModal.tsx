@@ -1,7 +1,6 @@
 import React from 'react';
 import UserForm from './UserForm';
-import { User } from '../../types/api/user'; 
-import { UserFormData, UserStatusUpdate } from '../../types/form/user';
+import { User, UserRequest } from '../../types/api/user'; 
 import { Store } from '../../types/store'; 
 
 interface UserFormModalProps {
@@ -9,7 +8,7 @@ interface UserFormModalProps {
   onClose: () => void;
   initialData?: User; 
   stores: Store[]; 
-  onSubmit: (data: UserFormData, status: UserStatusUpdate) => Promise<void>; 
+  onSubmit: (data: UserRequest) => Promise<void>; 
   onDelete: (userId: string) => Promise<void>;
   isSubmitting: boolean;
 }
@@ -28,7 +27,6 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
   return (
     <div onClick={handleSafeClose} className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-center items-center p-4">
       <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl relative overflow-hidden animate-in zoom-in-95 duration-300">
-        <button onClick={onClose} className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 z-10">
         {!isSubmitting && (
           <button 
             onClick={onClose} 
@@ -39,7 +37,6 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
             </svg>
           </button>
         )}
-        </button>
         
         <div className="p-10 md:p-12">
           <header className="mb-10 space-y-2">
@@ -51,8 +48,8 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
           <UserForm 
             initialData={initialData}
             stores={stores} 
-            onSubmit={async (data, status) => {
-                await onSubmit(data, status);
+            onSubmit={async (requestData) => {
+                await onSubmit(requestData);
                 onClose();
             }}
             onDelete={async (id) => {

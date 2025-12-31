@@ -4,8 +4,7 @@ import { useStores } from '../hooks/useStore';
 import { UserCard } from '../components/user/UserCard'; 
 import UserFormModal from '../components/user/UserFormModal'; 
 import { LoadingRow, EmptyRow } from '../components/common/TableStatusRows';
-import { UserRole, User, UserRequest, UserListItem, UserListParams } from '../types/api/user';
-import { UserFormData } from '../types/form/user';
+import { UserRole, User, UserRequest, UserListItem } from '../types/api/user'; // UserRequestを使用
 import { useAuth } from '../context/AuthContext';
 import { adminUsersApi } from '../api/admin/usersApi';
 import { managerUsersApi } from '../api/manager/usersApi';
@@ -13,7 +12,7 @@ import { managerUsersApi } from '../api/manager/usersApi';
 const ITEMS_PER_PAGE = 10;
 
 export const UserManagement: React.FC = () => {
-  const { user: authUser } = useAuth(); // ログイン中のユーザー情報
+  const { user: authUser } = useAuth();
   const { 
     users,
     total,
@@ -31,20 +30,19 @@ export const UserManagement: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
 
   // --- API セレクター ---
-  // ロールと所属店舗に基づいて、叩くべきAPIエンドポイントを動的に切り替える
+  // 引数の型を UserRequest に変更
   const getUserService = useCallback(() => {
     if (!authUser) return null;
     const isAdmin = authUser?.role?.toUpperCase() === 'ADMIN';
-    // 店長の場合、所属している最初の店舗IDを使用（兼任対応が必要な場合はロジック調整）
     const storeId = Array.isArray(authUser.storeIds) 
-    ? authUser.storeIds[0] 
-    : authUser.storeIds;
+      ? authUser.storeIds[0] 
+      : authUser.storeIds;
 
     return {
-      create: (data: UserFormData) => 
-        isAdmin ? adminUsersApi.createUser(data) : managerUsersApi.createUser(storeId!, data),
-      update: (id: string, data: UserFormData) => 
-        isAdmin ? adminUsersApi.updateUser(id, data) : managerUsersApi.updateUser(storeId!, id, data),
+      create: (request: UserRequest) => 
+        isAdmin ? adminUsersApi.createUser(request) : managerUsersApi.createUser(storeId!, request),
+      update: (id: string, request: UserRequest) => 
+        isAdmin ? adminUsersApi.updateUser(id, request) : managerUsersApi.updateUser(storeId!, id, request),
       delete: (id: string) => 
         isAdmin ? adminUsersApi.deleteUser(id) : managerUsersApi.deleteUser(storeId!, id),
     };
@@ -58,19 +56,19 @@ export const UserManagement: React.FC = () => {
   }, [currentPage, refetchUsers]);
 
   useEffect(() => {
-    setCurrentPage(1); // 検索条件が変わったら1ページ目に戻す
+    setCurrentPage(1);
   }, [filters.nameOrKana, filters.role]);
 
   // --- ハンドラー ---
   const handleEditClick = async (userItem: UserListItem) => {
-    if (!authUser) return null;
+    if (!authUser) return;
     setIsSubmitting(true);
     try {
       const isAdmin = authUser?.role === 'ADMIN';
       const storeId = Array.isArray(authUser?.storeIds) ? authUser.storeIds[0] : authUser?.storeIds;
       
       const fullUserData = isAdmin 
-        ? await adminUsersApi.getUser(userItem.id) // 個別取得APIを想定
+        ? await adminUsersApi.getUser(userItem.id)
         : await managerUsersApi.getUser(storeId!, userItem.id);
 
       setEditingUser(fullUserData);
@@ -82,23 +80,22 @@ export const UserManagement: React.FC = () => {
     }
   };
 
-  const handleSubmit = async (data: UserFormData) => {
+  // 引数を UserRequest に変更。UserForm側ですでに変換済みのため、ここではそのままAPIに渡す
+  const handleSubmit = async (requestData: UserRequest) => {
     setIsSubmitting(true);
     const service = getUserService();
     if (!service) return;
 
     try {
       if (editingUser) {
-        // 更新処理（adminUsersApi.updateUser または managerUsersApi.updateUser）
-        await service.update(editingUser.id, data);
+        await service.update(editingUser.id, requestData);
       } else {
-        // 新規作成処理
-        await service.create(data);
+        await service.create(requestData);
       }
-      await refetchUsers(currentPage - 1); // 一覧を再取得
+      await refetchUsers(currentPage - 1);
       setIsModalOpen(false);
-    } catch (err: any) {
-      // UserForm.tsx 内の catch ブロックでエラーメッセージを表示させるために例外を再送出
+    } catch (err: unknown) {
+      // UserForm 内でキャッチしてエラーメッセージを出すために再送出
       throw err;
     } finally {
       setIsSubmitting(false);
@@ -106,9 +103,7 @@ export const UserManagement: React.FC = () => {
   };
 
   const handleDelete = async (userId: string) => {
-    // 削除前の最終確認
-    if (!window.confirm("このユーザーを完全に削除してもよろしいですか？\n※このスタッフが担当したレッスン履歴がある場合は削除できません。")) return;
-    
+    // 削除確認は UserForm 内の window.confirm でも行っているが、念のためこちらでも保持
     setIsSubmitting(true);
     const service = getUserService();
     if (!service) return;
@@ -117,16 +112,12 @@ export const UserManagement: React.FC = () => {
       await refetchUsers(currentPage - 1); 
       setIsModalOpen(false);
     } catch (err: any) {
-      const msg = err.response?.data?.message || "削除に失敗しました。関連データを確認してください。";
+      const msg = err.response?.data?.message || "削除に失敗しました。";
       alert(msg);
+      throw err;
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const handleNewClick = () => {
-    setEditingUser(undefined);
-    setIsModalOpen(true);
   };
 
   return (

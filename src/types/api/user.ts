@@ -10,7 +10,6 @@ export interface User {
   kana: string;
   role: UserRole;
   storeIds: string[] | null;
-  pass: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -52,6 +51,6 @@ export interface UserListParams {
   page?: number;
   size?: number;
   name?: string;
-  role?: string;
+  role?: UserRole;
   isActive?: boolean;
 }

@@ -1,4 +1,4 @@
-import { UserRole } from '../api/user';
+import { User, UserRole } from '../api/user';
 
 export interface UserFormData {
   email: string;
@@ -11,4 +11,9 @@ export interface UserFormData {
 
 export interface UserStatusUpdate {
     isActive: boolean;
-    }
+}
+
+export type UserFilters = {
+    nameOrKana: string;
+    role: User['role'] | 'all';
+};

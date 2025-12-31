@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { LessonFormData } from '../../types/lesson';
 import { UserListItem } from '../../types/api/user';
-import { CustomerListItem } from '../../types/customer';
+import { CustomerListItem } from '../../types/api/customer';
 
 interface LessonFormProps {
   initialData?: LessonFormData;

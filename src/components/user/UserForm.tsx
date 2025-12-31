@@ -1,98 +1,103 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { User } from '../../types/api/user'; 
-import { UserFormData, UserStatusUpdate } from '../../types/form/user';
+import { User, UserRequest } from '../../types/api/user';
+import { UserFormData } from '../../types/form/user';
 import { Store } from '../../types/store';
 
 interface UserFormProps {
   initialData?: User;
   stores: Store[];
-  onSubmit: (data: UserFormData, status: UserStatusUpdate) => Promise<void>; 
-  onDelete?: (id: string) => Promise<void>; 
+  // 引数を UserRequest 一本に統合
+  onSubmit: (data: UserRequest) => Promise<void>;
+  onDelete?: (id: string) => Promise<void>;
   isSubmitting: boolean;
 }
 
 interface ApiErrorResponse {
-    message: string;
-  }
+  message: string;
+}
 
 const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDelete, isSubmitting }) => {
-    const [errorMsg, setErrorMsg] = useState<string | null>(null);
-    const isEditMode = !!initialData;
-    const [formData, setFormData] = useState<UserFormData>({
-        email: '',
-        name: '',
-        kana: '',
-        pass: '',
-        role: 'TRAINER',
-        storeIds: [],
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const isEditMode = !!initialData;
+
+  // 1. フォームの状態管理 (UIの都合に合わせた型)
+  // ステータス(isActive)も管理しやすいように統合しています
+  const [formData, setFormData] = useState<UserFormData & { isActive: boolean }>({
+    email: '',
+    name: '',
+    kana: '',
+    pass: '',
+    role: 'TRAINER',
+    storeIds: [],
+    isActive: true,
+  });
+
+  // 初期データの同期
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        email: initialData.email,
+        name: initialData.name,
+        kana: initialData.kana,
+        pass: '', // 更新時は空文字スタート
+        role: initialData.role,
+        storeIds: initialData.storeIds || [],
+        isActive: initialData.isActive,
       });
+    }
+  }, [initialData]);
 
-    const [status, setStatus] = useState<UserStatusUpdate>({
-        isActive: true
-    });
-
-    useEffect(() => {
-        if (initialData) {
-            setFormData({
-                email: initialData.email,
-                name: initialData.name,
-                kana: initialData.kana,
-                pass: '', 
-                role: initialData.role as UserFormData['role'],
-                storeIds: initialData.storeIds || [],
-            });
-            setStatus({ isActive: initialData.isActive });
-        }
-    }, [initialData]);
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: name === 'kana' && value === '' ? null : value
-        }));
-    };
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setErrorMsg(null);
-        
-        // 🔑 提出データの整形
-        const dataToSubmit: UserFormData = {
-            ...formData,
-            // 💡 storeIdの制約: manager以外は空配列にする
-            storeIds: formData.role === 'MANAGER' ? formData.storeIds : [],
-        };
-
-        try {
-            await onSubmit(dataToSubmit, status);
-          } catch (err: unknown) {
-            let message = "保存中にエラーが発生しました。";
-
-            // axiosの型ガードを使用して安全にメッセージを抽出
-            if (axios.isAxiosError<ApiErrorResponse>(err)) {
-                message = err.response?.data?.message || err.message;
-            } else if (err instanceof Error) {
-                message = err.message;
-            }
-            
-            // バックエンドの例外メッセージに応じた日本語化
-            if (message.includes("関連データが存在するため")) {
-              setErrorMsg("このユーザーにはレッスン履歴があるため削除できません。先にステータスを無効にしてください。");
-            } else if (message.includes("有効ユーザーは削除できません")) {
-              setErrorMsg("有効なステータスのままでは削除できません。");
-            } else {
-              setErrorMsg(message || "保存中にエラーが発生しました。");
-            }
-          }
-    };
+  // 汎用的な入力ハンドラー
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
+    const finalValue = type === 'checkbox' ? (e.target as HTMLInputElement).checked : value;
     
-    const handleDelete = () => {
-        if (initialData && onDelete && window.confirm('このユーザーを本当に削除しますか？')) {
-            onDelete(initialData.id);
-        }
-    };
+    setFormData(prev => ({
+      ...prev,
+      [name]: finalValue
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg(null);
+
+    try {
+      // 2. 🔑 UserFormData から UserRequest へのマッピング（変換）
+      const requestData: UserRequest = {
+        email: formData.email,
+        name: formData.name,
+        kana: formData.kana,
+        role: formData.role,
+        isActive: formData.isActive,
+        // 仕様: MANAGER以外は店舗IDを送らない
+        storeIds: formData.role === 'MANAGER' ? formData.storeIds : [],
+      };
+
+      // パスワード: 入力がある場合のみリクエストに含める
+      if (formData.pass && formData.pass.trim() !== '') {
+        requestData.pass = formData.pass;
+      }
+
+      await onSubmit(requestData);
+    } catch (err: unknown) {
+      let message = "保存中にエラーが発生しました。";
+      if (axios.isAxiosError<ApiErrorResponse>(err)) {
+        message = err.response?.data?.message || err.message;
+      } else if (err instanceof Error) {
+        message = err.message;
+      }
+      
+      if (message.includes("関連データが存在するため")) {
+        setErrorMsg("このユーザーにはレッスン履歴があるため削除できません。");
+      } else if (message.includes("有効ユーザーは削除できません")) {
+        setErrorMsg("有効なステータスのままでは削除できません。");
+      } else {
+        setErrorMsg(message);
+      }
+    }
+  };
 
     const RequiredBadge = () => (
         <span className="ml-2 px-1 bg-red-500 text-white text-[10px] font-black rounded shadow-sm inline-block transform -translate-y-0.5">
@@ -202,8 +207,8 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
                     <input
                         id="isActive"
                         type="checkbox"
-                        checked={status.isActive}
-                        onChange={(e) =>setStatus({ isActive: e.target.checked })}
+                        checked={formData.isActive}
+                        onChange={handleChange}
                         className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
                     />
                     <label htmlFor="isActive" className="ml-2 block text-sm font-bold text-gray-700">
@@ -224,7 +229,7 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
                 {isEditMode && onDelete && (
                     <button
                         type="button"
-                        onClick={handleDelete}
+                        onClick={() => initialData && window.confirm('本当に削除しますか？') && onDelete(initialData.id)}
                         className="w-full px-4 py-2 text-red-600 font-bold bg-white border border-red-200 rounded-xl hover:bg-red-50 transition-all"
                         disabled={isSubmitting}
                     >
