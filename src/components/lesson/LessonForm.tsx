@@ -1,81 +1,103 @@
-import React, { useState } from 'react';
-import axios from 'axios';
-import { LessonFormData } from '../../types/lesson';
+import React, { useState, useEffect } from 'react';
+import axios, { AxiosError } from 'axios';
+import { Lesson, LessonFormData } from '../../types/lesson';
+import { LessonRequest } from '../../types/lesson';
 import { UserListItem } from '../../types/api/user';
 import { CustomerListItem } from '../../types/api/customer';
+import { Store } from '../../types/store';
 
 interface LessonFormProps {
-  initialData?: LessonFormData;
-  onSubmit: (data: LessonFormData) => Promise<void>;
+  initialData?: Lesson;
+  onSubmit: (data: LessonRequest) => Promise<void>;
   trainers: UserListItem[];
   customers: CustomerListItem[];
-  stores: string[];
+  stores: Store[];
   onCancel?: () => void;
+  isSubmitting: boolean;
 }
 
-interface ApiErrorResponse {
+interface ApiErrorData {
   message: string;
 }
 
 export const LessonForm: React.FC<LessonFormProps> = ({
-  initialData,
-  trainers,
-  customers,
-  stores,
-  onSubmit,
-  onCancel,
+  initialData, trainers, customers, stores, onSubmit, onCancel, isSubmitting
 }) => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
 
-  // 1. 初期状態の設定
-  const [formData, setFormData] = useState<LessonFormData>(
-    initialData || {
-      customerName: '',
-      trainerName: '',
-      storeName: '',
-      startDate: '',
-      endDate: '',
-      condition: null,
-      weight: null,
-      bmi: null,
-      meal: null,
-      memo: null,
-      nextDate: null,
-      nextStoreName: null,
-      nextTrainerName: null,
+  const [formData, setFormData] = useState<LessonFormData>({
+    customerId: '',
+    trainerId: '',
+    storeId: '',
+    startDate: '',
+    endDate: '',
+    condition: '',
+    weight: '',
+    bmi: '',
+    meal: '',
+    memo: '',
+    nextDate: '',
+    nextStoreId: '',
+    nextTrainerId: '',
+  });
+
+  // 初期データのマッピング
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        customerId: initialData.customer.id,
+        trainerId: initialData.trainer.id,
+        storeId: initialData.store.id,
+        startDate: initialData.startDate.substring(0, 16),
+        endDate: initialData.endDate.substring(0, 16),
+        condition: initialData.condition || '',
+        weight: initialData.weight?.toString() || '',
+        bmi: initialData.bmi?.toString() || '',
+        meal: initialData.meal || '',
+        memo: initialData.memo || '',
+        nextDate: initialData.nextDate ? initialData.nextDate.substring(0, 16) : '',
+        nextStoreId: initialData.nextStore?.id || '',
+        nextTrainerId: initialData.nextTrainer?.id || '',
+      });
     }
-  );
+  }, [initialData]);
 
   // 2. 汎用的な入力ハンドラー (型安全)
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target;
-    
-    let finalValue: string | number | null = value;
-    if (type === 'number') {
-      finalValue = value === '' ? null : parseFloat(value);
-    } else if (value === '') {
-      finalValue = null;
-    }
-
-    setFormData(prev => ({ ...prev, [name]: finalValue }));
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
-    setLoading(true);
 
     try {
-      await onSubmit(formData);
+      const request: LessonRequest = {
+        customerId: formData.customerId,
+        trainerId: formData.trainerId,
+        storeId: formData.storeId,
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        weight: formData.weight ? parseFloat(formData.weight) : undefined,
+        condition: formData.condition || undefined,
+        meal: formData.meal || undefined,
+        memo: formData.memo || undefined,
+        nextDate: formData.nextDate || undefined,
+        nextStoreId: formData.nextStoreId || undefined,
+        nextTrainerId: formData.nextTrainerId || undefined,
+      };
+
+      await onSubmit(request);
     } catch (err: unknown) {
-      let message = "保存中にエラーが発生しました。";
-      if (axios.isAxiosError<ApiErrorResponse>(err)) {
-        message = err.response?.data?.message || err.message;
+      if (axios.isAxiosError(err)) {
+        const axiosError = err as AxiosError<ApiErrorData>;
+        setErrorMsg(axiosError.response?.data?.message ?? "通信エラーが発生しました。");
+      } else if (err instanceof Error) {
+        setErrorMsg(err.message);
+      } else {
+        setErrorMsg("予期せぬエラーが発生しました。");
       }
-      setErrorMsg(message);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -98,14 +120,14 @@ export const LessonForm: React.FC<LessonFormProps> = ({
           <div className="md:col-span-2">
             <label className="block text-sm font-bold text-gray-700 mb-1">実施店舗 <RequiredBadge /></label>
             <select 
-              name="storeName" 
-              value={formData.storeName} 
+              name="storeId" 
+              value={formData.storeId} 
               onChange={handleChange} 
               required 
               className="w-full h-12 border-2 border-gray-50 rounded-xl px-4 focus:border-green-500 outline-none transition-all appearance-none bg-white"
             >
               <option value="">店舗を選択</option>
-              {stores.map(name => <option key={name} value={name}>{name}</option>)}
+              {stores.map(s => <option key={s.id} value={s.id}>{s.id}</option>)}
             </select>
           </div>
           <div>
@@ -126,27 +148,27 @@ export const LessonForm: React.FC<LessonFormProps> = ({
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">顧客名 <RequiredBadge /></label>
             <select 
-              name="customerName" 
-              value={formData.customerName} 
+              name="customerId" 
+              value={formData.customerId} 
               onChange={handleChange} 
               required 
               className="w-full h-12 border-2 border-gray-50 rounded-xl px-4 focus:border-green-500 outline-none transition-all bg-white"
             >
               <option value="">顧客を選択</option>
-              {customers.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+              {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </div>
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">担当トレーナー <RequiredBadge /></label>
             <select 
-              name="trainerName" 
-              value={formData.trainerName} 
+              name="trainerId" 
+              value={formData.trainerId} 
               onChange={handleChange} 
               required 
               className="w-full h-12 border-2 border-gray-50 rounded-xl px-4 focus:border-green-500 outline-none transition-all bg-white"
             >
               <option value="">トレーナーを選択</option>
-              {trainers.map(t => <option key={t.id} value={t.name}>{t.name}</option>)}
+              {trainers.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
             </select>
           </div>
         </div>
@@ -191,8 +213,8 @@ export const LessonForm: React.FC<LessonFormProps> = ({
 
       {/* 送信ボタンエリア */}
       <div className="pt-4 flex flex-col gap-3">
-        <button type="submit" disabled={loading} className="w-full py-4 bg-green-600 text-white font-black rounded-2xl hover:bg-green-700 shadow-xl shadow-green-100 transition-all active:scale-95 disabled:opacity-50">
-          {loading ? '保存中...' : 'レッスン記録を保存する'}
+        <button type="submit" disabled={isSubmitting} className="w-full py-4 bg-green-600 text-white font-black rounded-2xl hover:bg-green-700 shadow-xl shadow-green-100 transition-all active:scale-95 disabled:opacity-50">
+          {isSubmitting ? '保存中...' : 'レッスン記録を保存する'}
         </button>
         {onCancel && (
           <button type="button" onClick={onCancel} className="w-full py-3 text-gray-400 text-[10px] font-black hover:text-gray-600 transition-all uppercase tracking-widest">

@@ -40,7 +40,7 @@ export const LessonCard: React.FC<LessonCardProps> = ({ lesson }) => {
       {/* 2. 実施店舗 */}
       <td className="px-8 py-6 text-center">
         <span className="inline-flex items-center px-4 py-1 rounded-full text-xs font-black tracking-widest uppercase bg-gray-50 text-gray-500 border border-gray-100 group-hover:bg-white group-hover:border-green-100 transition-all">
-          {lesson.storeName || '不明な店舗'}
+          {lesson.store.name || '不明な店舗'}
         </span>
       </td>
 
@@ -48,7 +48,7 @@ export const LessonCard: React.FC<LessonCardProps> = ({ lesson }) => {
       <td className="px-8 py-6">
         <div className="flex justify-center items-center">
           <span className="text-sm font-bold text-gray-600">
-            {lesson.trainerName || '未設定'}
+            {lesson.trainer.name || '未設定'}
           </span>
         </div>
       </td>
@@ -57,7 +57,7 @@ export const LessonCard: React.FC<LessonCardProps> = ({ lesson }) => {
       <td className="px-8 py-6">
         <div className="flex flex-col items-center text-center">
           <span className="text-base font-bold text-gray-900 group-hover:text-green-600 transition-colors">
-            {lesson.customerName || '不明な顧客'}
+            {lesson.customer.name || '不明な顧客'}
             <span className="text-[10px] text-gray-400 font-normal ml-1">様</span>
           </span>
           {/* 必要であればここにふりがな等を追加可能 */}

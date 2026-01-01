@@ -1,11 +1,13 @@
-// src/types/lesson.ts
+import { Customer } from './api/customer';
+import { User } from './api/user';
+import { Store } from './store';
 
 // バックエンド (Java) から返ってくる基本の型
 export interface Lesson {
   id: string;
-  customerName: string;   // lesson.getCustomer().getName()
-  trainerName: string;    // lesson.getTrainer().getName()
-  storeName: string;      // lesson.getStore().getName()
+  customer: Customer;   // オブジェクトで返ってくる
+  trainer: User;        // オブジェクトで返ってくる
+  store: Store;         // オブジェクトで返ってくる
   startDate: string;      // ISO形式
   endDate: string;        // ISO形式
   condition: string | null;
@@ -14,15 +16,31 @@ export interface Lesson {
   meal: string | null;
   memo: string | null;
   nextDate: string | null;
-  nextStoreName: string | null;
-  nextTrainerName: string | null;
+  nextStore?: Store | null;
+  nextTrainer?: User | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export type LessonFormData = Omit<Lesson, 'id' >;
+export interface LessonFormData {
+  customerId: string;
+  trainerId: string;
+  storeId: string;
+  startDate: string;
+  endDate: string;
+  condition: string;
+  weight: string;
+  bmi: string;
+  meal: string;
+  memo: string;
+  nextDate: string;
+  nextStoreId: string;
+  nextTrainerId: string;
+}
 
 export type LessonHistoryItem = Pick<
 Lesson,
-'id' | 'customerName' | 'trainerName' | 'storeName' | 'startDate' | 'endDate'>;
+'id' | 'customer' | 'trainer' | 'store' | 'startDate' | 'endDate'>;
 
 // グラフ表示用の型（JavaのLessonChartData / ChartSeriesに合わせる）
 export interface ChartSeries {
@@ -39,4 +57,20 @@ export interface LessonChartData {
 export interface LessonAdmin extends Lesson {
   createdAt: string;
   updatedAt: string;
+}
+
+export interface LessonRequest {
+  customerId: string;
+  trainerId: string;
+  storeId: string;
+  startDate: string;
+  endDate: string;
+  condition?: string;
+  weight?: number;
+  bmi?: number;
+  meal?: string;
+  memo?: string;
+  nextDate?: string;
+  nextStoreId?: string;
+  nextTrainerId?: string;
 }
