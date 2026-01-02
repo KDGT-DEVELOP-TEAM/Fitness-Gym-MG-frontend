@@ -19,16 +19,12 @@ axiosInstance.interceptors.request.use(
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 // レスポンスインターセプター: 401エラー時に自動ログアウト
 axiosInstance.interceptors.response.use(
-  (response: AxiosResponse) => {
-    return response;
-  },
+  (response) => response,
   (error) => {
     if (error.response?.status === 401) {
       storage.clear();
@@ -39,4 +35,3 @@ axiosInstance.interceptors.response.use(
 );
 
 export default axiosInstance;
-

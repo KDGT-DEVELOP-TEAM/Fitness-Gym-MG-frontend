@@ -13,7 +13,7 @@ import { PostureList } from './pages/PostureList';
 import { PostureCompare } from './pages/PostureCompare';
 import { CustomerManagement } from './pages/CustomerManagement';
 import { CustomerList } from './pages/CustomerList';
-import { UserManagement } from './pages/UserManagement';
+import  UserManagement  from './pages/UserManagement';
 import { UserList } from './pages/UserList';
 import { HiHome, HiClock } from 'react-icons/hi';
 

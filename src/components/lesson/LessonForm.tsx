@@ -1,31 +1,41 @@
-import React, { useState } from 'react';
-import { LessonFormData } from '../../types/lesson';
+import React, { useState, useEffect } from 'react';
+import axios, { AxiosError } from 'axios';
+import { Lesson, LessonFormData } from '../../types/lesson';
+import { LessonRequest } from '../../types/lesson';
+import { UserListItem } from '../../types/api/user';
+import { CustomerListItem } from '../../types/api/customer';
+import { Store } from '../../types/store';
 
 interface LessonFormProps {
   initialData?: Partial<LessonFormData>;
   onSubmit: (data: LessonFormData) => Promise<void>;
   onCancel?: () => void;
+  isSubmitting: boolean;
+}
+
+interface ApiErrorData {
+  message: string;
 }
 
 export const LessonForm: React.FC<LessonFormProps> = ({
-  initialData,
-  onSubmit,
-  onCancel,
+  initialData, onSubmit, onCancel
 }) => {
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [formData, setFormData] = useState<LessonFormData>({
     storeId: initialData?.storeId || '',
-    userId: initialData?.userId || '',
+    trainerId: initialData?.trainerId || '',
     customerId: initialData?.customerId || '',
     postureGroupId: initialData?.postureGroupId || null,
     condition: initialData?.condition || '',
     weight: initialData?.weight || null,
+    bmi: initialData?.bmi || null,
     meal: initialData?.meal || '',
     memo: initialData?.memo || '',
     startDate: initialData?.startDate || '',
     endDate: initialData?.endDate || '',
     nextDate: initialData?.nextDate || null,
     nextStoreId: initialData?.nextStoreId || null,
-    nextUserId: initialData?.nextUserId || null,
+    nextTrainerId: initialData?.nextTrainerId || null,
     trainings: initialData?.trainings || [],
   });
   const [loading, setLoading] = useState(false);
@@ -66,8 +76,8 @@ export const LessonForm: React.FC<LessonFormProps> = ({
         <label className="block text-sm font-medium">ユーザーID</label>
         <input
           type="text"
-          value={formData.userId}
-          onChange={(e) => setFormData({ ...formData, userId: e.target.value })}
+          value={formData.trainerId}
+          onChange={(e) => setFormData({ ...formData, trainerId: e.target.value })}
           required
           className="mt-1 block w-full px-3 py-2 border rounded-md"
         />
@@ -117,11 +127,7 @@ export const LessonForm: React.FC<LessonFormProps> = ({
           {loading ? '保存中...' : '保存'}
         </button>
         {onCancel && (
-          <button
-            type="button"
-            onClick={onCancel}
-            className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
-          >
+          <button type="button" onClick={onCancel} className="w-full py-3 text-gray-400 text-[10px] font-black hover:text-gray-600 transition-all uppercase tracking-widest">
             キャンセル
           </button>
         )}

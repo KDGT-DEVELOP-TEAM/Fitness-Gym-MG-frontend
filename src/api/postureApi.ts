@@ -1,42 +1,19 @@
 import axiosInstance from './axiosConfig';
-import { Posture, PostureComparison } from '../types/posture';
-import { PaginatedResponse, PaginationParams } from '../types/common';
+import { PostureGroup, PostureImage, SignedUrl } from '../types/posture';
 
 export const postureApi = {
-  getAll: async (params?: PaginationParams): Promise<PaginatedResponse<Posture>> => {
-    const response = await axiosInstance.get<PaginatedResponse<Posture>>('/postures', { params });
-    return response.data;
-  },
+getGroupsByCustomer: (customerId: string): Promise<PostureGroup[]> =>
+axiosInstance.get(`/customers/${customerId}/posture-groups`).then(res => res.data),
 
-  getById: async (id: string): Promise<Posture> => {
-    const response = await axiosInstance.get<Posture>(`/postures/${id}`);
-    return response.data;
-  },
+createGroup: (lessonId: string): Promise<PostureGroup> =>
+axiosInstance.post(`/lessons/${lessonId}/posture-groups`).then(res => res.data),
 
-  getByCustomerId: async (customerId: string): Promise<Posture[]> => {
-    const response = await axiosInstance.get<Posture[]>(`/postures/customer/${customerId}`);
-    return response.data;
-  },
+uploadImage: (formData: FormData): Promise<PostureImage> =>
+axiosInstance.post('/posture-images', formData).then(res => res.data),
 
-  create: async (formData: FormData): Promise<Posture> => {
-    const response = await axiosInstance.post<Posture>('/postures', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-    return response.data;
-  },
+getSignedUrls: (imageIds: string[], expiresIn = 3600): Promise<SignedUrl[]> =>
+axiosInstance.post('/posture-images/signed-urls', { imageIds, expiresIn }).then(res => res.data),
 
-  compare: async (beforeId: string, afterId: string): Promise<PostureComparison> => {
-    const response = await axiosInstance.post<PostureComparison>('/postures/compare', {
-      beforeId,
-      afterId,
-    });
-    return response.data;
-  },
-
-  delete: async (id: string): Promise<void> => {
-    await axiosInstance.delete(`/postures/${id}`);
-  },
+deleteImage: (imageId: string): Promise<PostureImage> =>
+axiosInstance.delete(`/posture-images/${imageId}`).then(res => res.data),
 };
-

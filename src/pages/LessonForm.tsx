@@ -3,26 +3,27 @@ import { lessonApi } from '../api/lessonApi';
 import { customerApi } from '../api/customerApi';
 import { userApi } from '../api/userApi';
 import { LessonFormData } from '../types/lesson';
-import { Customer } from '../types/customer';
-import { User } from '../types/user';
+import { Customer } from '../types/api/customer';
+import { User } from '../types/api/user';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../constants/routes';
 
 export const LessonForm: React.FC = () => {
   const [formData, setFormData] = useState<LessonFormData>({
     storeId: '',
-    userId: '',
+    trainerId: '',
     customerId: '',
     postureGroupId: null,
     condition: '',
     weight: null,
+    bmi: '',
     meal: '',
     memo: '',
     startDate: '',
     endDate: '',
     nextDate: null,
     nextStoreId: null,
-    nextUserId: null,
+    nextTrainerId: null,
     trainings: [],
   });
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -142,8 +143,8 @@ export const LessonForm: React.FC = () => {
             </div>
           ) : (
             <select
-              value={formData.userId}
-              onChange={(e) => setFormData({ ...formData, userId: e.target.value })}
+              value={formData.trainerId}
+              onChange={(e) => setFormData({ ...formData, trainerId: e.target.value })}
               required
               className="mt-1 block w-full px-3 py-2 border rounded-md"
             >

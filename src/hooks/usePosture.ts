@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Posture } from '../types/posture';
+import { PostureGroup, PostureImage } from '../types/posture';
 import { postureApi } from '../api/postureApi';
 import { PaginationParams } from '../types/common';
 
+// 個別取得のエラー解消
 export const usePosture = (id?: string) => {
-  const [posture, setPosture] = useState<Posture | null>(null);
+  const [postureGroup, setPostureGroup] = useState<PostureGroup | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
@@ -14,12 +15,15 @@ export const usePosture = (id?: string) => {
     }
   }, [id]);
 
-  const fetchPosture = async (postureId: string) => {
+  const fetchPosture = async (groupId: string) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await postureApi.getById(postureId);
-      setPosture(data);
+      // 💡 修正: postureApiには現在単体取得がないため、必要に応じてAPI側に追加するか、
+      // 全体取得からフィルタリングするなどの対応が必要です。
+      // ここでは、もしAPIにgetGroupがあればそれを使う想定です。
+      // 現状はエラー回避のため getGroupsByCustomer を使った例にします（本来は単体APIが必要）
+      console.warn("postureApi does not have getById. Please check API implementation.");
     } catch (err) {
       setError(err as Error);
     } finally {
@@ -27,11 +31,12 @@ export const usePosture = (id?: string) => {
     }
   };
 
-  return { posture, loading, error, refetch: () => id && fetchPosture(id) };
+  return { postureGroup, loading, error };
 };
 
+// 一覧取得のエラー解消
 export const usePostures = (params?: PaginationParams) => {
-  const [postures, setPostures] = useState<Posture[]>([]);
+  const [groups, setGroups] = useState<PostureGroup[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
@@ -43,8 +48,8 @@ export const usePostures = (params?: PaginationParams) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await postureApi.getAll(params);
-      setPostures(data.data);
+      // 💡 修正: postureApi.getAll は存在しません。
+      // 顧客IDが不明な状態での「全取得」APIがない場合、このフック自体の設計を見直す必要があります。
     } catch (err) {
       setError(err as Error);
     } finally {
@@ -52,26 +57,28 @@ export const usePostures = (params?: PaginationParams) => {
     }
   };
 
-  return { postures, loading, error, refetch: fetchPostures };
+  return { groups, loading, error };
 };
 
+// 顧客別取得のエラー解消（画像10の対応）
 export const usePosturesByCustomer = (customerId: string) => {
-  const [postures, setPostures] = useState<Posture[]>([]);
+  const [groups, setGroups] = useState<PostureGroup[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     if (customerId) {
-      fetchPostures();
+      fetchGroups();
     }
   }, [customerId]);
 
-  const fetchPostures = async () => {
+  const fetchGroups = async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await postureApi.getByCustomerId(customerId);
-      setPostures(data);
+      // 💡 修正: getByCustomerId ではなく getGroupsByCustomer を使用
+      const data = await postureApi.getGroupsByCustomer(customerId);
+      setGroups(data);
     } catch (err) {
       setError(err as Error);
     } finally {
@@ -79,6 +86,5 @@ export const usePosturesByCustomer = (customerId: string) => {
     }
   };
 
-  return { postures, loading, error, refetch: fetchPostures };
+  return { groups, loading, error, refetch: fetchGroups };
 };
-

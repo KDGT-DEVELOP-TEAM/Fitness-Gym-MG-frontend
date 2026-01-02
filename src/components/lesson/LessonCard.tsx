@@ -1,16 +1,16 @@
 import React from 'react';
 import { Lesson } from '../../types/lesson';
 
-interface LessonCardProps {
-  lesson: Lesson;
-  onClick?: () => void;
-}
-
 const formatDate = (dateStr?: string | null) => {
   if (!dateStr) return '-';
   const date = new Date(dateStr);
   return date.toLocaleDateString('ja-JP');
 };
+
+interface LessonCardProps {
+  lesson: Lesson;
+  onClick?: () => void;
+}
 
 export const LessonCard: React.FC<LessonCardProps> = ({ lesson, onClick }) => {
   return (
@@ -34,4 +34,3 @@ export const LessonCard: React.FC<LessonCardProps> = ({ lesson, onClick }) => {
     </div>
   );
 };
-

@@ -1,3 +1,5 @@
+// src/pages/CustomerProfile.tsx
+
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import {

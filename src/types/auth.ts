@@ -1,4 +1,4 @@
-import { User } from './user';
+import { User } from './api/user';
 
 export type { User };
 

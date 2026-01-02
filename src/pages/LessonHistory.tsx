@@ -75,8 +75,8 @@ export const LessonHistory: React.FC = () => {
         dayOfWeek: lesson.startDate ? new Date(lesson.startDate).toLocaleDateString('ja-JP', { weekday: 'short' }) : '',
         startTime: lesson.startDate ? new Date(lesson.startDate).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) : '',
         status: '完了',
-        customerName: lesson.customerId || '',
-        shopName: lesson.storeId || '',
+        customerName: lesson.customer.id || '',
+        shopName: lesson.store.id || '',
       }));
       setLessonHistory(formattedLessons);
 
@@ -404,3 +404,5 @@ export const LessonHistory: React.FC = () => {
     </div>
   );
 };
+
+export default LessonHistory;
