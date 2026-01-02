@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react';
 import { useLessonHistory } from '../../hooks/useLessonHistory';
 import { useStores } from '../../hooks/useStore';
-import { LessonCard } from '../../components/lesson/LessonCard';
+import { LessonCard } from '../../components/lesson/LessonCard2';
 import { LoadingRow, EmptyRow } from '../../components/common/TableStatusRows';
 import { adminHomeApi } from '../../api/admin/homeApi'; 
 import { AdminHomeResponse } from '../../types/admin/home'

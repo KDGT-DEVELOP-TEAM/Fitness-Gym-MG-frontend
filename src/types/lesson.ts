@@ -18,24 +18,32 @@ export interface Lesson {
   nextDate: string | null;
   nextStore?: Store | null;
   nextTrainer?: User | null;
-  createdAt?: string;
-  updatedAt?: string;
+  postureGroupId?: string | null;
+  nextStoreId?: string | null;
+}
+
+export interface TrainingInput {
+  name: string;
+  reps: number;
+  orderNo?: number;
 }
 
 export interface LessonFormData {
+  storeId: string;
   customerId: string;
   trainerId: string;
-  storeId: string;
   startDate: string;
   endDate: string;
   condition: string;
-  weight: string;
-  bmi: string;
-  meal: string;
-  memo: string;
-  nextDate: string;
-  nextStoreId: string;
-  nextTrainerId: string;
+  weight: number | null;
+  bmi: string | null;
+  meal: string | null;
+  memo: string | null;
+  nextDate: string | null;
+  nextStoreId: string | null;
+  nextTrainerId: string | null;
+  postureGroupId?: string | null;
+  trainings?: TrainingInput[];
 }
 
 export type LessonHistoryItem = Pick<
@@ -73,4 +81,25 @@ export interface LessonRequest {
   nextDate?: string;
   nextStoreId?: string;
   nextTrainerId?: string;
+}
+
+export interface AppointmentWithDetails {
+  id: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  status: string;
+  customer: {
+    id: string;
+    name: string;
+    phone?: string;
+  };
+  instructor: {
+    id: string;
+    name: string;
+  };
+  shop: {
+    id: string;
+    name: string;
+  };
 }

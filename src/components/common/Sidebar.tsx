@@ -1,11 +1,17 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../context/AuthContext';
+
+interface SubMenuItem {
+  path: string;
+  label: string;
+}
 
 interface MenuItem {
   path: string;
   label: string;
   icon: React.ReactNode;
+  subItems?: SubMenuItem[];
 }
 
 interface SidebarProps {
@@ -36,26 +42,72 @@ export const Sidebar: React.FC<SidebarProps> = ({ menuItems }) => {
         <ul className="space-y-2">
           {menuItems.map((item) => {
             const isActive = location.pathname === item.path;
+            const hasSubItems = item.subItems && item.subItems.length > 0;
+            const isSubItemActive = hasSubItems && item.subItems?.some(subItem => location.pathname === subItem.path);
+            const isActiveOrSubActive = isActive || isSubItemActive;
+
             return (
               <li key={item.path}>
-                <Link
-                  to={item.path}
-                  className="block rounded-20 p-0 transition-all"
-                >
-                  <div
-                    className={`rounded-20 px-6 pt-5 pb-[0.5px] transition-colors duration-200 ${ /*ホバースタイル　*/
-                      isActive
-                        ? 'bg-sidebar-hover shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)]'
-                        : 'bg-transparent hover:bg-[rgba(122,183,122,0.4)]'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      {item.icon && item.icon}
-                      <span className="text-lg">{item.label}</span>
+                {hasSubItems ? (
+                  <>
+                    <div
+                      className={`rounded-20 px-6 pt-5 pb-[0.5px] transition-colors duration-200 ${
+                        isActiveOrSubActive
+                          ? 'bg-sidebar-hover shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)]'
+                          : 'bg-transparent hover:bg-[rgba(122,183,122,0.4)]'
+                      }`}
+                    >
+                      <Link
+                        to={item.path}
+                        className="block pb-2"
+                      >
+                        <div className="flex items-center gap-3">
+                          {item.icon && item.icon}
+                          <span className="text-lg">{item.label}</span>
+                        </div>
+                      </Link>
+                      <ul className="px-6 pt-2 pb-2 space-y-1">
+                        {item.subItems?.map((subItem) => {
+                          const isSubActive = location.pathname === subItem.path;
+                          return (
+                            <li key={subItem.path}>
+                              <Link
+                                to={subItem.path}
+                                className={`block py-1 px-3 rounded-lg text-base transition-all ${
+                                  isSubActive
+                                    ? 'text-white font-medium bg-[rgba(255,255,255,0.15)]'
+                                    : 'text-white/90 hover:text-white hover:bg-[rgba(255,255,255,0.1)]'
+                                }`}
+                              >
+                                {subItem.label}
+                              </Link>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                      <div className="bg-white h-[3px] mt-1" />
                     </div>
-                    <div className="bg-white h-[3px] mt-3" />
-                  </div>
-                </Link>
+                  </>
+                ) : (
+                  <Link
+                    to={item.path}
+                    className="block rounded-20 p-0 transition-all"
+                  >
+                    <div
+                      className={`rounded-20 px-6 pt-5 pb-[0.5px] transition-colors duration-200 ${
+                        isActive
+                          ? 'bg-sidebar-hover shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)]'
+                          : 'bg-transparent hover:bg-[rgba(122,183,122,0.4)]'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        {item.icon && item.icon}
+                        <span className="text-lg">{item.label}</span>
+                      </div>
+                      <div className="bg-white h-[3px] mt-3" />
+                    </div>
+                  </Link>
+                )}
               </li>
             );
           })}

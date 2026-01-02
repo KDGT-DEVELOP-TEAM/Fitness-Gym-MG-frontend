@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from './ProtectedRoute';
-import { LoginPage } from '../pages/auth/LoginPage';
+import { Login } from '../pages/Login';
 import { AdminDashboard } from '../pages/admin/AdminDashboard';
 import { ManagerDashboard } from '../pages/manager/ManagerDashboard';
 import { CustomerManagement } from '../pages/CustomerManagement';
@@ -18,7 +18,7 @@ export const AppRouter = () => {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/login" element={<LoginPage />} />
+        <Route path="/login" element={<Login />} />
 
         <Route path="/trainer" element={<ProtectedRoute roles={['TRAINER']} />}>
           <Route index element={<Navigate to="/trainer/home" replace />} />

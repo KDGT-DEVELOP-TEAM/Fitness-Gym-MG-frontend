@@ -1,36 +1,23 @@
 import axiosInstance from './axiosConfig';
+import { LoginCredentials, AuthResponse } from '../types/auth';
 import { storage } from '../utils/storage';
-import { User } from '../types/api/user';
-
-export interface LoginRequest {
-  email: string;
-  password: string;
-}
-
-export interface LoginResponse extends User {
-  token?: string;
-}
 
 export const authApi = {
-  login: async (credentials: LoginRequest): Promise<LoginResponse> => {
-    const response = await axiosInstance.post<any>('/auth/login', credentials);
-    const data = response.data;
+  login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
+    const response = await axiosInstance.post<AuthResponse>('/auth/login', credentials);
+    const { token, user } = response.data;
 
-    // 🔑 userId を id に詰め替える（バックエンドのキーに合わせる）
-    const formattedUser: LoginResponse = {
-      ...data,
-      id: data.id || data.userId, // userId が来ても id として扱う
-    };
-    const { token, ...userData } = response.data;
-    
     // JWTトークンを保存
-    if (token) {
-      storage.setToken(token);
-    }
-    
+    storage.setToken(token);
+
     // ユーザー情報を保存
-    storage.setUser(userData);
-    
+    storage.setUser({
+      userId: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+    });
+
     return response.data;
   },
 
@@ -42,8 +29,8 @@ export const authApi = {
     }
   },
 
-  checkAuth: async (): Promise<LoginResponse> => {
-    const response = await axiosInstance.get<LoginResponse>('/auth/login');
-    return response.data;
+  getCurrentUser: async (): Promise<AuthResponse['user']> => {
+    const response = await axiosInstance.get<AuthResponse>('/auth/me');
+    return response.data.user;
   },
 };

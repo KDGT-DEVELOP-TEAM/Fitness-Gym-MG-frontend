@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useLayoutEffect, useMemo } from 're
 import { useLessonHistory } from '../../hooks/useLessonHistory';
 import { useStores } from '../../hooks/useStore';
 import { useAuth } from '../../context/AuthContext';
-import { LessonCard } from '../../components/lesson/LessonCard';
+import { LessonCard } from '../../components/lesson/LessonCard2';
 import { managerHomeApi } from '../../api/manager/homeApi';
 import { LoadingRow, EmptyRow } from '../../components/common/TableStatusRows';
 import { ManagerHomeResponse } from '../../types/manager/home';
