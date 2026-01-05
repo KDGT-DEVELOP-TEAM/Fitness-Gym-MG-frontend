@@ -5,7 +5,7 @@ export interface Customer {
   kana: string;
   name: string;
   gender: Gender;
-  birthday: string;
+  birthdate: string; // バックエンドのCustomerResponse.birthdateに対応（birthdayから変換される）
   height: number;
   email: string;
   phone: string;
@@ -48,7 +48,7 @@ export interface CustomerListItem {
     id: string;
     name: string;
     kana: string | null;
-    birthday: string;
+    birthdate: string; // バックエンドのCustomerResponse.birthdateに対応
     active: boolean; // バックエンドのCustomerResponse.activeに対応
   }
   

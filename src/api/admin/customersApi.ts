@@ -16,14 +16,8 @@ export const adminCustomersApi = {
       .then(res => convertPageResponse(res.data));
   },
 
-  getCustomer: (customerId: string): Promise<Customer> =>
-    axiosInstance.get<Customer>(`/admin/customers/${customerId}`).then(res => res.data),
-
-  createCustomer: (customerData: CustomerRequest): Promise<Customer> =>
-    axiosInstance.post<Customer>('/admin/customers', customerData).then(res => res.data),
-
-  updateCustomer: (customerId: string, customerData: CustomerRequest): Promise<Customer> =>
-    axiosInstance.patch<Customer>(`/admin/customers/${customerId}`, customerData).then(res => res.data),
+  createCustomer: (customerData: CustomerRequest): Promise<void> =>
+    axiosInstance.post<void>('/admin/customers', customerData).then(() => undefined),
   
   // 有効無効切り替えは編集モーダル内(update)でしか行わないため、コメントアウト
   // enableCustomer: (customerId: string): Promise<Customer> =>

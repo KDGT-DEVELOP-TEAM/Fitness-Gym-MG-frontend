@@ -39,7 +39,7 @@ export const lessonApi = {
    */
   create: async (customerId: string, data: LessonRequest): Promise<Lesson> => {
     const response = await axiosInstance.post<Lesson>(
-      `/api/customers/${customerId}/lessons`,
+      `/customers/${customerId}/lessons`,
       data
     );
     return response.data;
@@ -53,7 +53,7 @@ export const lessonApi = {
     data: Partial<LessonRequest>
   ): Promise<Lesson> => {
     const response = await axiosInstance.patch<Lesson>(
-      `/api/lessons/${lessonId}`,
+      `/lessons/${lessonId}`,
       data
     );
     return response.data;
@@ -64,7 +64,7 @@ export const lessonApi = {
    */
   getById: async (lessonId: string): Promise<Lesson> => {
     const response = await axiosInstance.get<Lesson>(
-      `/api/lessons/${lessonId}`
+      `/lessons/${lessonId}`
     );
     return response.data;
   },
@@ -77,7 +77,7 @@ export const lessonApi = {
     params?: { page?: number; size?: number }
   ): Promise<PaginatedResponse<Lesson>> => {
     const response = await axiosInstance.get<SpringPage<Lesson>>(
-      `/api/customers/${customerId}/lessons`,
+      `/customers/${customerId}/lessons`,
       { params }
     );
     return convertPageResponse(response.data);

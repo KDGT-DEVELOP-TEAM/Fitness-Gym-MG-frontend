@@ -1,6 +1,6 @@
-export interface TrainerHomeResponse {
-    totalCustomers: number;
-    activeCustomers: number;
-    pendingLessons: number;
-    // その他必要なフィールド
-}
+import { HomeResponse } from '../admin/home';
+
+/**
+ * Trainer用のHomeResponseエイリアス
+ */
+export type TrainerHomeResponse = HomeResponse;

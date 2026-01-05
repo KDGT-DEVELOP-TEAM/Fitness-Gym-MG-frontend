@@ -21,7 +21,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
     name: initialData?.name || '',
     kana: initialData?.kana || '',
     gender: initialData?.gender || '男',
-    birthday: initialData?.birthday || '',
+    birthday: initialData?.birthdate || '', // バックエンドのCustomerResponse.birthdateをフォームのbirthdayに変換
     height: initialData?.height || 0,
     email: initialData?.email || '',
     phone: initialData?.phone || '',

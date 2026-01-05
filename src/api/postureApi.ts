@@ -8,7 +8,7 @@ export const postureApi = {
    * レスポンス: PostureGroupResponse[]
    */
   getPostureGroups: (customerId: string): Promise<PostureGroupResponse[]> =>
-    axiosInstance.get<PostureGroupResponse[]>(`/api/customers/${customerId}/posture_groups`).then(res => res.data),
+    axiosInstance.get<PostureGroupResponse[]>(`/customers/${customerId}/posture_groups`).then(res => res.data),
 
   /**
    * レッスンに紐づく姿勢グループを作成
@@ -17,7 +17,7 @@ export const postureApi = {
    * レスポンス: PostureGroupResponse
    */
   createPostureGroup: (lessonId: string): Promise<PostureGroupResponse> =>
-    axiosInstance.post<PostureGroupResponse>(`/api/lessons/${lessonId}/posture_groups`).then(res => res.data),
+    axiosInstance.post<PostureGroupResponse>(`/lessons/${lessonId}/posture_groups`).then(res => res.data),
 
   /**
    * 姿勢画像をアップロード
@@ -46,7 +46,7 @@ export const postureApi = {
       formData.append('takenAt', takenAt);
     }
 
-    const response = await axiosInstance.post<PostureImageUploadResponse>('/api/posture_images/upload', formData, {
+    const response = await axiosInstance.post<PostureImageUploadResponse>('/posture_images/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
     return response.data;
@@ -59,7 +59,7 @@ export const postureApi = {
    * レスポンス: BatchSignedUrlResponse
    */
   getBatchSignedUrls: (imageIds: string[], expiresIn: number = 3600): Promise<BatchSignedUrlResponse> =>
-    axiosInstance.post<BatchSignedUrlResponse>('/api/posture_images/signed-urls', { imageIds, expiresIn }).then(res => res.data),
+    axiosInstance.post<BatchSignedUrlResponse>('/posture_images/signed-urls', { imageIds, expiresIn }).then(res => res.data),
 
   /**
    * 画像削除
@@ -67,5 +67,5 @@ export const postureApi = {
    * レスポンス: 204 No Content (void)
    */
   deleteImage: (imageId: string): Promise<void> =>
-    axiosInstance.delete(`/api/posture_images/${imageId}`).then(() => undefined),
+    axiosInstance.delete(`/posture_images/${imageId}`).then(() => undefined),
 };

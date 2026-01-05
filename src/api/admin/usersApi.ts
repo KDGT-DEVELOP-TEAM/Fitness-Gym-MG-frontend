@@ -14,14 +14,14 @@ export const adminUsersApi = {
 
   // createUser: (userData: UserFormData): Promise<User> =>
   //   axiosInstance.post<User>('/admin/users', userData).then(res => res.data),
-  createUser: (userData: UserRequest): Promise<User> => {
-    return axiosInstance.post<User>('/admin/users', userData).then(res => res.data);
+  createUser: (userData: UserRequest): Promise<void> => {
+    return axiosInstance.post<void>('/admin/users', userData).then(() => undefined);
   },
 
   // updateUser: (userId: string, userData: UserFormData): Promise<User> =>
   //   axiosInstance.patch<User>(`/admin/users/${userId}`, userData).then(res => res.data),
-  updateUser: (userId: string, userData: UserRequest): Promise<User> => {
-    return axiosInstance.patch<User>(`/admin/users/${userId}`, userData).then(res => res.data);
+  updateUser: (userId: string, userData: UserRequest): Promise<void> => {
+    return axiosInstance.patch<void>(`/admin/users/${userId}`, userData).then(() => undefined);
   },
 
   // 有効無効切り替えは編集モーダル内(update)でしか行わないため、コメントアウト
@@ -32,5 +32,5 @@ export const adminUsersApi = {
   //   axiosInstance.patch<User>(`/admin/users/${userId}/disable`).then(res => res.data),
 
   deleteUser: (userId: string): Promise<void> =>
-    axiosInstance.delete<void>(`/admin/users/${userId}`).then(res => res.data),
+    axiosInstance.delete<void>(`/admin/users/${userId}`).then(() => undefined),
 };

@@ -14,14 +14,14 @@ export const managerUsersApi = {
 
   // createUser: (storeId: string, userData: UserFormData): Promise<User> =>
   //   axiosInstance.post<User>(`/stores/${storeId}/manager/users`, userData).then(res => res.data),
-  createUser: (storeId: string, userData: UserRequest): Promise<User> => {
-    return axiosInstance.post<User>(`/stores/${storeId}/manager/users`, userData).then(res => res.data);
+  createUser: (storeId: string, userData: UserRequest): Promise<void> => {
+    return axiosInstance.post<void>(`/stores/${storeId}/manager/users`, userData).then(() => undefined);
   },
 
   // updateUser: (storeId: string, userId: string, userData: UserFormData): Promise<User> =>
   //   axiosInstance.patch<User>(`/stores/${storeId}/manager/users/${userId}`, userData).then(res => res.data),
-  updateUser: (storeId: string, userId: string, userData: UserRequest): Promise<User> => {
-    return axiosInstance.patch<User>(`/stores/${storeId}/manager/users/${userId}`, userData).then(res => res.data);
+  updateUser: (storeId: string, userId: string, userData: UserRequest): Promise<void> => {
+    return axiosInstance.patch<void>(`/stores/${storeId}/manager/users/${userId}`, userData).then(() => undefined);
   },
 
   // 有効無効切り替えは編集モーダル内(update)でしか行わないため、コメントアウト
@@ -32,5 +32,5 @@ export const managerUsersApi = {
   //   axiosInstance.patch<User>(`/stores/${storeId}/manager/users/${userId}/disable`).then(res => res.data),
 
   deleteUser: (storeId: string, userId: string): Promise<void> =>
-    axiosInstance.delete<void>(`/stores/${storeId}/manager/users/${userId}`).then(res => res.data),
+    axiosInstance.delete<void>(`/stores/${storeId}/manager/users/${userId}`).then(() => undefined),
 };

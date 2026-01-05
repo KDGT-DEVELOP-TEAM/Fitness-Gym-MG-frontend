@@ -7,6 +7,7 @@ import { Customer, CustomerRequest } from '../types/api/customer';
 import { useAuth } from '../context/AuthContext';
 import { adminCustomersApi } from '../api/admin/customersApi';
 import { managerCustomersApi } from '../api/manager/customersApi';
+import { customerApi } from '../api/customerApi';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -37,7 +38,7 @@ export const CustomerManagement: React.FC = () => {
       create: (data: CustomerRequest) => 
         isAdmin ? adminCustomersApi.createCustomer(data) : managerCustomersApi.createCustomer(storeId!, data),
       update: (id: string, data: CustomerRequest) => 
-        isAdmin ? adminCustomersApi.updateCustomer(id, data) : managerCustomersApi.updateCustomer(storeId!, id, data),
+        customerApi.updateProfile(id, data),
       delete: (id: string) => 
         isAdmin ? adminCustomersApi.deleteCustomer(id) : managerCustomersApi.deleteCustomer(storeId!, id),
     };

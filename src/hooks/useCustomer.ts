@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import axios from 'axios';
 import { adminCustomersApi } from '../api/admin/customersApi';
+import { customerApi } from '../api/customerApi';
 import { Customer, CustomerRequest, CustomerListParams } from '../types/api/customer';
 
 interface ApiError {
@@ -39,7 +40,7 @@ export const useCustomers = () => {
 
   // CustomerRequest 型を受け取るように修正
   const createCustomer = (data: CustomerRequest) => adminCustomersApi.createCustomer(data);
-  const updateCustomer = (id: string, data: CustomerRequest) => adminCustomersApi.updateCustomer(id, data);
+  const updateCustomer = (id: string, data: CustomerRequest) => customerApi.updateProfile(id, data);
   const deleteCustomer = (id: string) => adminCustomersApi.deleteCustomer(id);
 
   return {

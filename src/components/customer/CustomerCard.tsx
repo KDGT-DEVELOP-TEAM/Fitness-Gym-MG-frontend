@@ -3,7 +3,7 @@ import { CustomerListItem } from '../../types/api/customer';
 
 interface CustomerCardProps {
   customer: CustomerListItem;
-  calculateAge: (birthday: string) => number;
+  calculateAge: (birthdate: string) => number;
   onEdit: (customer: CustomerListItem) => void;
 }
 
@@ -25,7 +25,7 @@ export const CustomerCard: React.FC<CustomerCardProps> = ({ customer, calculateA
       {/* 年齢 */}
       <td className="px-8 py-6 text-center">
         <span className="text-sm font-bold text-gray-600">
-          {calculateAge(customer.birthday)}歳
+          {calculateAge(customer.birthdate)}歳
         </span>
       </td>
 

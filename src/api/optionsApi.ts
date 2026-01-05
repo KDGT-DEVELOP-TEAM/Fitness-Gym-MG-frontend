@@ -33,7 +33,7 @@ interface CustomerResponse {
  */
 export const fetchStoreOptions = async (): Promise<Option[]> => {
   try {
-    const response = await axiosInstance.get<StoreResponse[]>('/api/stores');
+    const response = await axiosInstance.get<StoreResponse[]>('/stores');
     const data = response.data;
     
     if (!data || !Array.isArray(data)) {
@@ -54,7 +54,7 @@ export const fetchStoreOptions = async (): Promise<Option[]> => {
  */
 export const fetchUserOptions = async (): Promise<Option[]> => {
   try {
-    const response = await axiosInstance.get<UserResponse[]>('/api/users');
+    const response = await axiosInstance.get<UserResponse[]>('/users');
     const data = response.data;
     
     if (!data || !Array.isArray(data)) {
@@ -74,7 +74,7 @@ export const fetchUserOptions = async (): Promise<Option[]> => {
  */
 export const fetchCustomerOptions = async (): Promise<Option[]> => {
   try {
-    const response = await axiosInstance.get<CustomerResponse[]>('/api/customers');
+    const response = await axiosInstance.get<CustomerResponse[]>('/customers');
     const data = response.data;
     
     if (!data || !Array.isArray(data)) {

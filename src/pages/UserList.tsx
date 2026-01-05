@@ -1,5 +1,5 @@
 import React from 'react';
-import { userApi } from '../api/userApi';
+import axiosInstance from '../api/axiosConfig';
 import { User } from '../types/api/user';
 import { useState, useEffect } from 'react';
 
@@ -12,8 +12,9 @@ export const UserList: React.FC = () => {
     const fetchUsers = async () => {
       setLoading(true);
       try {
-        const data = await userApi.getAll();
-        setUsers(data.data);
+        // バックエンドのGET /api/usersはオプション選択用（ページングなし、全ユーザー返却）
+        const response = await axiosInstance.get<User[]>('/users');
+        setUsers(response.data);
       } catch (err) {
         setError(err as Error);
       } finally {
