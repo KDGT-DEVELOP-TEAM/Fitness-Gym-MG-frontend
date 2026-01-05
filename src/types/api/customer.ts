@@ -40,7 +40,13 @@ export interface CustomerRequest {
   firstPostureGroupId?: string | null;
   active?: boolean; // デフォルト: true
 
-  // 店舗ID（ADMINの場合は必須、MANAGERの場合はパス変数から取得されるため省略可能）
+  /**
+   * 店舗ID
+   * ADMINの場合: 不要（送信しない）。顧客は店舗に紐づかない。
+   * MANAGERの場合: パス変数から取得されるため、リクエストボディでは不要。
+   * 店舗と紐付くのはLessonであり、顧客自体は店舗に紐づかない。
+   * ただし、MANAGERが作成する顧客は検索・フィルタリングのため店舗と紐付ける。
+   */
   storeId?: string;
 }
 
