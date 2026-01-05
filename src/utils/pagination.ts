@@ -1,6 +1,6 @@
 /**
  * ページネーション関連のユーティリティ関数
- * Spring Data JPA形式のPage<T>をフロントエンド形式のPaginatedResponse<T>に変換
+ * Spring Data JPA形式のPage<T>からフロントエンド形式のPaginatedResponse<T>に変換
  */
 
 /**
@@ -28,7 +28,7 @@ export interface PaginatedResponse<T> {
 }
 
 /**
- * Spring Data JPA形式のPage<T>をフロントエンド形式のPaginatedResponse<T>に変換
+ * Spring Data JPA形式のPage<T>からフロントエンド形式のPaginatedResponse<T>に変換
  * @param springPage Spring Data JPA形式のページネーションレスポンス
  * @returns フロントエンド形式のページネーションレスポンス
  */
@@ -40,4 +40,3 @@ export function convertPageResponse<T>(springPage: SpringPage<T>): PaginatedResp
     limit: springPage.size,
   };
 }
-

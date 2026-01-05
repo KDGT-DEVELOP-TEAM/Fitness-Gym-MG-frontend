@@ -1,6 +1,11 @@
 import React from 'react';
 import { Lesson } from '../../types/lesson';
-import { formatDate, formatDateTime } from '../../utils/dateFormatter';
+
+const formatDate = (dateStr?: string | null) => {
+  if (!dateStr) return '-';
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('ja-JP');
+};
 
 interface LessonCardProps {
   lesson: Lesson;
@@ -8,8 +13,6 @@ interface LessonCardProps {
 }
 
 export const LessonCard: React.FC<LessonCardProps> = ({ lesson, onClick }) => {
-  const start = lesson.startDate;
-  const end = lesson.endDate;
   return (
     <div
       onClick={onClick}
@@ -17,14 +20,17 @@ export const LessonCard: React.FC<LessonCardProps> = ({ lesson, onClick }) => {
     >
       <div className="flex justify-between items-start">
         <div>
-          {start && <p className="font-semibold">{formatDate(start)}</p>}
+          <p className="font-semibold">
+            {formatDate(lesson.startDate)} {lesson.startDate && lesson.endDate && `- ${formatDate(lesson.endDate)}`}
+          </p>
           <p className="text-sm text-gray-600">
-            {start ? formatDateTime(start) : ''} {end ? ` - ${formatDateTime(end)}` : ''}
+            体重: {lesson.weight ? `${lesson.weight}kg` : '未記録'}
           </p>
         </div>
       </div>
-      {lesson.memo && <p className="mt-2 text-sm text-gray-600">{lesson.memo}</p>}
+      {lesson.memo && (
+        <p className="mt-2 text-sm text-gray-600">{lesson.memo}</p>
+      )}
     </div>
   );
 };
-

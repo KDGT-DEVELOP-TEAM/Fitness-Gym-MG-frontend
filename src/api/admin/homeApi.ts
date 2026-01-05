@@ -1,5 +1,7 @@
 import axiosInstance from '../axiosConfig';
+import { AdminHomeResponse } from '../../types/admin/home';
 
 export const adminHomeApi = {
-  getHome: () => axiosInstance.get('/api/admin/home').then(res => res.data),
+  getHome: (): Promise<AdminHomeResponse> =>
+    axiosInstance.get<AdminHomeResponse>('/admin/home').then(res => res.data),
 };

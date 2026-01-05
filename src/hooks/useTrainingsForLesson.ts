@@ -26,7 +26,7 @@ export const useTrainingsForLesson = (lessonId: string | undefined) => {
       setLoading(true);
       try {
         // バックエンドのLessonResponseにはtrainingsフィールドが含まれている
-        const lessonResponse = await lessonApi.getLesson(lessonId);
+        const lessonResponse = await lessonApi.getById(lessonId);
         const trainingsData = lessonResponse.trainings || [];
 
         if (!Array.isArray(trainingsData)) {

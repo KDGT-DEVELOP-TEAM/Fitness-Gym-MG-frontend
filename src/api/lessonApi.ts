@@ -1,64 +1,138 @@
 import axiosInstance from './axiosConfig';
-import { Lesson, TrainingResponse } from '../types/lesson';
-import { convertPageResponse, PaginatedResponse, SpringPage } from '../utils/pagination';
+import {
+  Lesson,
+  LessonHistoryItem,
+  LessonChartData,
+  LessonRequest,
+} from '../types/lesson';
+import {
+  convertPageResponse,
+  PaginatedResponse,
+  SpringPage,
+} from '../utils/pagination';
 
 /**
- * バックエンドのLessonRequestに対応する型
+ * ============================
+ * Query Params
+ * ============================
  */
-export interface LessonCreateRequest {
-  storeId: string; // UUID (必須)
-  trainerId: string; // UUID (必須)
-  condition?: string | null; // String (最大500文字)
-  weight?: number | null; // BigDecimal (0.0以上500.0以下)
-  meal?: string | null; // String (最大500文字)
-  memo?: string | null; // String (最大1000文字)
-  startDate: string; // LocalDateTime (必須)
-  endDate: string; // LocalDateTime (必須)
-  nextDate?: string | null; // LocalDateTime (オプション)
-  nextStoreId?: string | null; // UUID (オプション)
-  nextTrainerId?: string | null; // UUID (オプション)
-  trainings?: Array<{
-    orderNo: number; // Integer (必須, 1以上)
-    name: string; // String (必須, 最大100文字)
-    reps: number; // Integer (必須, 1以上, 最大値制限あり)
-  }>; // List<TrainingRequest> (最大件数制限あり)
+
+export interface LessonHistoryParams {
+  storeId?: string; // 'all' または UUID
+  page?: number;
+  size?: number;
 }
+
+/**
+ * ============================
+ * Lesson API
+ * ============================
+ * ・REST責務を厳密に統一
+ * ・any 排除
+ * ・型はすべて src/types に集約
+ */
 
 export const lessonApi = {
   /**
    * レッスン作成
-   * POST /api/customers/{customer_id}/lessons
-   * リクエスト: LessonRequest
-   * レスポンス: LessonResponse (詳細情報を含む)
+   * POST /api/customers/{customerId}/lessons
    */
-  createLesson: (customerId: string, lessonData: LessonCreateRequest): Promise<Lesson> =>
-    axiosInstance.post<Lesson>(`/api/customers/${customerId}/lessons`, lessonData).then(res => res.data),
-
-  /**
-   * 顧客のレッスン一覧取得（ページネーション）
-   * GET /api/customers/{customer_id}/lessons
-   * レスポンス: Page<LessonResponse>
-   */
-  getLessons: (customerId: string, params?: { page?: number; size?: number }): Promise<PaginatedResponse<Lesson>> => {
-    const queryString = new URLSearchParams(params as any).toString();
-    return axiosInstance.get<SpringPage<Lesson>>(`/api/customers/${customerId}/lessons?${queryString}`)
-      .then(res => convertPageResponse(res.data));
+  create: async (customerId: string, data: LessonRequest): Promise<Lesson> => {
+    const response = await axiosInstance.post<Lesson>(
+      `/api/customers/${customerId}/lessons`,
+      data
+    );
+    return response.data;
   },
 
   /**
-   * レッスン詳細取得
-   * GET /api/lessons/{lesson_id}
-   * レスポンス: LessonResponse
+   * レッスン更新（部分更新）
    */
-  getLesson: (lessonId: string): Promise<Lesson> =>
-    axiosInstance.get<Lesson>(`/api/lessons/${lessonId}`).then(res => res.data),
+  update: async (
+    lessonId: string,
+    data: Partial<LessonRequest>
+  ): Promise<Lesson> => {
+    const response = await axiosInstance.patch<Lesson>(
+      `/api/lessons/${lessonId}`,
+      data
+    );
+    return response.data;
+  },
 
   /**
-   * レッスン更新
-   * PATCH /api/lessons/{lesson_id}
-   * リクエスト: LessonRequest
-   * レスポンス: LessonResponse
+   * 単一レッスン取得
    */
-  updateLesson: (lessonId: string, lessonData: LessonCreateRequest): Promise<Lesson> =>
-    axiosInstance.patch<Lesson>(`/api/lessons/${lessonId}`, lessonData).then(res => res.data),
+  getById: async (lessonId: string): Promise<Lesson> => {
+    const response = await axiosInstance.get<Lesson>(
+      `/api/lessons/${lessonId}`
+    );
+    return response.data;
+  },
+
+  /**
+   * 顧客別レッスン一覧（ページング）
+   */
+  getByCustomer: async (
+    customerId: string,
+    params?: { page?: number; size?: number }
+  ): Promise<PaginatedResponse<Lesson>> => {
+    const response = await axiosInstance.get<SpringPage<Lesson>>(
+      `/api/customers/${customerId}/lessons`,
+      { params }
+    );
+    return convertPageResponse(response.data);
+  },
+
+  // 以下のエンドポイントはバックエンドに実装されていないため、コメントアウト
+  // 必要に応じてバックエンドに実装を追加するか、この機能を削除してください
+
+  /**
+   * レッスン履歴一覧（管理画面）
+   * @deprecated バックエンドに実装されていません
+   */
+  // getHistory: async (
+  //   params?: LessonHistoryParams
+  // ): Promise<PaginatedResponse<LessonHistoryItem>> => {
+  //   const query = new URLSearchParams();
+  //   if (params?.storeId && params.storeId !== 'all') {
+  //     query.append('storeId', params.storeId);
+  //   }
+  //   if (params?.page !== undefined) {
+  //     query.append('page', String(params.page));
+  //   }
+  //   if (params?.size !== undefined) {
+  //     query.append('size', String(params.size));
+  //   }
+  //   const response = await axiosInstance.get<
+  //     SpringPage<LessonHistoryItem>
+  //   >(`/api/lessons/history?${query.toString()}`);
+  //   return convertPageResponse(response.data);
+  // },
+
+  /**
+   * グラフ用データ取得
+   * @deprecated バックエンドに実装されていません
+   */
+  // getChartData: async (
+  //   storeId: string | undefined,
+  //   type: 'week' | 'month'
+  // ): Promise<LessonChartData> => {
+  //   const query = new URLSearchParams();
+  //   if (storeId && storeId !== 'all') {
+  //     query.append('storeId', storeId);
+  //   }
+  //   query.append('type', type);
+  //   const response = await axiosInstance.get<LessonChartData>(
+  //     `/api/lessons/chart?${query.toString()}`
+  //   );
+  //   return response.data;
+  // },
+
+  /**
+   * レッスン削除
+   * @deprecated バックエンドに実装されていません
+   */
+  // delete: async (lessonId: string): Promise<void> => {
+  //   await axiosInstance.delete(`/api/lessons/${lessonId}`);
+  // },
 };

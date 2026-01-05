@@ -23,6 +23,7 @@ export interface PostureComparison {
 /**
  * バックエンドのPostureImageResponseに対応する型
  * フィールド名はバックエンド仕様（camelCase）に合わせる
+ * feature/new-lesson-detailブランチの構造を維持
  */
 export interface PostureImage {
   id: string;
@@ -73,3 +74,15 @@ export interface BatchSignedUrlResponse {
   }>;
 }
 
+// developブランチから追加された型定義（互換性のため）
+export interface PostureGroup {
+  id: string;
+  lessonId: string;
+  customerId: string;
+}
+
+export interface SignedUrl {
+  imageId: string;
+  signedUrl: string;
+  expiresAt: string;
+}

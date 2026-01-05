@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { PosturePreview, PosturePosition } from '../types/lesson';
+import { PosturePreview, PosturePosition } from '../constants/posture';
 import { TIME_CONSTANTS } from '../constants/time';
 import { logger } from '../utils/logger';
 import { isPosturePosition } from '../constants/posture';
@@ -32,7 +32,7 @@ export const usePostureImagesForLesson = (
       // GET /api/lessons/{lesson_id}
       // レスポンス: LessonResponse (postureImagesフィールドが含まれる)
       logger.debug('Fetching posture images for lesson', { lessonId }, 'usePostureImagesForLesson');
-      const lessonResponse = await lessonApi.getLesson(lessonId);
+      const lessonResponse = await lessonApi.getById(lessonId);
       
       // バックエンドのレスポンス構造: LessonResponse.postureImages (PostureImageResponse[])
       // PostureImageResponseはcamelCase (storageKey, takenAt, position, consentPublication)

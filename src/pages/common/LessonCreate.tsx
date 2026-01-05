@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ROUTES } from '../../constants/routes';
 import { lessonApi } from '../../api/lessonApi';
 import { postureApi } from '../../api/postureApi';
-import { LessonFormData, TrainingInput } from '../../types/lesson';
+import { LessonFormData, TrainingInput, TrainingRequest, LessonRequest } from '../../types/lesson';
 import { logger } from '../../utils/logger';
 import { PosturePosition, getPosturePositionLabel, ALL_POSTURE_POSITIONS } from '../../constants/posture';
 import { useOptions } from '../../hooks/useOptions';
@@ -74,9 +74,13 @@ export const LessonCreate: React.FC = () => {
     });
   };
 
-  const addTraining = () => setTrainings((prev) => [...prev, { name: '', reps: 0 }]);
+  const addTraining = () => setTrainings((prev) => [...prev, { name: '', reps: 0, orderNo: prev.length + 1 }]);
   const removeTraining = (index: number) =>
-    setTrainings((prev) => prev.filter((_, i) => i !== index));
+    setTrainings((prev) => {
+      const filtered = prev.filter((_, i) => i !== index);
+      // orderNoを再設定（1から連番）
+      return filtered.map((t, idx) => ({ ...t, orderNo: idx + 1 }));
+    });
 
   // カメラ開始
   const startCamera = async () => {
@@ -303,26 +307,29 @@ export const LessonCreate: React.FC = () => {
     setLoading(true);
     try {
       // バックエンドのLessonRequest仕様に合わせてリクエストを構築
-      const lessonRequest = {
+      // TrainingInputをTrainingRequestに変換（orderNoを設定）
+      const trainingRequests: TrainingRequest[] = trainings.map((t, idx) => ({
+        orderNo: t.orderNo || idx + 1,
+        name: t.name,
+        reps: t.reps,
+      }));
+
+      const lessonRequest: LessonRequest = {
         storeId: formData.storeId,
         trainerId: formData.userId,
-        condition: formData.condition || null,
+        condition: formData.condition || undefined,
         weight: formData.weight ?? null,
-        meal: formData.meal || null,
-        memo: formData.memo || null,
+        meal: formData.meal || undefined,
+        memo: formData.memo || undefined,
         startDate: formData.startDate!, // 必須（バリデーション済み）
         endDate: formData.endDate!, // 必須（バリデーション済み）
         nextDate: formData.nextDate || null,
         nextStoreId: formData.nextStoreId || null,
         nextTrainerId: formData.nextUserId || null,
-        trainings: trainings.map((t, idx) => ({
-          orderNo: t.orderNo ?? (idx + 1), // デフォルト値はインデックス+1
-          name: t.name,
-          reps: t.reps
-        }))
+        trainings: trainingRequests.length > 0 ? trainingRequests : undefined,
       };
 
-      const created = await lessonApi.createLesson(formData.customerId, lessonRequest);
+      const created = await lessonApi.create(formData.customerId, lessonRequest);
       if (created?.id) {
         await linkPostureGroupToLesson(created.id);
       }

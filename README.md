@@ -106,7 +106,7 @@ fitnessgym-mg-frontend/
 │   │
 │   ├── pages/                 # ページコンポーネント
 │   │   ├── Login.tsx
-│   │   ├── ShopManagement.tsx
+│   │   ├── StoreManagement.tsx
 │   │   ├── CustomerSelect.tsx
 │   │   ├── LessonForm.tsx
 │   │   ├── LessonHistory.tsx

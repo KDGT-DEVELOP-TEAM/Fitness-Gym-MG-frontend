@@ -1,16 +1,15 @@
 import { Navigate, Outlet } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { Loading } from '../components/common/Loading';
+import { useAuth } from '../hooks/useAuth';
 
 interface ProtectedRouteProps {
-  roles?: Array<'ADMIN' | 'MANAGER' | 'TRAINER'>;
+  roles?: string[];
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ roles }) => {
   const { user, isAuthenticated, authLoading } = useAuth();
 
   if (authLoading) {
-    return <Loading />;
+    return <div>Loading...</div>;
   }
 
   if (!isAuthenticated) {

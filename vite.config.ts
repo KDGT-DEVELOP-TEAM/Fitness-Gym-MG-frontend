@@ -15,8 +15,10 @@ export default defineConfig({
     open: true,
   },
   build: {
-    outDir: 'dist',
+    outDir: 'build',
     sourcemap: true,
   },
+  define: {
+    'process.env': {},
+  },
 });
-

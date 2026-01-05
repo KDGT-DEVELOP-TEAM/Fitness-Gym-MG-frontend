@@ -30,3 +30,12 @@ export const isPosturePosition = (value: string): value is PosturePosition => {
  * すべての姿勢ポジションの配列（順序付き）
  */
 export const ALL_POSTURE_POSITIONS: readonly PosturePosition[] = ['front', 'right', 'back', 'left'] as const;
+
+/**
+ * 姿勢画像プレビュー（フロントエンド専用）
+ */
+export interface PosturePreview {
+  position: PosturePosition;
+  url: string;
+  storageKey: string;
+}

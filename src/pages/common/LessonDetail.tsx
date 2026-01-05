@@ -15,7 +15,7 @@ export const LessonDetail: React.FC = () => {
 
   // Use custom hooks for data fetching
   const { lesson, loading: lessonLoading } = useLessonData(id);
-  const { posturePreviews, loading: imagesLoading } = usePostureImagesForLesson(id, lesson?.postureGroupId ?? null);
+  const { posturePreviews, loading: imagesLoading } = usePostureImagesForLesson(id, null);
   const { trainings, loading: trainingsLoading } = useTrainingsForLesson(id);
 
   const loading = lessonLoading || imagesLoading || trainingsLoading;
@@ -140,11 +140,11 @@ export const LessonDetail: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6">
             <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
               <label className={FORM_STYLES.label}>次回店舗：</label>
-              <input className={`${FORM_STYLES.inputReadOnly} md:flex-1`} value={lesson.nextStoreName || findName(stores, lesson.nextStoreId)} readOnly />
+              <input className={`${FORM_STYLES.inputReadOnly} md:flex-1`} value={lesson.nextStoreName || ''} readOnly />
             </div>
             <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
               <label className={FORM_STYLES.label}>次回トレーナー：</label>
-              <input className={`${FORM_STYLES.inputReadOnly} md:flex-1`} value={lesson.nextTrainerName || findName(users, lesson.nextUserId)} readOnly />
+              <input className={`${FORM_STYLES.inputReadOnly} md:flex-1`} value={lesson.nextTrainerName || ''} readOnly />
             </div>
           </div>
         </div>

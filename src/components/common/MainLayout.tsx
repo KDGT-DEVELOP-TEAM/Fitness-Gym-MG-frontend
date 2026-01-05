@@ -1,30 +1,29 @@
 import React, { ReactNode } from 'react';
 import { Sidebar } from './Sidebar';
-import { COLOR_CLASSES } from '../../constants/colors';
+
+interface SubMenuItem {
+  path: string;
+  label: string;
+}
 
 interface MenuItem {
   path: string;
   label: string;
   icon: React.ReactNode;
+  subItems?: SubMenuItem[];
 }
 
 interface MainLayoutProps {
   children: ReactNode;
   menuItems: MenuItem[];
-  header?: ReactNode;
 }
 
-export const MainLayout: React.FC<MainLayoutProps> = ({ children, menuItems, header }) => {
+export const MainLayout: React.FC<MainLayoutProps> = ({ children, menuItems }) => {
   return (
-    <div className={`flex h-screen ${COLOR_CLASSES.BACKGROUND_LIGHT}`}>
+    <div className="flex h-screen bg-[#FAF8F3]">
       <Sidebar menuItems={menuItems} />
       <div className="flex-1 flex flex-col overflow-hidden">
-        {header && (
-          <div className={`flex-shrink-0 ${COLOR_CLASSES.BACKGROUND_LIGHT} border-b border-black`}>
-            {header}
-          </div>
-        )}
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+        <main className="flex-1 overflow-y-auto">{children}</main>
       </div>
     </div>
   );
