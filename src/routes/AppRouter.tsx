@@ -3,9 +3,9 @@ import { ProtectedRoute } from './ProtectedRoute';
 import { Login } from '../pages/Login';
 import { AdminDashboard } from '../pages/admin/AdminDashboard';
 import { ManagerDashboard } from '../pages/manager/ManagerDashboard';
+import { TrainerDashboard } from '../pages/trainer/TrainerDashboard';
 import { CustomerManagement } from '../pages/CustomerManagement';
 import { UserManagement } from '../pages/UserManagement';
-// import { TrainerHome } from '../pages/trainer/TrainerHome';
 // 以下のコンポーネントは実際の実装に合わせてインポートしてください
 // import { CustomerSelectPage } from '../pages/trainer/CustomerSelectPage';
 // import { UserListPage } from '../pages/admin/UserListPage';
@@ -22,8 +22,7 @@ export const AppRouter = () => {
 
         <Route path="/trainer" element={<ProtectedRoute roles={['TRAINER']} />}>
           <Route index element={<Navigate to="/trainer/home" replace />} />
-          {/* <Route path="home" element={<TrainerHome />} />
-          <Route path="customers" element={<CustomerSelectPage />} /> */}
+          <Route path="home" element={<TrainerDashboard />} />
         </Route>
 
         <Route path="/admin" element={<ProtectedRoute roles={['ADMIN']} />}>
