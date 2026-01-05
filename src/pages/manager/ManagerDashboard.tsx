@@ -28,13 +28,17 @@ export const ManagerDashboard: React.FC = () => {
   useEffect(() => {
     if (!storeId) return;
 
-    managerHomeApi.getHome(storeId)
+    managerHomeApi.getHome(storeId, {
+      chartType: viewMode,
+      page: currentPage - 1, // フロントエンドは1ベース、バックエンドは0ベース
+      size: ITEMS_PER_PAGE,
+    })
       .then(data => setHomeData(data))
       .catch(err => {
         console.error("Manager Home API Fetch Error:", err);
         setApiError("ダッシュボードデータの取得に失敗しました。");
       });
-  }, [storeId]);
+  }, [storeId, viewMode, currentPage]);
 
   const currentStoreName = useMemo(() => {
     return stores.find(s => s.id === storeId)?.name || '所属店舗';

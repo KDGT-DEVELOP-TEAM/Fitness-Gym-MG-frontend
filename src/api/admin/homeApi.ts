@@ -2,6 +2,19 @@ import axiosInstance from '../axiosConfig';
 import { AdminHomeResponse } from '../../types/admin/home';
 
 export const adminHomeApi = {
-  getHome: (): Promise<AdminHomeResponse> =>
-    axiosInstance.get<AdminHomeResponse>('/admin/home').then(res => res.data),
+  getHome: (params?: {
+    chartType?: 'week' | 'month';
+    page?: number;
+    size?: number;
+  }): Promise<AdminHomeResponse> => {
+    const queryParams = new URLSearchParams();
+    if (params?.chartType) queryParams.append('chartType', params.chartType);
+    if (params?.page !== undefined) queryParams.append('page', String(params.page));
+    if (params?.size !== undefined) queryParams.append('size', String(params.size));
+    
+    const queryString = queryParams.toString();
+    const url = queryString ? `/admin/home?${queryString}` : '/admin/home';
+    
+    return axiosInstance.get<AdminHomeResponse>(url).then(res => res.data);
+  },
 };

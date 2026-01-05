@@ -19,14 +19,18 @@ export const AdminDashboard: React.FC = () => {
   const [apiError, setApiError] = useState<string | null>(null);
 
   useEffect(() => {
-    adminHomeApi.getHome()
+    adminHomeApi.getHome({
+      chartType: viewMode,
+      page: currentPage - 1, // フロントエンドは1ベース、バックエンドは0ベース
+      size: ITEMS_PER_PAGE,
+    })
       .then(data => setHomeData(data))
       .catch(err => {
         console.error("Admin Home API Fetch Error:", err);
         setApiError("ダッシュボードデータの取得に失敗しました。");
         alert("統計情報の取得に失敗しました。ページを再読み込みしてください。");
       });
-  }, []);
+  }, [viewMode, currentPage]);
 
   // --- 1. バックエンド連携フック (既存維持) ---
   const { history, chartData, total, loading, error: historyError, refetch } = useLessonHistory(
