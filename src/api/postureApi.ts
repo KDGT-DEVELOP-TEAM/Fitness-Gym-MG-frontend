@@ -1,5 +1,5 @@
 import axiosInstance from './axiosConfig';
-import { Posture, PostureComparison, PostureGroupResponse, PostureImageUploadResponse, BatchSignedUrlResponse } from '../types/posture';
+import { Posture, PostureComparison, PostureGroupResponse, PostureImageUploadResponse, SignedUrlResponse, BatchSignedUrlResponse } from '../types/posture';
 
 export const postureApi = {
   /**
@@ -50,6 +50,24 @@ export const postureApi = {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
     return response.data;
+  },
+
+  /**
+   * 単一の署名付きURL取得
+   * GET /api/posture_images/{imageId}/signed-url
+   * クエリパラメータ: expiresIn (optional, default: 3600)
+   * レスポンス: SignedUrlResponse
+   */
+  getSignedUrl: (imageId: string, expiresIn: number = 3600): Promise<SignedUrlResponse> => {
+    const queryParams = new URLSearchParams();
+    if (expiresIn !== 3600) {
+      queryParams.append('expiresIn', String(expiresIn));
+    }
+    const queryString = queryParams.toString();
+    const url = queryString 
+      ? `/posture_images/${imageId}/signed-url?${queryString}` 
+      : `/posture_images/${imageId}/signed-url`;
+    return axiosInstance.get<SignedUrlResponse>(url).then(res => res.data);
   },
 
   /**

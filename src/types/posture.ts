@@ -64,6 +64,14 @@ export interface PostureImageUploadResponse {
 }
 
 /**
+ * バックエンドのSignedUrlResponseに対応する型
+ */
+export interface SignedUrlResponse {
+  signedUrl: string;
+  expiresAt: string; // OffsetDateTime
+}
+
+/**
  * バックエンドのBatchSignedUrlResponseに対応する型
  */
 export interface BatchSignedUrlResponse {
