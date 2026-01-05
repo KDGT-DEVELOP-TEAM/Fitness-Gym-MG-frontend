@@ -59,7 +59,6 @@ export const authApi = {
       storeIds: [], // LoginResponseにはstoreIdsが含まれていないため空配列
       active: true, // LoginResponseにはactiveが含まれていないためtrueと仮定
       createdAt: '',
-      updatedAt: '',
     };
   },
 

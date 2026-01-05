@@ -13,7 +13,6 @@ export interface User {
   storeIds: string[]; // バックエンドはSet<UUID>、空の場合は空Set（nullではなく空配列）
   active: boolean; // バックエンドはactiveフィールド
   createdAt: string;
-  updatedAt: string;
 }
 
 /**
