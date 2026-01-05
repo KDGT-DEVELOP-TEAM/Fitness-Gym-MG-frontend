@@ -22,15 +22,15 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
   const isEditMode = !!initialData;
 
   // 1. フォームの状態管理 (UIの都合に合わせた型)
-  // ステータス(isActive)も管理しやすいように統合しています
-  const [formData, setFormData] = useState<UserFormData & { isActive: boolean }>({
+  // ステータス(active)も管理しやすいように統合しています
+  const [formData, setFormData] = useState<UserFormData & { active: boolean }>({
     email: '',
     name: '',
     kana: '',
     pass: '',
     role: 'TRAINER',
     storeIds: [],
-    isActive: true,
+    active: true,
   });
 
   // 初期データの同期
@@ -43,7 +43,7 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
         pass: '', // 更新時は空文字スタート
         role: initialData.role,
         storeIds: initialData.storeIds || [],
-        isActive: initialData.isActive,
+        active: initialData.active,
       });
     }
   }, [initialData]);
@@ -70,7 +70,7 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
         name: formData.name,
         kana: formData.kana,
         role: formData.role,
-        isActive: formData.isActive,
+        active: formData.active,
         // 仕様: MANAGER以外は店舗IDを送らない
         storeIds: formData.role === 'MANAGER' ? formData.storeIds : [],
       };
@@ -205,13 +205,14 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
             {isEditMode && (
                 <div className="flex items-center p-2 bg-gray-50 rounded-lg">
                     <input
-                        id="isActive"
+                        id="active"
+                        name="active"
                         type="checkbox"
-                        checked={formData.isActive}
+                        checked={formData.active}
                         onChange={handleChange}
                         className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
                     />
-                    <label htmlFor="isActive" className="ml-2 block text-sm font-bold text-gray-700">
+                    <label htmlFor="active" className="ml-2 block text-sm font-bold text-gray-700">
                         このユーザーを有効な状態にする
                     </label>
                 </div>

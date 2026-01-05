@@ -40,9 +40,9 @@ export const UserCard: React.FC<UserCardProps> = ({ user, onEdit }) => {
       {/* 3. ステータス */}
       <td className="px-8 py-6 text-center">
         <span className={`inline-flex items-center px-4 py-1 rounded-full text-xs font-black tracking-widest uppercase ${
-          user.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'
+          user.active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'
         }`}>
-          {user.isActive ? '有効' : '無効'}
+          {user.active ? '有効' : '無効'}
         </span>
       </td>
 

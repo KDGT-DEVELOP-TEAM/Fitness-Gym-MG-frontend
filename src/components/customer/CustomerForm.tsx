@@ -17,7 +17,7 @@ interface ApiErrorResponse {
 export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmit, onDelete, isSubmitting }) => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   
-  const [formData, setFormData] = useState<CustomerFormData & { isActive: boolean }>({
+  const [formData, setFormData] = useState<CustomerFormData & { active: boolean }>({
     name: initialData?.name || '',
     kana: initialData?.kana || '',
     gender: initialData?.gender || '男',
@@ -29,7 +29,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
     medical: initialData?.medical || '',
     taboo: initialData?.taboo || '',
     memo: initialData?.memo || '',
-    isActive: initialData?.isActive ?? true, // フォーム内で管理
+    active: initialData?.active ?? true, // フォーム内で管理（バックエンドのCustomer.activeに対応）
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -63,7 +63,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
         medical: formData.medical || undefined,
         taboo: formData.taboo || undefined,
         memo: formData.memo || undefined,
-        active: formData.isActive, // バックエンドのCustomerRequestは`active`フィールドを使用
+        active: formData.active, // バックエンドのCustomerRequestは`active`フィールドを使用
       };
 
       await onSubmit(requestData);
@@ -158,8 +158,8 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
         </div>
 
         <div className="flex items-center p-4 bg-gray-50 rounded-2xl border border-gray-100">
-          <input type="checkbox" id="isActive" name="isActive" checked={formData.isActive} onChange={handleChange} className="w-5 h-5 text-green-600 rounded" />
-          <label htmlFor="isActive" className="ml-3 text-sm font-bold text-gray-700">顧客ステータスを<span className={formData.isActive ? "text-green-600" : "text-gray-400"}>{formData.isActive ? "有効" : "無効"}</span>にする</label>
+          <input type="checkbox" id="active" name="active" checked={formData.active} onChange={handleChange} className="w-5 h-5 text-green-600 rounded" />
+          <label htmlFor="active" className="ml-3 text-sm font-bold text-gray-700">顧客ステータスを<span className={formData.active ? "text-green-600" : "text-gray-400"}>{formData.active ? "有効" : "無効"}</span>にする</label>
         </div>
       </section>
 

@@ -15,7 +15,7 @@ export interface Customer {
   firstPostureGroupId: string | null;
   memo: string | null;
   createdAt: string;
-  isActive: boolean;
+  active: boolean; // バックエンドのCustomerResponse.activeに対応
 }
 
 /**
@@ -49,15 +49,16 @@ export interface CustomerListItem {
     name: string;
     kana: string | null;
     birthday: string;
-    isActive: boolean;
+    active: boolean; // バックエンドのCustomerResponse.activeに対応
   }
   
   export interface CustomerListParams {
     page?: number;
     size?: number;
     name?: string;
-    kana?: string;
-    isActive?: boolean;
+    // バックエンドが受け取らないパラメータを削除:
+    // kana: バックエンドのCustomerApiControllerでは受け取らない
+    // isActive: バックエンドのCustomerApiControllerでは受け取らない
   }
 
 /**

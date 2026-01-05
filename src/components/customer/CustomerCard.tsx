@@ -32,9 +32,9 @@ export const CustomerCard: React.FC<CustomerCardProps> = ({ customer, calculateA
       {/* ステータス */}
       <td className="px-8 py-6 text-center">
         <span className={`inline-flex items-center px-4 py-1 rounded-full text-xs font-black tracking-widest uppercase ${
-          customer.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'
+          customer.active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'
         }`}>
-          {customer.isActive ? '有効' : '無効'}
+          {customer.active ? '有効' : '無効'}
         </span>
       </td>
 

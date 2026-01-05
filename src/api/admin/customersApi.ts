@@ -8,8 +8,9 @@ export const adminCustomersApi = {
     if (params?.page !== undefined) query.append('page', String(params.page));
     if (params?.size !== undefined) query.append('size', String(params.size));
     if (params?.name) query.append('name', params.name);
-    if (params?.kana) query.append('kana', params.kana);
-    if (params?.isActive !== undefined) query.append('isActive', String(params.isActive));
+    // バックエンドが受け取らないパラメータを削除:
+    // kana: バックエンドのCustomerApiControllerでは受け取らない
+    // isActive: バックエンドのCustomerApiControllerでは受け取らない
     
     return axiosInstance.get<SpringPage<Customer>>(`/admin/customers?${query}`)
       .then(res => convertPageResponse(res.data));

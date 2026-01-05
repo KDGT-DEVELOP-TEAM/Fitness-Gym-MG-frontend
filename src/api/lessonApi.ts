@@ -83,6 +83,17 @@ export const lessonApi = {
     return convertPageResponse(response.data);
   },
 
+  /**
+   * トレーナー別の次回レッスン希望日程一覧取得
+   * GET /api/lessons/next-by-trainer/{trainer_id}
+   */
+  getNextLessonsByTrainer: async (trainerId: string): Promise<Lesson[]> => {
+    const response = await axiosInstance.get<Lesson[]>(
+      `/lessons/next-by-trainer/${trainerId}`
+    );
+    return response.data;
+  },
+
   // 以下のエンドポイントはバックエンドに実装されていないため、コメントアウト
   // 必要に応じてバックエンドに実装を追加するか、この機能を削除してください
 

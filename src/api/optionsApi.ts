@@ -25,6 +25,11 @@ interface CustomerResponse {
 
 /**
  * Fetch all stores as options
+ * 注意: バックエンドにStoreApiControllerが存在しないため、
+ * このAPIは現在動作しない可能性があります。
+ * バックエンド実装が必要です。
+ * 
+ * GET /api/stores
  */
 export const fetchStoreOptions = async (): Promise<Option[]> => {
   try {
@@ -39,6 +44,7 @@ export const fetchStoreOptions = async (): Promise<Option[]> => {
     return data.map((d) => ({ id: d.id, name: d.name }));
   } catch (error) {
     logger.error('Failed to fetch stores', error, 'optionsApi');
+    // バックエンドに実装がない場合は空配列を返す
     return [];
   }
 };

@@ -53,5 +53,6 @@ export interface UserListParams {
   size?: number;
   name?: string;
   role?: UserRole;
-  active?: boolean;
+  // バックエンドが受け取らないパラメータを削除:
+  // active: バックエンドのUserApiControllerでは受け取らない
 }
