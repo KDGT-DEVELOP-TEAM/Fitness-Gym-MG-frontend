@@ -1,5 +1,5 @@
-import { User } from '../types/user';
-import { Customer } from '../types/customer';
+import { User } from '../types/api/user';
+import { Customer } from '../types/api/customer';
 import { Posture, PostureComparison, PostureAnalysis } from '../types/posture';
 
 /**
@@ -42,11 +42,16 @@ export const isCustomer = (customer: unknown): customer is Customer => {
   return (
     typeof c.id === 'string' &&
     typeof c.name === 'string' &&
-    typeof c.email === 'string' && // DBスキーマでNOT NULL
-    typeof c.phone === 'string' && // DBスキーマでNOT NULL
-    typeof c.shopId === 'string' &&
+    typeof c.kana === 'string' &&
+    typeof c.email === 'string' &&
+    typeof c.phone === 'string' &&
+    typeof c.address === 'string' &&
+    typeof c.birthdate === 'string' &&
+    typeof c.age === 'number' &&
+    typeof c.height === 'number' &&
+    typeof c.active === 'boolean' &&
     typeof c.createdAt === 'string' &&
-    // updatedAt: DBスキーマに存在しないため削除
+    // gender, firstPostureGroupId, latestWeightはオプショナルまたはnull許容のためチェックしない
     true
   );
 };

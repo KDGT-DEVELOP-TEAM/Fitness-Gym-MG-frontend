@@ -6,14 +6,16 @@ export interface Customer {
   name: string;
   gender: Gender;
   birthdate: string; // バックエンドのCustomerResponse.birthdateに対応（birthdayから変換される）
+  age: number; // バックエンドのCustomerResponse.age（計算値）
   height: number;
   email: string;
   phone: string;
   address: string;
-  medical: string | null;
-  taboo: string | null;
   firstPostureGroupId: string | null;
-  memo: string | null;
+  latestWeight: number | null; // バックエンドのCustomerResponse.latestWeight（getCustomerByIdでのみ設定される）
+  medical: string | null; // バックエンドのCustomerResponse.medical（任意フィールド）
+  taboo: string | null; // バックエンドのCustomerResponse.taboo（任意フィールド）
+  memo: string | null; // バックエンドのCustomerResponse.memo（任意フィールド）
   createdAt: string;
   active: boolean; // バックエンドのCustomerResponse.activeに対応
 }
@@ -38,6 +40,10 @@ export interface CustomerRequest {
   taboo?: string;
   memo?: string;
   firstPostureGroupId?: string | null;
+  /**
+   * 有効/無効フラグ
+   * デフォルト値: true（バックエンドのCustomerRequest.active = trueに対応）
+   */
   active?: boolean; // デフォルト: true
 
   /**

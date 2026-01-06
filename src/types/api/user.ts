@@ -35,6 +35,7 @@ export interface UserRequest {
   pass?: string;
   /**
    * 有効 / 無効（バックエンドはactiveフィールド）
+   * デフォルト値: true（バックエンドのUserRequest.active = trueに対応）
    */
   active?: boolean;
 }
