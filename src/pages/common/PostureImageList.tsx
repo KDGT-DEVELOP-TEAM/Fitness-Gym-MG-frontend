@@ -198,7 +198,7 @@ export const usePostureImageList = () => {
             return null;
           }
 
-          // Validate position type
+          // ポジションタイプのバリデーション
           if (!isPosturePosition(img.position)) {
             logger.warn('Invalid posture position', { position: img.position }, 'PostureImageList');
             return null;
@@ -300,7 +300,7 @@ export const usePostureImageList = () => {
     setShowDeleteConfirm(false);
   };
 
-  // Note: Header is not used - UI is handled within PostureImageListContent
+  // 注意: ヘッダーは使用されていません - UIはPostureImageListContent内で処理されます
 
   const content = loading ? (
     <div className="flex items-center justify-center h-screen">

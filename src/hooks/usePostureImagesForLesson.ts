@@ -78,7 +78,7 @@ export const usePostureImagesForLesson = (
           return null;
         }
 
-        // Validate position type
+        // ポジションタイプのバリデーション
         if (!isPosturePosition(img.position)) {
           logger.warn('Invalid posture position', { position: img.position }, 'usePostureImagesForLesson');
           return null;

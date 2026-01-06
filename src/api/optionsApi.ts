@@ -24,7 +24,7 @@ interface CustomerResponse {
 }
 
 /**
- * Fetch all stores as options
+ * すべての店舗をオプションとして取得
  * GET /api/stores
  */
 export const fetchStoreOptions = async (): Promise<Option[]> => {

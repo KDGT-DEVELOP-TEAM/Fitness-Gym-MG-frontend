@@ -173,7 +173,7 @@ export const LessonCreate: React.FC = () => {
           return;
         }
 
-        // Always show local preview
+        // 常にローカルプレビューを表示
         const localUrl = URL.createObjectURL(blob);
         const updatePreview = (signedUrl: string, storageKey: string) =>
           setPosturePreviews((prev) => {
@@ -264,25 +264,25 @@ export const LessonCreate: React.FC = () => {
     e.preventDefault();
     setError('');
 
-    // Validate required fields
+    // 必須フィールドのバリデーション
     if (!validateRequired(formData.storeId) || !validateRequired(formData.userId) || !validateRequired(formData.customerId)) {
       setError(ERROR_MESSAGES.REQUIRED_FIELD);
       return;
     }
 
-    // Validate required date fields
+    // 必須日付フィールドのバリデーション
     if (!validateRequired(formData.startDate) || !validateRequired(formData.endDate)) {
       setError('開始時間と終了時間は必須です');
       return;
     }
 
-    // Validate date range
+    // 日付範囲のバリデーション
     if (formData.startDate && formData.endDate && !validateDateRange(formData.startDate, formData.endDate)) {
       setError(ERROR_MESSAGES.DATE_RANGE_ERROR);
       return;
     }
 
-    // Validate weight if provided
+    // 体重が指定されている場合のバリデーション
     if (formData.weight !== null && formData.weight !== undefined) {
       if (!validateNumericRange(formData.weight, 0, 500)) {
         setError('体重は0kg以上500kg以下で入力してください');
@@ -290,7 +290,7 @@ export const LessonCreate: React.FC = () => {
       }
     }
 
-    // Validate trainings
+    // トレーニングのバリデーション
     if (trainings.length > 0) {
       for (const training of trainings) {
         if (!validateRequired(training.name)) {

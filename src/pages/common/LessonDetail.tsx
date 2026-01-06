@@ -13,7 +13,7 @@ export const LessonDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { stores, users, customers } = useOptions();
 
-  // Use custom hooks for data fetching
+  // カスタムフックを使用してデータを取得
   const { lesson, loading: lessonLoading } = useLessonData(id);
   const { posturePreviews, loading: imagesLoading } = usePostureImagesForLesson(id, null);
   const { trainings, loading: trainingsLoading } = useTrainingsForLesson(id);
