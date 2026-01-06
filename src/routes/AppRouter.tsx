@@ -3,7 +3,6 @@ import { ProtectedRoute } from './ProtectedRoute';
 import { Login } from '../pages/Login';
 import { AdminDashboard } from '../pages/admin/AdminDashboard';
 import { ManagerDashboard } from '../pages/manager/ManagerDashboard';
-import { TrainerDashboard } from '../pages/trainer/TrainerDashboard';
 import { CustomerManagement } from '../pages/CustomerManagement';
 import { UserManagement } from '../pages/UserManagement';
 // 以下のコンポーネントは実際の実装に合わせてインポートしてください
@@ -21,8 +20,7 @@ export const AppRouter = () => {
         <Route path="/login" element={<Login />} />
 
         <Route path="/trainer" element={<ProtectedRoute roles={['TRAINER']} />}>
-          <Route index element={<Navigate to="/trainer/home" replace />} />
-          <Route path="home" element={<TrainerDashboard />} />
+          <Route index element={<Navigate to="/home" replace />} />
         </Route>
 
         <Route path="/admin" element={<ProtectedRoute roles={['ADMIN']} />}>
