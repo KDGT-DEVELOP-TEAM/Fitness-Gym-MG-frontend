@@ -55,6 +55,20 @@ export const validatePassword = (password: string): boolean => {
 };
 
 /**
+ * Validate password pattern
+ * 8-16 characters, or empty (for update)
+ * 
+ * @param password - Password to validate
+ * @returns True if password meets requirements
+ */
+export const validatePasswordPattern = (password: string): boolean => {
+  if (!password || password.trim() === '') {
+    return true; // Empty is allowed for update
+  }
+  return password.length >= 8 && password.length <= 16;
+};
+
+/**
  * Validate numeric value range
  * 
  * @param value - Numeric value to validate
@@ -115,5 +129,41 @@ export const validateUUID = (uuid: string): boolean => {
   }
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   return uuidRegex.test(uuid.trim());
+};
+
+/**
+ * Validate that date is in the past
+ * 
+ * @param dateString - Date string to validate
+ * @returns True if date is in the past
+ */
+export const validatePastDate = (dateString: string): boolean => {
+  if (!dateString || dateString.trim() === '') {
+    return true; // Optional field
+  }
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) {
+    return false;
+  }
+  return date < new Date();
+};
+
+/**
+ * Validate next lesson fields correlation
+ * If any next lesson field is set, all must be set
+ * 
+ * @param nextDate - Next lesson date
+ * @param nextStoreId - Next lesson store ID
+ * @param nextTrainerId - Next lesson trainer ID
+ * @returns True if validation passes
+ */
+export const validateNextLesson = (
+  nextDate: string | null | undefined,
+  nextStoreId: string | null | undefined,
+  nextTrainerId: string | null | undefined
+): boolean => {
+  const anySet = nextDate || nextStoreId || nextTrainerId;
+  const allSet = nextDate && nextStoreId && nextTrainerId;
+  return !anySet || !!allSet;
 };
 

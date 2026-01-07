@@ -11,7 +11,7 @@ import { IMAGE_QUALITY, CANVAS_DIMENSIONS } from '../../constants/image';
 import { IMAGE_CONSTANTS } from '../../constants/storage';
 import { FORM_STYLES } from '../../styles/formStyles';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
-import { validateRequired, validateDateRange, validateNumericRange } from '../../utils/validators';
+import { validateRequired, validateDateRange, validateNumericRange, validateNextLesson } from '../../utils/validators';
 import { ERROR_MESSAGES } from '../../constants/errorMessages';
 type PosturePreview = {
   position: PosturePosition;
@@ -304,6 +304,12 @@ export const LessonCreate: React.FC = () => {
       }
     }
 
+    // 次回予約の相関制約チェック
+    if (!validateNextLesson(formData.nextDate, formData.nextStoreId, formData.nextUserId)) {
+      setError('次回予約を設定する場合、日時・店舗・トレーナーはすべて必須です');
+      return;
+    }
+
     setLoading(true);
     try {
       // バックエンドのLessonRequest仕様に合わせてリクエストを構築
@@ -448,6 +454,7 @@ export const LessonCreate: React.FC = () => {
               value={formData.condition ?? ''}
               onChange={(e) => setFormData({ ...formData, condition: e.target.value })}
                 placeholder="体調メモ (condition)"
+                maxLength={500}
             />
           </div>
 
@@ -459,6 +466,7 @@ export const LessonCreate: React.FC = () => {
               value={formData.meal ?? ''}
               onChange={(e) => setFormData({ ...formData, meal: e.target.value })}
                 placeholder="食事内容 (meal)"
+                maxLength={500}
             />
             </div>
           </div>
@@ -563,6 +571,7 @@ export const LessonCreate: React.FC = () => {
                 value={t.name}
                 onChange={(e) => handleTrainingChange(idx, 'name', e.target.value)}
                 required
+                maxLength={100}
               />
               </div>
 
@@ -709,6 +718,7 @@ export const LessonCreate: React.FC = () => {
             value={formData.memo ?? ''}
             onChange={(e) => setFormData({ ...formData, memo: e.target.value })}
             rows={5}
+            maxLength={1000}
           />
         </div>
 

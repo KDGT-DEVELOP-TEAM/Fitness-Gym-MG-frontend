@@ -3,6 +3,7 @@ import axios from 'axios';
 import { User, UserRequest } from '../../types/api/user';
 import { UserFormData } from '../../types/form/user';
 import { Store } from '../../types/store';
+import { validatePasswordPattern } from '../../utils/validators';
 
 interface UserFormProps {
   initialData?: User;
@@ -63,6 +64,12 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
     e.preventDefault();
     setErrorMsg(null);
 
+    // パスワードバリデーション（新規作成時、または更新時にパスワードが指定されている場合）
+    if ((!isEditMode || (formData.pass && formData.pass.trim() !== '')) && formData.pass && !validatePasswordPattern(formData.pass)) {
+      setErrorMsg('パスワードは8文字以上16文字以内で設定してください');
+      return;
+    }
+
     try {
       // 2. 🔑 UserFormData から UserRequest へのマッピング（変換）
       const requestData: UserRequest = {
@@ -119,7 +126,7 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
                 {/* Email */}
                 <div>
                     <label className="block text-sm font-bold text-gray-700 mb-1">メールアドレス <RequiredBadge /></label>
-                    <input type="email" name="email" value={formData.email} onChange={handleChange} required disabled={isEditMode} className="w-full border p-2 rounded disabled:bg-gray-100 shadow-sm" />
+                    <input type="email" name="email" value={formData.email} onChange={handleChange} required maxLength={255} disabled={isEditMode} className="w-full border p-2 rounded disabled:bg-gray-100 shadow-sm" />
                 </div>
 
                 {/* Role */}
@@ -137,13 +144,13 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
                 {/* Name */}
                 <div>
                     <label className="block text-sm font-bold text-gray-700 mb-1">氏名 <RequiredBadge /></label>
-                    <input type="text" name="name" value={formData.name} onChange={handleChange} required className="w-full border p-2 rounded shadow-sm" />
+                    <input type="text" name="name" value={formData.name} onChange={handleChange} required minLength={2} maxLength={50} className="w-full border p-2 rounded shadow-sm" />
                 </div>
                 
                 {/* Kana */}
                 <div>
                     <label className="block text-sm font-bold text-gray-700 mb-1">ふりがな <RequiredBadge /></label>
-                    <input type="text" name="kana" value={formData.kana} onChange={handleChange} className="w-full border p-2 rounded shadow-sm" />
+                    <input type="text" name="kana" value={formData.kana} onChange={handleChange} required minLength={2} maxLength={50} className="w-full border p-2 rounded shadow-sm" />
                 </div>
             </div>
             
