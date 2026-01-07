@@ -17,6 +17,7 @@ import { CustomerManagement } from './pages/CustomerManagement';
 import { CustomerList } from './pages/CustomerList';
 import  UserManagement  from './pages/UserManagement';
 import { UserList } from './pages/UserList';
+import { Forbidden } from './pages/common/Forbidden';
 import { HiHome, HiClock } from 'react-icons/hi';
 
 // ページごとのメニュー項目
@@ -57,14 +58,7 @@ const ProtectedRoute: React.FC<{ roles: string[] }> = ({ roles }) => {
 
   // ユーザーのロールが許可されたロールに含まれているかチェック
   if (user && !roles.includes(user.role)) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">アクセス拒否</h1>
-          <p className="text-gray-600">このページにアクセスする権限がありません。</p>
-        </div>
-      </div>
-    );
+    return <Forbidden />;
   }
 
   return <Outlet />;
