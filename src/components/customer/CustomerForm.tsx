@@ -3,6 +3,8 @@ import axios from 'axios';
 import { Customer, CustomerRequest } from '../../types/api/customer';
 import { CustomerFormData } from '../../types/form/customer';
 import { validatePastDate } from '../../utils/validators';
+import { getAllErrorMessages } from '../../utils/errorMessages';
+import { isErrorResponse } from '../../types/api/error';
 
 interface CustomerFormProps {
   initialData?: Customer;
@@ -17,6 +19,7 @@ interface ApiErrorResponse {
 
 export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmit, onDelete, isSubmitting }) => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [errorMessages, setErrorMessages] = useState<string[]>([]);
   
   const [formData, setFormData] = useState<CustomerFormData & { active: boolean }>({
     name: initialData?.name || '',
@@ -75,11 +78,25 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
 
       await onSubmit(requestData);
     } catch (err: unknown) {
-      let message = "保存中にエラーが発生しました。";
-      if (axios.isAxiosError<ApiErrorResponse>(err)) {
-        message = err.response?.data?.message || err.message;
+      // 複数エラーメッセージを取得
+      const allErrors = getAllErrorMessages(err);
+      if (allErrors.length > 0) {
+        setErrorMessages(allErrors);
+        // 最初のエラーメッセージを単一エラーとしても設定（後方互換性）
+        setErrorMsg(allErrors[0]);
+      } else {
+        // エラーメッセージを取得
+        let message = "保存中にエラーが発生しました。";
+        if (axios.isAxiosError(err)) {
+          if (err.response?.data && isErrorResponse(err.response.data)) {
+            message = err.response.data.message || err.message;
+          } else {
+            message = (err.response?.data as { message?: string })?.message || err.message;
+          }
+        }
+        setErrorMsg(message);
+        setErrorMessages([]);
       }
-      setErrorMsg(message);
     }
   };
 
@@ -92,9 +109,22 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-h-[70vh] overflow-y-auto px-2">
       {/* エラーメッセージ表示エリア */}
-      {errorMsg && (
-        <div className="p-4 bg-red-50 border-2 border-red-200 text-red-600 rounded-2xl font-bold text-sm animate-bounce">
-          ⚠️ {errorMsg}
+      {(errorMsg || errorMessages.length > 0) && (
+        <div className="p-4 bg-red-50 border-2 border-red-200 text-red-600 rounded-2xl text-sm">
+          {errorMessages.length > 1 ? (
+            // 複数エラーの場合
+            <div>
+              <div className="font-bold mb-2">⚠️ 以下のエラーが発生しました:</div>
+              <ul className="list-disc list-inside space-y-1">
+                {errorMessages.map((msg, index) => (
+                  <li key={index}>{msg}</li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            // 単一エラーの場合
+            <div className="font-bold">⚠️ {errorMsg}</div>
+          )}
         </div>
       )}
       {/* 基本情報セクション */}

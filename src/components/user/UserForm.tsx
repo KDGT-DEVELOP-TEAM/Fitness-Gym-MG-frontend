@@ -4,6 +4,8 @@ import { User, UserRequest } from '../../types/api/user';
 import { UserFormData } from '../../types/form/user';
 import { Store } from '../../types/store';
 import { validatePasswordPattern } from '../../utils/validators';
+import { getAllErrorMessages } from '../../utils/errorMessages';
+import { isErrorResponse } from '../../types/api/error';
 
 interface UserFormProps {
   initialData?: User;
@@ -20,6 +22,7 @@ interface ApiErrorResponse {
 
 const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDelete, isSubmitting }) => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [errorMessages, setErrorMessages] = useState<string[]>([]);
   const isEditMode = !!initialData;
 
   // 1. フォームの状態管理 (UIの都合に合わせた型)
@@ -89,19 +92,40 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
 
       await onSubmit(requestData);
     } catch (err: unknown) {
-      let message = "保存中にエラーが発生しました。";
-      if (axios.isAxiosError<ApiErrorResponse>(err)) {
-        message = err.response?.data?.message || err.message;
-      } else if (err instanceof Error) {
-        message = err.message;
-      }
-      
-      if (message.includes("関連データが存在するため")) {
-        setErrorMsg("このユーザーにはレッスン履歴があるため削除できません。");
-      } else if (message.includes("有効ユーザーは削除できません")) {
-        setErrorMsg("有効なステータスのままでは削除できません。");
+      // 複数エラーメッセージを取得
+      const allErrors = getAllErrorMessages(err);
+      if (allErrors.length > 0) {
+        setErrorMessages(allErrors);
+        // 最初のエラーメッセージを単一エラーとしても設定（後方互換性）
+        const firstError = allErrors[0];
+        if (firstError.includes("関連データが存在するため")) {
+          setErrorMsg("このユーザーにはレッスン履歴があるため削除できません。");
+        } else if (firstError.includes("有効ユーザーは削除できません")) {
+          setErrorMsg("有効なステータスのままでは削除できません。");
+        } else {
+          setErrorMsg(firstError);
+        }
       } else {
-        setErrorMsg(message);
+        // エラーメッセージを取得
+        let message = "保存中にエラーが発生しました。";
+        if (axios.isAxiosError(err)) {
+          if (err.response?.data && isErrorResponse(err.response.data)) {
+            message = err.response.data.message || err.message;
+          } else {
+            message = (err.response?.data as { message?: string })?.message || err.message;
+          }
+        } else if (err instanceof Error) {
+          message = err.message;
+        }
+        
+        if (message.includes("関連データが存在するため")) {
+          setErrorMsg("このユーザーにはレッスン履歴があるため削除できません。");
+        } else if (message.includes("有効ユーザーは削除できません")) {
+          setErrorMsg("有効なステータスのままでは削除できません。");
+        } else {
+          setErrorMsg(message);
+        }
+        setErrorMessages([]);
       }
     }
   };
@@ -116,9 +140,22 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
         <form onSubmit={handleSubmit} className="space-y-8 max-h-[70vh] overflow-y-auto px-1 custom-scrollbar">
 
             {/* エラーメッセージ表示エリア */}
-            {errorMsg && (
-                <div className="p-4 bg-red-50 border-2 border-red-200 text-red-600 rounded-2xl font-bold text-sm animate-bounce">
-                ⚠️ {errorMsg}
+            {(errorMsg || errorMessages.length > 0) && (
+                <div className="p-4 bg-red-50 border-2 border-red-200 text-red-600 rounded-2xl text-sm">
+                  {errorMessages.length > 1 ? (
+                    // 複数エラーの場合
+                    <div>
+                      <div className="font-bold mb-2">⚠️ 以下のエラーが発生しました:</div>
+                      <ul className="list-disc list-inside space-y-1">
+                        {errorMessages.map((msg, index) => (
+                          <li key={index}>{msg}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : (
+                    // 単一エラーの場合
+                    <div className="font-bold">⚠️ {errorMsg}</div>
+                  )}
                 </div>
             )}
             
