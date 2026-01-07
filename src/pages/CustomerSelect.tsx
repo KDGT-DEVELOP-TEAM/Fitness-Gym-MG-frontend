@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { lessonApi } from '../api/lessonApi';
+import { trainerHomeApi } from '../api/trainer/homeApi';
 import { Lesson } from '../types/lesson';
 import { ROUTES } from '../constants/routes';
 import { FiChevronRight, FiSearch, FiCalendar, FiUser } from 'react-icons/fi';
@@ -10,10 +10,12 @@ export const CustomerSelect: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [nextLessons, setNextLessons] = useState<Lesson[]>([]);
+  const [totalCount, setTotalCount] = useState(0); // 総件数
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [visibleCount, setVisibleCount] = useState(10); // 初期表示件数
+  const [currentPage, setCurrentPage] = useState(0); // バックエンド側のページネーション用（0ベース）
+  const [pageSize] = useState(10); // 1ページあたりの件数
 
   // fetchNextLessonsをuseCallbackでメモ化
   const fetchNextLessons = useCallback(async () => {
@@ -22,15 +24,22 @@ export const CustomerSelect: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await lessonApi.getNextLessonsByTrainer(user.id);
-      setNextLessons(data);
+      // GET /api/trainers/home を使用（1週間後～1ヶ月後までのレッスン予定をページネーション付きで取得）
+      const data = await trainerHomeApi.getHome({
+        page: currentPage,
+        size: pageSize,
+      });
+      
+      // upcomingLessonsとtotalLessonCountを使用
+      setNextLessons(data.upcomingLessons || []);
+      setTotalCount(data.totalLessonCount || 0);
     } catch (err) {
       setError('次回レッスン希望日程の取得に失敗しました');
       console.error(err);
     } finally {
       setLoading(false);
     }
-  }, [user?.id]);
+  }, [user?.id, currentPage, pageSize]);
 
   useEffect(() => {
     if (user?.id) {
@@ -38,22 +47,29 @@ export const CustomerSelect: React.FC = () => {
     }
   }, [user?.id, fetchNextLessons]);
 
-  // useMemoで検索フィルタリングとスライスを最適化
+  // useMemoで検索フィルタリングを最適化
   const displayedLessons = useMemo(() => {
     if (searchQuery.trim() === '') {
-      return nextLessons.slice(0, visibleCount);
+      return nextLessons;
     } else {
       const normalizedQuery = searchQuery.toLowerCase();
-      const filtered = nextLessons.filter((lesson) =>
+      return nextLessons.filter((lesson) =>
         lesson.customerName.toLowerCase().includes(normalizedQuery)
       );
-      return filtered.slice(0, visibleCount);
     }
-  }, [nextLessons, searchQuery, visibleCount]);
+  }, [nextLessons, searchQuery]);
 
+  // 次のページを読み込む（バックエンド側のページネーション）
   const handleLoadMore = () => {
-    setVisibleCount((prev) => prev + 10);
+    setCurrentPage((prev) => prev + 1);
   };
+
+  // 検索クエリが変更されたときにページをリセット
+  useEffect(() => {
+    if (searchQuery.trim() !== '') {
+      setCurrentPage(0);
+    }
+  }, [searchQuery]);
 
   const handleLessonClick = (customerId: string) => {
     navigate(ROUTES.LESSON_HISTORY.replace(':id', customerId));
@@ -88,7 +104,8 @@ export const CustomerSelect: React.FC = () => {
     return acc;
   }, {} as Record<string, Lesson[]>);
 
-  const upcomingCount = nextLessons.length;
+  // 検索時はフィルタリング後の件数、検索無し時は総件数を使用
+  const upcomingCount = searchQuery.trim() === '' ? totalCount : displayedLessons.length;
 
   // ユーザーがログインしていない場合
   if (!user) {
@@ -193,8 +210,8 @@ export const CustomerSelect: React.FC = () => {
         )}
       </div>
 
-      {/* もっと見るボタン */}
-      {displayedLessons.length < (searchQuery ? nextLessons.filter(lesson => lesson.customerName.toLowerCase().includes(searchQuery.toLowerCase())).length : nextLessons.length) && (
+      {/* もっと見るボタン（バックエンド側のページネーション対応） */}
+      {!searchQuery && (currentPage + 1) * pageSize < totalCount && (
         <div className="mt-6 text-center">
           <button
             onClick={handleLoadMore}
