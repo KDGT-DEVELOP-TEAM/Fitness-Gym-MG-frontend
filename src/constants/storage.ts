@@ -9,5 +9,10 @@ export const STORAGE_CONSTANTS = {
 
 export const IMAGE_CONSTANTS = {
   JPEG_MIME_TYPE: 'image/jpeg',
-  JPEG_QUALITY: 0.9,
 } as const;
+
+/**
+ * Maximum file size for uploads (10MB)
+ * Matches backend ApplicationConstants.MAX_FILE_SIZE_BYTES
+ */
+export const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB

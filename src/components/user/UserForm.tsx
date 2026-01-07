@@ -181,13 +181,13 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
                 {/* Name */}
                 <div>
                     <label className="block text-sm font-bold text-gray-700 mb-1">氏名 <RequiredBadge /></label>
-                    <input type="text" name="name" value={formData.name} onChange={handleChange} required minLength={2} maxLength={50} className="w-full border p-2 rounded shadow-sm" />
+                    <input type="text" name="name" value={formData.name} onChange={handleChange} required minLength={2} maxLength={100} className="w-full border p-2 rounded shadow-sm" />
                 </div>
                 
                 {/* Kana */}
                 <div>
                     <label className="block text-sm font-bold text-gray-700 mb-1">ふりがな <RequiredBadge /></label>
-                    <input type="text" name="kana" value={formData.kana} onChange={handleChange} required minLength={2} maxLength={50} className="w-full border p-2 rounded shadow-sm" />
+                    <input type="text" name="kana" value={formData.kana} onChange={handleChange} required minLength={2} maxLength={100} className="w-full border p-2 rounded shadow-sm" />
                 </div>
             </div>
             

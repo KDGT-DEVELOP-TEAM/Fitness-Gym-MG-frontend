@@ -8,7 +8,7 @@ import { logger } from '../../utils/logger';
 import { PosturePosition, getPosturePositionLabel, ALL_POSTURE_POSITIONS } from '../../constants/posture';
 import { useOptions } from '../../hooks/useOptions';
 import { IMAGE_QUALITY, CANVAS_DIMENSIONS } from '../../constants/image';
-import { IMAGE_CONSTANTS } from '../../constants/storage';
+import { IMAGE_CONSTANTS, MAX_FILE_SIZE_BYTES } from '../../constants/storage';
 import { FORM_STYLES } from '../../styles/formStyles';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import { validateRequired, validateDateRange, validateNumericRange, validateNextLesson } from '../../utils/validators';
@@ -173,6 +173,13 @@ export const LessonCreate: React.FC = () => {
           return;
         }
 
+        // ファイルサイズチェック
+        if (blob.size > MAX_FILE_SIZE_BYTES) {
+          setError(`ファイルサイズが上限（10MB）を超えています。現在のサイズ: ${(blob.size / 1024 / 1024).toFixed(2)}MB`);
+          resolve();
+          return;
+        }
+
         // 常にローカルプレビューを表示
         const localUrl = URL.createObjectURL(blob);
         const updatePreview = (signedUrl: string, storageKey: string) =>
@@ -284,8 +291,8 @@ export const LessonCreate: React.FC = () => {
 
     // 体重が指定されている場合のバリデーション
     if (formData.weight !== null && formData.weight !== undefined) {
-      if (!validateNumericRange(formData.weight, 0, 500)) {
-        setError('体重は0kg以上500kg以下で入力してください');
+      if (!validateNumericRange(formData.weight, 30, 300)) {
+        setError('体重は30kg以上300kg以下で入力してください');
         return;
       }
     }
