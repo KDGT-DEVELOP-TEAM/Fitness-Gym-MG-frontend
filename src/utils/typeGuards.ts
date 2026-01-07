@@ -51,8 +51,14 @@ export const isCustomer = (customer: unknown): customer is Customer => {
     typeof c.height === 'number' &&
     typeof c.active === 'boolean' &&
     typeof c.createdAt === 'string' &&
-    // gender, firstPostureGroupId, latestWeightはオプショナルまたはnull許容のためチェックしない
-    true
+    // gender: MALE/FEMALEのいずれかであることを厳密にチェック
+    (c.gender === 'MALE' || c.gender === 'FEMALE') &&
+    // firstPostureGroupId, latestWeight, medical, taboo, memoはnull許容のためチェックしない
+    (c.firstPostureGroupId === null || typeof c.firstPostureGroupId === 'string') &&
+    (c.latestWeight === null || typeof c.latestWeight === 'number') &&
+    (c.medical === null || typeof c.medical === 'string') &&
+    (c.taboo === null || typeof c.taboo === 'string') &&
+    (c.memo === null || typeof c.memo === 'string')
   );
 };
 

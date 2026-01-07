@@ -1,4 +1,8 @@
-export type Gender = '男' | '女';
+/**
+ * 性別（バックエンドのGender Enumに対応）
+ * バックエンドはJacksonデフォルトでEnum名をシリアライズするため、MALE/FEMALEを使用
+ */
+export type Gender = 'MALE' | 'FEMALE';
 
 export interface Customer {
   id: string;

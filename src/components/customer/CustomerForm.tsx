@@ -21,7 +21,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
   const [formData, setFormData] = useState<CustomerFormData & { active: boolean }>({
     name: initialData?.name || '',
     kana: initialData?.kana || '',
-    gender: initialData?.gender || '男',
+    gender: initialData?.gender || 'MALE', // バックエンドのGender Enum（MALE/FEMALE）に対応
     birthday: initialData?.birthdate || '', // バックエンドのCustomerResponse.birthdateをフォームのbirthdayに変換
     height: initialData?.height || 0,
     email: initialData?.email || '',
@@ -116,8 +116,8 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
           <div>
             <label className="block text-sm font-medium">性別 <RequiredBadge /></label>
             <select name="gender" value={formData.gender} onChange={handleChange} className="w-full border p-2 rounded">
-              <option value="男">男</option>
-              <option value="女">女</option>
+              <option value="MALE">男</option>
+              <option value="FEMALE">女</option>
             </select>
           </div>
         </div>

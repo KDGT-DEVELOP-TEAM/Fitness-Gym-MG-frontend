@@ -1,18 +1,20 @@
 import { useState, useEffect } from 'react';
 import { customerApi } from '../api/customerApi';
+import { Gender, CustomerRequest } from '../types/api/customer';
 
 export interface CustomerProfileData {
   id: string;
-  furigana: string;
+  kana: string; // バックエンドのCustomer.kanaに対応
   name: string;
-  gender: '男性' | '女性' | 'その他' | '';
-  birthDate: string;
+  gender: Gender | ''; // バックエンドのGender Enum（MALE/FEMALE）に対応
+  birthdate: string; // バックエンドのCustomer.birthdateに対応
   age: number;
   height: string;
   address: string;
   email: string;
-  medicalHistory: string;
-  contraindications: string;
+  phone: string; // バックエンドのCustomer.phoneに対応
+  medical: string; // バックエンドのCustomer.medicalに対応
+  taboo: string; // バックエンドのCustomer.tabooに対応
   memo: string;
   postureImages: {
     front?: string;
@@ -42,16 +44,17 @@ export const useCustomerProfile = (customerId: string) => {
   const [editingField, setEditingField] = useState<keyof CustomerProfileData | null>(null);
   const [profileData, setProfileData] = useState<CustomerProfileData>({
     id: customerId || '',
-    furigana: '',
+    kana: '',
     name: '',
     gender: '',
-    birthDate: '',
+    birthdate: '',
     age: 0,
     height: '',
     address: '',
     email: '',
-    medicalHistory: '',
-    contraindications: '',
+    phone: '',
+    medical: '',
+    taboo: '',
     memo: '',
     postureImages: {
       front: undefined,
@@ -68,22 +71,23 @@ export const useCustomerProfile = (customerId: string) => {
         setLoading(true);
         setError(null);
 
-        // APIから顧客データを取得
-        const data = await customerApi.getById(customerId);
+        // APIから顧客データを取得（customerApi.getProfileを使用）
+        const data = await customerApi.getProfile(customerId);
 
         // 取得したデータをプロフィール形式に変換
         setProfileData({
           id: data.id,
-          furigana: data.furigana || '',
+          kana: data.kana || '',
           name: data.name,
-          gender: (data.gender as '男性' | '女性' | 'その他') || '',
-          birthDate: data.birthDate || '',
-          age: data.birthDate ? calculateAge(data.birthDate) : 0,
+          gender: data.gender || '',
+          birthdate: data.birthdate || '',
+          age: data.birthdate ? calculateAge(data.birthdate) : 0,
           height: data.height?.toString() || '',
           address: data.address || '',
           email: data.email || '',
-          medicalHistory: data.medicalHistory || '',
-          contraindications: data.contraindications || '',
+          phone: data.phone || '',
+          medical: data.medical || '',
+          taboo: data.taboo || '',
           memo: data.memo || '',
           postureImages: {
             front: undefined,
@@ -104,11 +108,11 @@ export const useCustomerProfile = (customerId: string) => {
 
   // 生年月日が変更された時に年齢を自動更新
   useEffect(() => {
-    if (profileData.birthDate) {
-      const newAge = calculateAge(profileData.birthDate);
+    if (profileData.birthdate) {
+      const newAge = calculateAge(profileData.birthdate);
       setProfileData((prev) => ({ ...prev, age: newAge }));
     }
-  }, [profileData.birthDate]);
+  }, [profileData.birthdate]);
 
   const handleEdit = (fieldName: keyof CustomerProfileData) => {
     setEditingField(fieldName);
@@ -125,20 +129,36 @@ export const useCustomerProfile = (customerId: string) => {
       setSaving(true);
       setError(null);
 
-      // APIを使って顧客情報を更新
-      const updateData: Partial<CustomerProfileData> = {
-        [editingField]: profileData[editingField],
-      };
-
-      // heightは数値に変換
+      // CustomerRequestに合わせてデータを構築
+      const requestData: Partial<CustomerRequest> = {};
+      
       if (editingField === 'height') {
         const heightNum = parseFloat(profileData.height);
-        await customerApi.update(customerId, {
-          height: isNaN(heightNum) ? undefined : heightNum,
-        });
-      } else {
-        await customerApi.update(customerId, updateData as any);
+        requestData.height = isNaN(heightNum) ? undefined : heightNum;
+      } else if (editingField === 'kana') {
+        requestData.kana = profileData.kana;
+      } else if (editingField === 'name') {
+        requestData.name = profileData.name;
+      } else if (editingField === 'gender') {
+        requestData.gender = profileData.gender as Gender;
+      } else if (editingField === 'birthdate') {
+        requestData.birthday = profileData.birthdate; // birthdateをbirthdayに変換
+      } else if (editingField === 'address') {
+        requestData.address = profileData.address;
+      } else if (editingField === 'email') {
+        requestData.email = profileData.email;
+      } else if (editingField === 'phone') {
+        requestData.phone = profileData.phone;
+      } else if (editingField === 'medical') {
+        requestData.medical = profileData.medical;
+      } else if (editingField === 'taboo') {
+        requestData.taboo = profileData.taboo;
+      } else if (editingField === 'memo') {
+        requestData.memo = profileData.memo;
       }
+
+      // customerApi.updateProfileを使用
+      await customerApi.updateProfile(customerId, requestData as CustomerRequest);
 
       console.log('Saved:', editingField, profileData[editingField]);
     } catch (error) {
