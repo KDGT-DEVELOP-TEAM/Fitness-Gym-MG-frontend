@@ -155,6 +155,7 @@ export const UserManagement: React.FC = () => {
             value={filters.nameOrKana}
             onChange={(e) => handleFilterChange({ nameOrKana: e.target.value })}
             className="w-full h-14 bg-white border-2 border-gray-50 pl-14 pr-6 rounded-2xl focus:border-green-500 focus:ring-0 outline-none transition-all text-gray-700 font-medium shadow-sm"
+            maxLength={100}
           />
         </div>
         

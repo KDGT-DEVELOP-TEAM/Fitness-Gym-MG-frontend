@@ -138,6 +138,7 @@ if (!service) return;
             className="w-full h-14 bg-white border-2 border-gray-50 pl-14 pr-6 rounded-2xl focus:border-green-500 focus:ring-0 outline-none transition-all text-gray-700 font-medium shadow-sm"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            maxLength={100}
           />
         </div>
         {/* 必要であればここに性別フィルタなどの select を追加可能 */}

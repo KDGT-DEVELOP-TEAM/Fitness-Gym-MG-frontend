@@ -72,6 +72,12 @@ export interface CustomerListItem {
     page?: number;
     size?: number;
     name?: string;
+    /**
+     * ソート順
+     * バックエンドのCustomerSort Enumに対応（KANA: かな順昇順, CREATED: 作成日時順降順）
+     * デフォルト値: "created"（バックエンドのCustomerApiControllerのdefaultValueに合わせる）
+     */
+    sort?: 'KANA' | 'CREATED';
     // バックエンドが受け取らないパラメータを削除:
     // kana: バックエンドのCustomerApiControllerでは受け取らない
     // isActive: バックエンドのCustomerApiControllerでは受け取らない

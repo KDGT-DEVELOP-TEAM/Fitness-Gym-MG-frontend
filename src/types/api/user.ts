@@ -53,6 +53,12 @@ export interface UserListParams {
   size?: number;
   name?: string;
   role?: UserRole;
+  /**
+   * ソート順
+   * バックエンドのUserSortType Enumに対応（created: 登録日時降順, kana: カナ昇順）
+   * デフォルト値: "created"（バックエンドのUserApiControllerのdefaultValueに合わせる）
+   */
+  sort?: 'created' | 'kana';
   // バックエンドが受け取らないパラメータを削除:
   // active: バックエンドのUserApiControllerでは受け取らない
 }

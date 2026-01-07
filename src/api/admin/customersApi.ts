@@ -8,6 +8,7 @@ export const adminCustomersApi = {
     if (params?.page !== undefined) query.append('page', String(params.page));
     if (params?.size !== undefined) query.append('size', String(params.size));
     if (params?.name) query.append('name', params.name);
+    if (params?.sort) query.append('sort', params.sort);
     // バックエンドが受け取らないパラメータを削除:
     // kana: バックエンドのCustomerApiControllerでは受け取らない
     // isActive: バックエンドのCustomerApiControllerでは受け取らない
