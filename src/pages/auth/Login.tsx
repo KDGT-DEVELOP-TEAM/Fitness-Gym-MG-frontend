@@ -38,7 +38,8 @@ export const Login: React.FC = () => {
       console.log('[Login] ユーザー状態更新を検知、リダイレクト:', redirectPath);
       navigate(redirectPath, { replace: true });
     }
-  }, [user, navigate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]); // navigateはReact Routerが安定性を保証しているため、依存配列から除外
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
