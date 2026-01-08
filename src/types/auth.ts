@@ -1,8 +1,4 @@
-<<<<<<< Current (Your changes)
-import { User } from './api/user';
-=======
 import { UserRole } from './api/user';
->>>>>>> Incoming (Background Agent changes)
 
 export type { User } from './api/user';
 

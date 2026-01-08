@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '../types/auth';
 import { authApi } from '../api/authApi';
+import { storage } from '../utils/storage';
 
 interface AuthContextType {
   user: User | null;
@@ -21,10 +22,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     const initAuth = async () => {
       try {
+        // トークンが存在する場合のみ認証状態を確認
+        const token = storage.getToken();
+        if (!token) {
+          // トークンがない場合は認証されていない
+          setUser(null);
+          setAuthLoading(false);
+          return;
+        }
+        
         // getCurrentUser()の成否のみで認証状態を判断
         const currentUser = await authApi.getCurrentUser();
         setUser(currentUser);
-      } catch (error) {
+      } catch (error: any) {
+        // 401エラー（未認証）は正常な動作なので、エラーをログに出力しない
+        // その他のエラーのみログに出力
+        if (error?.response?.status !== 401) {
+          console.error('認証状態の確認に失敗しました:', error);
+        }
         // 認証失敗時はnullに設定
         setUser(null);
       } finally {

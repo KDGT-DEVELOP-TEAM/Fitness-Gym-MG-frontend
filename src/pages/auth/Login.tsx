@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { ROUTES } from '../../constants/routes';
-import { getLoginErrorMessage } from '../../utils/errorHandler';
+import { getErrorMessage, getAllErrorMessages } from '../../utils/errorMessages';
 import { logger } from '../../utils/logger';
 
 export const Login: React.FC = () => {
@@ -42,7 +42,13 @@ export const Login: React.FC = () => {
       }
     } catch (err) {
       logger.error('Login failed', err, 'Login');
-      setError(getLoginErrorMessage(err));
+      // バリデーションエラーの場合は詳細メッセージを表示
+      const errorMessages = getAllErrorMessages(err);
+      if (errorMessages.length > 0) {
+        setError(errorMessages.join('\n'));
+      } else {
+        setError(getErrorMessage(err, 'login'));
+      }
     }
   };
 
