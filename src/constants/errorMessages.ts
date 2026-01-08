@@ -23,6 +23,7 @@ export const ERROR_MESSAGES = {
   BAD_REQUEST: '入力形式が無効です。',
   FORBIDDEN: 'アクセス権限がありません。',
   UNAUTHORIZED: '認証が必要です。',
+  CONFLICT: 'リソースが既に存在します。',
 
   // Database errors
   DB_ERROR: 'データベース操作に失敗しました。',

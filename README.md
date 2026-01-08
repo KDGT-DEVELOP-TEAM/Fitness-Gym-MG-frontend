@@ -36,7 +36,7 @@ VITE_API_BASE_URL=http://localhost:3001/api
 **注意**: 
 - Viteでは環境変数に `VITE_` プレフィックスが必要です
 - 環境変数は `import.meta.env.VITE_*` でアクセスします
-- APIベースURLはバックエンドサーバーのURLに合わせて設定してください（デフォルト: http://localhost:3001/api）
+- APIベースURLはバックエンドサーバーのURLに合わせて設定してください（デフォルト: http://localhost:8080/api）
 
 ### 3. 開発サーバーの起動
 

@@ -130,16 +130,6 @@ export const LessonCreate: React.FC = () => {
       setPostureGroupId(tempId);
       logger.debug('Temporary posture group ID created', { id: tempId }, 'LessonForm');
       return tempId;
-      
-      if (!response || !response.id) {
-        setError('姿勢グループの作成に失敗しました');
-        return null;
-      }
-      
-      const newId = response.id;
-      setPostureGroupId(newId);
-      logger.debug('Posture group created', { id: newId }, 'LessonForm');
-      return newId;
     } catch (error) {
       logger.error('Failed to create posture group', error, 'LessonForm');
       setError(handleError(error, 'LessonForm'));
@@ -348,7 +338,7 @@ export const LessonCreate: React.FC = () => {
       }
       // 姿勢画像一覧ページに遷移
       if (formData.customerId) {
-        navigate(ROUTES.POSTURE_IMAGE_LIST.replace(':customerId', formData.customerId));
+        navigate(ROUTES.POSTURE_LIST.replace(':id', formData.customerId));
       } else {
         navigate(ROUTES.LESSON_FORM);
       }

@@ -175,6 +175,14 @@ export function getUserFriendlyMessage(error: AppError): string {
         return '認証に失敗しました。ログイン情報を確認してください。';
       case ErrorCode.ACCESS_DENIED:
         return 'この操作を実行する権限がありません。';
+      case ErrorCode.BUSINESS_RULE_VIOLATION:
+        return error.message || 'ビジネスルールに違反しています。';
+      case ErrorCode.BUSINESS_LOGIC_ERROR:
+        return error.message || '処理を実行できませんでした。';
+      case ErrorCode.DATA_INTEGRITY_ERROR:
+        return error.message || 'データ整合性エラーが発生しました。';
+      case ErrorCode.FILE_SIZE_EXCEEDED:
+        return 'ファイルサイズが上限を超えています。';
       case ErrorCode.STORAGE_ERROR:
       case ErrorCode.INTERNAL_ERROR:
         return 'サーバーエラーが発生しました。しばらくしてから再度お試しください。';
@@ -202,8 +210,14 @@ export function getUserFriendlyMessage(error: AppError): string {
       }
       return error.message;
     case ErrorType.API_ERROR:
+      if (error.statusCode === 403) {
+        return 'このリソースにアクセスする権限がありません。';
+      }
       if (error.statusCode === 404) {
         return 'リソースが見つかりませんでした。';
+      }
+      if (error.statusCode === 409) {
+        return 'リソースが既に存在します。';
       }
       if (error.statusCode === 500) {
         return 'サーバーエラーが発生しました。しばらくしてから再度お試しください。';
