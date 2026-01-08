@@ -53,16 +53,30 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const login = async (email: string, password: string): Promise<User> => {
     setActionLoading(true);
     try {
+      // login()のレスポンスから直接User型を作成
       // authApi側でtoken保存まで完結
-      await authApi.login({ email, password });
-
-      // getCurrentUser()で認証を確定
-      const currentUser = await authApi.getCurrentUser();
-      setUser(currentUser);
-
-      return currentUser;
+      console.log('[AuthContext] ログイン開始');
+      const loginResponse = await authApi.login({ email, password });
+      console.log('[AuthContext] ログインAPI成功:', loginResponse);
+      
+      // LoginResponseからUser型に変換
+      const user: User = {
+        id: loginResponse.userId,
+        email: loginResponse.email,
+        name: loginResponse.name,
+        kana: '', // LoginResponseにはkanaが含まれていないため空文字
+        role: loginResponse.role,
+        storeIds: [], // LoginResponseにはstoreIdsが含まれていないため空配列
+        active: true, // LoginResponseにはactiveが含まれていないためtrueと仮定
+        createdAt: '',
+      };
+      
+      console.log('[AuthContext] User型に変換完了:', user);
+      setUser(user);
+      console.log('[AuthContext] setUser完了');
+      return user;
     } catch (error) {
-      console.error('ログインに失敗しました:', error);
+      console.error('[AuthContext] ログインに失敗しました:', error);
       throw error;
     } finally {
       setActionLoading(false);

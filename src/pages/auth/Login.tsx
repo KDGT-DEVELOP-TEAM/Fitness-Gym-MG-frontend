@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { ROUTES } from '../../constants/routes';
 import { getErrorMessage, getAllErrorMessages } from '../../utils/errorMessages';
@@ -14,33 +14,43 @@ export const Login: React.FC = () => {
   const [resetError, setResetError] = useState('');
   const [resetSuccess, setResetSuccess] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
-  const { login, actionLoading } = useAuth();
+  const { login, actionLoading, user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // ログイン成功後の遷移をuseEffectで処理
+  useEffect(() => {
+    console.log('[Login] useEffect発火、user:', user);
+    if (user) {
+      const redirectPath = (() => {
+        switch (user.role) {
+          case 'ADMIN':
+            return '/admin';
+          case 'MANAGER':
+            return '/manager';
+          case 'TRAINER':
+            return '/trainer';
+          default:
+            return '/login';
+        }
+      })();
+      
+      console.log('[Login] ユーザー状態更新を検知、リダイレクト:', redirectPath);
+      navigate(redirectPath, { replace: true });
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
     try {
-      const userData = await login(email, password);
-      
-      // ロールベースのリダイレクト
-      // 注意: /admin/home、/manager/home、/trainer/homeは他の担当者が実装予定のため、
-      // 一時的に/admin、/manager、/trainerにリダイレクト（これらは/403にリダイレクトされます）
-      switch (userData.role) {
-        case 'ADMIN':
-          navigate('/admin');
-          break;
-        case 'MANAGER':
-          navigate('/manager');
-          break;
-        case 'TRAINER':
-          navigate('/trainer');
-          break;
-        default:
-          navigate('/login');
-      }
+      console.log('[Login] ログイン試行開始');
+      await login(email, password);
+      console.log('[Login] ログイン成功、ユーザーデータの設定を待機中');
+      // navigate()の呼び出しを削除 - useEffectで処理
     } catch (err) {
+      console.error('[Login] ログインエラー:', err);
       logger.error('Login failed', err, 'Login');
       // バリデーションエラーの場合は詳細メッセージを表示
       const errorMessages = getAllErrorMessages(err);

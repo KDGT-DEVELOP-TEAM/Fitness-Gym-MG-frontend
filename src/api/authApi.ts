@@ -10,21 +10,46 @@ export const authApi = {
    * バックエンドのLoginResponseに対応
    */
   login: async (credentials: LoginCredentials): Promise<LoginResponse> => {
-    const response = await axiosInstance.post<LoginResponse>('/auth/login', credentials);
-    const { token, userId, email, name, role } = response.data;
+    console.log('[authApi] ログインAPI呼び出し開始');
+    try {
+      const response = await axiosInstance.post<LoginResponse>('/auth/login', credentials);
+      console.log('[authApi] ログインAPIレスポンス成功:', {
+        status: response.status,
+        data: response.data,
+        headers: response.headers
+      });
+      const { token, userId, email, name, role } = response.data;
 
     // JWTトークンを保存
+    console.log('[authApi] トークン保存開始');
     storage.setToken(token);
+    console.log('[authApi] トークン保存完了');
 
     // ユーザー情報を保存
+    console.log('[authApi] ユーザー情報保存開始');
     storage.setUser({
       userId,
       email,
       name,
       role,
     });
+    console.log('[authApi] ユーザー情報保存完了');
 
-    return response.data;
+      return response.data;
+    } catch (error: any) {
+      console.error('[authApi] ログインAPIエラー:', {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        config: {
+          url: error.config?.url,
+          method: error.config?.method,
+          headers: error.config?.headers
+        }
+      });
+      throw error;
+    }
   },
 
   /**

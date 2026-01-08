@@ -26,9 +26,16 @@ axiosInstance.interceptors.request.use(
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
+    // ログインエンドポイントの401エラーは除外（ログイン失敗は正常な動作）
+    const isLoginEndpoint = error.config?.url?.includes('/auth/login') && error.config?.method === 'post';
+    
     if (error.response?.status === 401) {
-      storage.clear();
-      window.location.href = '/login';
+      // ログインエンドポイント以外の401エラーのみ自動ログアウト
+      if (!isLoginEndpoint) {
+        console.log('[axiosConfig] 401エラー検知、ログアウト処理を実行');
+        storage.clear();
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
