@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { trainerHomeApi } from '../api/trainer/homeApi';
 import { Lesson } from '../types/lesson';
 import { ROUTES } from '../constants/routes';
-import { FiChevronRight, FiSearch, FiCalendar, FiUser } from 'react-icons/fi';
+import { FiChevronRight, FiSearch, FiCalendar, FiUser, FiMapPin } from 'react-icons/fi';
 
 export const CustomerSelect: React.FC = () => {
   const { user } = useAuth();
@@ -80,7 +80,7 @@ export const CustomerSelect: React.FC = () => {
     const date = new Date(dateTimeStr);
     const hours = date.getHours().toString().padStart(2, '0');
     const minutes = date.getMinutes().toString().padStart(2, '0');
-    return `${hours}:${minutes}`;
+    return `${hours}:${minutes} 〜`;
   };
 
   const formatDate = (dateTimeStr: string | null) => {
@@ -127,17 +127,12 @@ export const CustomerSelect: React.FC = () => {
 
   return (
     <div className="p-8 font-poppins">
-      <h1 className="text-3xl font-semibold mb-6 text-gray-800">顧客選択</h1>
-
-      {/* 次回レッスン希望日程件数 */}
-      <div className="mb-6">
-        <div className="border border-[#DFDFDF] bg-white rounded-[10px] flex items-center px-6 h-[65px]">
-          <FiCalendar className="text-[#68BE6B] mr-3 w-[29px] h-[29px]" />
-          <p className="text-gray-700 text-[23px]">
-            次回レッスン希望日程: <span className="font-semibold text-[#68BE6B]">{upcomingCount}</span>件
-          </p>
-        </div>
-      </div>
+      <h1 className="text-3xl font-semibold mb-6 text-gray-800 flex items-center gap-4">
+        顧客選択
+        <span className="text-lg font-normal text-gray-600">
+          次回レッスン希望日程: <span className="font-semibold text-[#68BE6B]">{upcomingCount}</span>件
+        </span>
+      </h1>
 
       {/* 検索バー */}
       <div className="mb-6 flex justify-center">
@@ -200,6 +195,47 @@ export const CustomerSelect: React.FC = () => {
                         <p className="text-lg font-bold text-gray-900">
                           {lesson.customerName}
                         </p>
+                      </div>
+                      {/* 前回と次回の店舗・担当情報を2列で表示 */}
+                      <div className="grid grid-cols-2 gap-4 mt-3">
+                        {/* 左列: 前回 */}
+                        <div className="space-y-2">
+                          {lesson.storeName && (
+                            <div className="flex items-center gap-2">
+                              <FiMapPin className="text-[#68BE6B] w-[18px] h-[18px]" />
+                              <p className="text-base text-gray-700">
+                                前回実施店舗: {lesson.storeName}
+                              </p>
+                            </div>
+                          )}
+                          {lesson.trainerName && (
+                            <div className="flex items-center gap-2">
+                              <FiUser className="text-[#68BE6B] w-[18px] h-[18px]" />
+                              <p className="text-base text-gray-700">
+                                前回担当: {lesson.trainerName}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                        {/* 右列: 次回 */}
+                        <div className="space-y-2">
+                          {lesson.nextStoreName && (
+                            <div className="flex items-center gap-2">
+                              <FiMapPin className="text-[#68BE6B] w-[18px] h-[18px]" />
+                              <p className="text-base text-gray-700">
+                                実施店舗: {lesson.nextStoreName}
+                              </p>
+                            </div>
+                          )}
+                          {lesson.nextTrainerName && (
+                            <div className="flex items-center gap-2">
+                              <FiUser className="text-[#68BE6B] w-[18px] h-[18px]" />
+                              <p className="text-base text-gray-700">
+                                担当: {lesson.nextTrainerName}
+                              </p>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
