@@ -127,12 +127,16 @@ export const CustomerSelect: React.FC = () => {
 
   return (
     <div className="p-8 font-poppins">
-      <h1 className="text-3xl font-semibold mb-6 text-gray-800 flex items-center gap-4">
-        顧客選択
-        <span className="text-lg font-normal text-gray-600">
-          次回レッスン希望日程: <span className="font-semibold text-[#68BE6B]">{upcomingCount}</span>件
-        </span>
-      </h1>
+      <div className="flex items-center gap-4 mb-6">
+        <h1 className="text-3xl font-semibold text-gray-800">レッスン日程</h1>
+        {/* 次回レッスン希望日程件数 */}
+        <div className="border border-[#DFDFDF] bg-white rounded-[10px] flex items-center px-6 h-[65px]">
+          <FiCalendar className="text-[#68BE6B] mr-3 w-[29px] h-[29px]" />
+          <p className="text-gray-700 text-[23px]">
+            次回レッスン希望日程: <span className="font-semibold text-[#68BE6B]">{upcomingCount}</span>件
+          </p>
+        </div>
+      </div>
 
       {/* 検索バー */}
       <div className="mb-6 flex justify-center">
