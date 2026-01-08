@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useParams } from 'react-router-dom';
 import { ROUTES } from '../../constants/routes';
 import { lessonApi } from '../../api/lessonApi';
 import { postureApi } from '../../api/postureApi';
@@ -22,6 +22,7 @@ type PosturePreview = {
 export const LessonCreate: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const params = useParams<{ customerId?: string }>();
   const { stores, users, customers } = useOptions();
   const [trainings, setTrainings] = useState<TrainingInput[]>([]);
   const [posturePreviews, setPosturePreviews] = useState<PosturePreview[]>([]);
@@ -48,9 +49,10 @@ export const LessonCreate: React.FC = () => {
     trainings: [],
   });
 
-  // URLクエリパラメータから顧客IDを取得して自動選択
+  // URLパラメータまたはクエリパラメータから顧客IDを取得して自動選択
   useEffect(() => {
-    const customerIdFromUrl = searchParams.get('customerId');
+    // パスパラメータを優先、なければクエリパラメータを使用（後方互換性のため）
+    const customerIdFromUrl = params.customerId || searchParams.get('customerId');
     if (customerIdFromUrl && customers.length > 0) {
       // 顧客リストに該当する顧客が存在するか確認
       const customerExists = customers.some((c) => c.id === customerIdFromUrl);
@@ -61,7 +63,7 @@ export const LessonCreate: React.FC = () => {
         }));
       }
     }
-  }, [searchParams, customers]);
+  }, [params.customerId, searchParams, customers]);
 
   const handleTrainingChange = (index: number, key: keyof TrainingInput, value: string) => {
     setTrainings((prev) => {

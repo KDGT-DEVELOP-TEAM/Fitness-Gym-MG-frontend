@@ -72,7 +72,13 @@ export const CustomerSelect: React.FC = () => {
   }, [searchQuery]);
 
   const handleLessonClick = (customerId: string) => {
-    navigate(ROUTES.LESSON_HISTORY.replace(':id', customerId));
+    if (!customerId) {
+      console.error('[CustomerSelect] customerId is missing');
+      return;
+    }
+    const url = ROUTES.LESSON_FORM_WITH_CUSTOMER.replace(':customerId', customerId);
+    console.log('[CustomerSelect] Navigating to:', url);
+    navigate(url);
   };
 
   const formatTime = (dateTimeStr: string | null) => {

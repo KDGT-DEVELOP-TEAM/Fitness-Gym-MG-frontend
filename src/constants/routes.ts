@@ -2,6 +2,7 @@ export const ROUTES = {
   LOGIN: '/login',
   CUSTOMER_SELECT: '/home',
   LESSON_FORM: '/lessons/new',
+  LESSON_FORM_WITH_CUSTOMER: '/trainer/home/newlessons/:customerId',
   LESSON_HISTORY: '/lessons/history/:id',
   CUSTOMER_PROFILE: '/customers/:id',
   POSTURE_LIST: '/postures/:id',

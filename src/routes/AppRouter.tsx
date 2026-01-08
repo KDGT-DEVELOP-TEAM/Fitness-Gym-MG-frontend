@@ -6,8 +6,10 @@ import { ManagerDashboard } from '../pages/manager/ManagerDashboard';
 import { CustomerManagement } from '../pages/CustomerManagement';
 import { UserManagement } from '../pages/UserManagement';
 import { CustomerSelect } from '../pages/CustomerSelect';
+import { LessonCreate } from '../pages/common/LessonCreate';
 import { MainLayout } from '../components/common/MainLayout';
 import { HiHome, HiUsers, HiUserGroup } from 'react-icons/hi';
+import { ROUTES } from '../constants/routes';
 // 以下のコンポーネントは実際の実装に合わせてインポートしてください
 // import { CustomerSelectPage } from '../pages/trainer/CustomerSelectPage';
 // import { UserListPage } from '../pages/admin/UserListPage';
@@ -42,6 +44,12 @@ export const AppRouter = () => {
         <Route path="/trainer" element={<ProtectedRoute roles={['TRAINER']} />}>
           <Route index element={<Navigate to="/trainer/home" replace />} />
           <Route path="home" element={<MainLayout menuItems={trainerMenuItems}><CustomerSelect /></MainLayout>} />
+          <Route path="home/newlessons/:customerId" element={<MainLayout menuItems={trainerMenuItems}><LessonCreate /></MainLayout>} />
+        </Route>
+
+        {/* レッスン作成画面（全ロール共通 - 旧パス互換性のため残す） */}
+        <Route path={ROUTES.LESSON_FORM} element={<ProtectedRoute roles={['ADMIN', 'MANAGER', 'TRAINER']} />}>
+          <Route index element={<MainLayout menuItems={trainerMenuItems}><LessonCreate /></MainLayout>} />
         </Route>
 
         <Route path="/admin" element={<ProtectedRoute roles={['ADMIN']} />}>
