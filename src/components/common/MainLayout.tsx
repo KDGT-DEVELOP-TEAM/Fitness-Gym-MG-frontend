@@ -11,6 +11,7 @@ interface MenuItem {
   label: string;
   icon: React.ReactNode;
   subItems?: SubMenuItem[];
+  isBackButton?: boolean;
 }
 
 interface MainLayoutProps {

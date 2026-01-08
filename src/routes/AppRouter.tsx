@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { ProtectedRoute } from './ProtectedRoute';
 import { Login } from '../pages/auth/Login';
 import { AdminDashboard } from '../pages/admin/AdminDashboard';
@@ -8,7 +8,7 @@ import { UserManagement } from '../pages/UserManagement';
 import { CustomerSelect } from '../pages/CustomerSelect';
 import { LessonCreate } from '../pages/common/LessonCreate';
 import { MainLayout } from '../components/common/MainLayout';
-import { HiHome, HiUsers, HiUserGroup } from 'react-icons/hi';
+import { HiHome, HiUsers, HiUserGroup, HiDocumentAdd, HiClock, HiPhotograph, HiArrowLeft } from 'react-icons/hi';
 import { ROUTES } from '../constants/routes';
 // 以下のコンポーネントは実際の実装に合わせてインポートしてください
 // import { CustomerSelectPage } from '../pages/trainer/CustomerSelectPage';
@@ -35,6 +35,45 @@ const managerMenuItems = [
   { path: '/manager/customers', label: '顧客管理', icon: <HiUserGroup className="w-5 h-5" /> },
 ];
 
+// 顧客IDに基づいて動的にメニューアイテムを生成する関数
+const getCustomerRelatedMenuItems = (customerId: string) => [
+  { 
+    path: '/trainer/home', 
+    label: 'Home', 
+    icon: <HiArrowLeft className="w-5 h-5" />,
+    isBackButton: true,
+  },
+  { 
+    path: `/trainer/home/newlessons/${customerId}`, 
+    label: '新規レッスン入力', 
+    icon: <HiDocumentAdd className="w-5 h-5" /> 
+  },
+  {
+    path: ROUTES.LESSON_HISTORY.replace(':id', customerId),
+    label: '履歴一覧',
+    icon: <HiClock className="w-5 h-5" />,
+  },
+  {
+    path: ROUTES.POSTURE_LIST.replace(':id', customerId),
+    label: '姿勢一覧',
+    icon: <HiPhotograph className="w-5 h-5" />,
+  },
+];
+
+// 顧客IDを取得してメニューアイテムを生成するラッパーコンポーネント
+const LessonCreateWithMenu: React.FC = () => {
+  const { customerId } = useParams<{ customerId: string }>();
+  if (!customerId) {
+    return <LessonCreate />;
+  }
+  const menuItems = getCustomerRelatedMenuItems(customerId);
+  return (
+    <MainLayout menuItems={menuItems}>
+      <LessonCreate />
+    </MainLayout>
+  );
+};
+
 export const AppRouter = () => {
   return (
     <BrowserRouter>
@@ -44,7 +83,7 @@ export const AppRouter = () => {
         <Route path="/trainer" element={<ProtectedRoute roles={['TRAINER']} />}>
           <Route index element={<Navigate to="/trainer/home" replace />} />
           <Route path="home" element={<MainLayout menuItems={trainerMenuItems}><CustomerSelect /></MainLayout>} />
-          <Route path="home/newlessons/:customerId" element={<MainLayout menuItems={trainerMenuItems}><LessonCreate /></MainLayout>} />
+          <Route path="home/newlessons/:customerId" element={<LessonCreateWithMenu />} />
         </Route>
 
         {/* レッスン作成画面（全ロール共通 - 旧パス互換性のため残す） */}

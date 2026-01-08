@@ -12,6 +12,7 @@ interface MenuItem {
   label: string;
   icon: React.ReactNode;
   subItems?: SubMenuItem[];
+  isBackButton?: boolean;
 }
 
 interface SidebarProps {
@@ -40,11 +41,38 @@ export const Sidebar: React.FC<SidebarProps> = ({ menuItems }) => {
     <aside className="w-64 bg-sidebar text-white min-h-screen flex flex-col font-poppins">
       <nav className="flex-1 p-4">
         <ul className="space-y-2">
-          {menuItems.map((item) => {
+          {menuItems.map((item, index) => {
             const isActive = location.pathname === item.path;
             const hasSubItems = item.subItems && item.subItems.length > 0;
             const isSubItemActive = hasSubItems && item.subItems?.some(subItem => location.pathname === subItem.path);
             const isActiveOrSubActive = isActive || isSubItemActive;
+            const isBackButton = item.isBackButton || false;
+
+            // 戻るボタンの場合は特別なスタイルで表示
+            if (isBackButton) {
+              return (
+                <li key={item.path} className={index > 0 ? 'mt-4 pt-4 border-t border-white/20' : ''}>
+                  <Link
+                    to={item.path}
+                    className="block rounded-20 p-0 transition-all"
+                  >
+                    <div
+                      className={`rounded-20 px-6 pt-5 pb-[0.5px] transition-colors duration-200 ${
+                        isActive
+                          ? 'bg-sidebar-hover shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)]'
+                          : 'bg-transparent hover:bg-[rgba(122,183,122,0.4)]'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        {item.icon && item.icon}
+                        <span className="text-lg">{item.label}</span>
+                      </div>
+                      <div className="bg-white h-[3px] mt-3" />
+                    </div>
+                  </Link>
+                </li>
+              );
+            }
 
             return (
               <li key={item.path}>
