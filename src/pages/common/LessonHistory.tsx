@@ -229,8 +229,7 @@ export const LessonHistory: React.FC = () => {
                 yAxisId="left"
                 stroke="#666"
                 domain={[18, 40]}
-                ticks={[18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40]}
-                interval={0}
+                ticks={[20, 25, 30, 35, 40]}
                 style={{ fontSize: '14px' }}
               />
               <YAxis
@@ -238,6 +237,7 @@ export const LessonHistory: React.FC = () => {
                 orientation="right"
                 stroke="#666"
                 domain={[18, 40]}
+                ticks={[20, 25, 30, 35, 40]}
                 style={{ fontSize: '14px' }}
               />
               <Tooltip content={() => null} cursor={false} />
@@ -245,6 +245,16 @@ export const LessonHistory: React.FC = () => {
                 wrapperStyle={{ paddingTop: '20px' }}
                 iconType="circle"
               />
+              {/* BMI値5ずつの横線（グレー） */}
+              {[20, 25, 30, 35, 40].map((value) => (
+                <ReferenceLine
+                  key={value}
+                  y={value}
+                  yAxisId="left"
+                  stroke="#D3D3D3"
+                  strokeWidth={1}
+                />
+              ))}
               {/* 初期BMIの基準線 */}
               {initialBMI && (
                 <ReferenceLine
