@@ -5,7 +5,6 @@ import { formatDateForGrouping, formatDateTimeForCompare } from '../../utils/dat
 import { logger } from '../../utils/logger';
 import { COLOR_CLASSES } from '../../constants/colors';
 import { PosturePosition, isPosturePosition } from '../../constants/posture';
-import { TIME_CONSTANTS } from '../../constants/time';
 import { ConfirmModal } from '../../components/common/ConfirmModal';
 import { PostureImageGrid } from '../../components/posture/PostureImageGrid';
 import { PostureCompareModal } from '../../components/posture/PostureCompareModal';
@@ -170,29 +169,16 @@ export const usePostureImageList = () => {
           return;
         }
 
-        // 署名付きURLをバックエンド経由でバッチ取得
-        let signedUrlMap: Map<string, string> = new Map();
-        
-        try {
-          const imageIds = allImages.map(img => img.id).filter(Boolean);
-          if (imageIds.length > 0) {
-            const signedUrlResponse = await postureApi.getBatchSignedUrls(
-              imageIds,
-              TIME_CONSTANTS.SEVEN_DAYS_IN_SECONDS
-            );
-            
-            if (signedUrlResponse && Array.isArray(signedUrlResponse.urls)) {
-              signedUrlMap = new Map(
-                signedUrlResponse.urls.map((u) => [u.imageId, u.signedUrl])
-              );
-            }
-          }
-        } catch (urlError) {
-          logger.error('Failed to generate batch signed URLs', urlError, 'PostureImageList');
-          // 署名付きURLの生成に失敗しても続行（URLなしで表示）
-        }
+        // デバッグログ: バックエンドから取得した画像情報を確認
+        logger.debug('Fetched posture groups', { 
+          groupCount: postureGroups.length,
+          totalImageCount: allImages.length,
+          imagesWithSignedUrl: allImages.filter(img => img.signedUrl && img.signedUrl.length > 0).length,
+          imagesWithoutSignedUrl: allImages.filter(img => !img.signedUrl || img.signedUrl.length === 0).length
+        }, 'PostureImageList');
 
         // バックエンドのレスポンス（camelCase）をフロントエンド用のPostureImage型に変換
+        // バックエンドから取得したsignedUrlをそのまま使用（追加のAPI呼び出しは不要）
         const imagesWithUrls = allImages.map((img): PostureImage | null => {
           if (!img.storageKey) {
             return null;
@@ -211,7 +197,48 @@ export const usePostureImageList = () => {
           }
 
           const position: PosturePosition = img.position;
-          const signedUrl = signedUrlMap.get(img.id) || '';
+          // バックエンドから取得したsignedUrlを使用（存在しない場合は空文字列）
+          const signedUrl = img.signedUrl || '';
+
+          // 検証ログ: signedUrlの詳細を記録（パスの検証用）
+          // 相対パスの場合は警告を出力（バックエンドで変換されるべき）
+          if (signedUrl) {
+            const isAbsolute = signedUrl.startsWith('http://') || signedUrl.startsWith('https://');
+            const isRelative = signedUrl.startsWith('/');
+            
+            if (isRelative) {
+              // 相対パスが返されている場合は警告（バックエンドで変換されるべき）
+              logger.warn('Received relative signedUrl from backend (should be converted to absolute)', { 
+                imageId: img.id, 
+                storageKey: img.storageKey,
+                position: img.position,
+                signedUrl: signedUrl.substring(0, Math.min(100, signedUrl.length))
+              }, 'PostureImageList');
+            } else if (isAbsolute) {
+              // 絶対URLの場合はデバッグログのみ
+              logger.debug('Image with absolute signedUrl', { 
+                imageId: img.id, 
+                position: img.position,
+                signedUrlLength: signedUrl.length
+              }, 'PostureImageList');
+            } else {
+              // その他の形式の場合は警告
+              logger.warn('Image with invalid signedUrl format', { 
+                imageId: img.id, 
+                storageKey: img.storageKey,
+                position: img.position,
+                signedUrl: signedUrl.substring(0, Math.min(100, signedUrl.length))
+              }, 'PostureImageList');
+            }
+          } else {
+            logger.warn('Image without signedUrl', { 
+              imageId: img.id, 
+              storageKey: img.storageKey,
+              position: img.position,
+              hasStorageKey: !!img.storageKey,
+              storageKeyLength: img.storageKey?.length || 0
+            }, 'PostureImageList');
+          }
 
           return {
             id: img.id,
@@ -227,6 +254,37 @@ export const usePostureImageList = () => {
         });
 
         const validImages = imagesWithUrls.filter((img): img is PostureImage => img !== null);
+        
+        // デバッグログ: 最終的な画像数とsignedUrlの有無を確認
+        const imagesWithAbsoluteUrl = validImages.filter(img => img.url && (img.url.startsWith('http://') || img.url.startsWith('https://')));
+        const imagesWithRelativeUrl = validImages.filter(img => img.url && img.url.startsWith('/'));
+        const imagesWithoutUrl = validImages.filter(img => !img.url || img.url.length === 0);
+        
+        logger.info('Processed images summary', { 
+          total: validImages.length,
+          withAbsoluteUrl: imagesWithAbsoluteUrl.length,
+          withRelativeUrl: imagesWithRelativeUrl.length,
+          withoutUrl: imagesWithoutUrl.length,
+          // 相対URLがある場合は警告
+          relativeUrls: imagesWithRelativeUrl.length > 0 ? imagesWithRelativeUrl
+            .filter(img => img.url) // nullチェック
+            .map(img => ({
+              imageId: img.id,
+              url: img.url!.substring(0, Math.min(100, img.url!.length))
+            })) : []
+        }, 'PostureImageList');
+        
+        // 相対URLがある場合は警告
+        if (imagesWithRelativeUrl.length > 0) {
+          logger.warn('Some images have relative URLs (backend should convert to absolute)', {
+            count: imagesWithRelativeUrl.length,
+            sampleUrls: imagesWithRelativeUrl
+              .filter(img => img.url) // nullチェック
+              .slice(0, 3)
+              .map(img => img.url!.substring(0, Math.min(100, img.url!.length)))
+          }, 'PostureImageList');
+        }
+        
         setImages(validImages);
       } catch (err: unknown) {
         const errorMessage = handleError(err, 'PostureImageList');

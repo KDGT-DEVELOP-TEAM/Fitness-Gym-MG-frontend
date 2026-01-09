@@ -1,8 +1,9 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { PostureImage } from '../../types/posture';
 import { groupByDate, formatDateForDisplay } from '../../utils/dateFormatter';
 import { COLOR_CLASSES } from '../../constants/colors';
 import { PosturePosition } from '../../constants/posture';
+import { logger } from '../../utils/logger';
 
 const positionLabels: Record<PosturePosition, string> = {
   front: 'Front',
@@ -23,12 +24,51 @@ const isMockUrl = (url: string | undefined): boolean => {
   return url ? url.includes('mock-storage.example.com') : false;
 };
 
+// URLが有効かどうかを検証する関数（ログ出力なし、パフォーマンス最適化）
+const isValidImageUrl = (url: string | undefined): boolean => {
+  if (!url || url.trim() === '') {
+    return false;
+  }
+  
+  // 相対パス（/で始まる）の場合は無効
+  if (url.startsWith('/')) {
+    return false;
+  }
+  
+  // http://またはhttps://で始まる場合は有効
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return true;
+  }
+  
+  // その他の場合は無効
+  return false;
+};
+
 // 画像表示用のコンポーネント
 const ImageDisplay: React.FC<{ image: PostureImage }> = ({ image }) => {
   const [imageError, setImageError] = useState(false);
+  const hasLoggedInvalidUrl = useRef(false);
+  const hasLoggedError = useRef(false);
   
-  // mock URLまたはURLがない場合はプレースホルダーを表示
-  if (!image.url || isMockUrl(image.url) || imageError) {
+  // URLの検証: 有効なURLでない場合はプレースホルダーを表示
+  const urlIsValid = isValidImageUrl(image.url);
+  
+  // URLが無効な場合のログ（初回のみ、useEffectで制御）
+  useEffect(() => {
+    if (!urlIsValid && image.url && !hasLoggedInvalidUrl.current) {
+      hasLoggedInvalidUrl.current = true;
+      logger.warn('Image URL is invalid, showing placeholder', {
+        imageId: image.id,
+        position: image.position,
+        url: image.url.substring(0, 100),
+        storageKey: image.storageKey,
+        urlIsRelative: image.url.startsWith('/')
+      }, 'PostureImageGrid');
+    }
+  }, [urlIsValid, image.url, image.id, image.position, image.storageKey]);
+  
+  // mock URL、無効なURL、またはエラーが発生した場合はプレースホルダーを表示
+  if (!urlIsValid || isMockUrl(image.url) || imageError) {
     return (
       <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100 text-gray-400">
         <div className="text-sm mb-1">画像なし</div>
@@ -43,8 +83,45 @@ const ImageDisplay: React.FC<{ image: PostureImage }> = ({ image }) => {
       alt={positionLabels[image.position]}
       className="w-full h-full object-cover"
       loading="lazy"
-      onError={() => {
+      onError={(e) => {
+        // エラーログを出力（各画像ごとに1回のみ）
+        if (!hasLoggedError.current) {
+          hasLoggedError.current = true;
+          // エラーの詳細情報を抽出（循環参照を避ける）
+          const errorInfo: Record<string, unknown> = {
+            imageId: image.id,
+            position: image.position,
+            storageKey: image.storageKey,
+            url: image.url || 'N/A',
+            urlLength: image.url?.length || 0,
+            urlIsAbsolute: image.url ? (image.url.startsWith('http://') || image.url.startsWith('https://')) : false,
+            urlIsRelative: image.url ? image.url.startsWith('/') : false,
+            urlStartsWith: image.url ? image.url.substring(0, Math.min(100, image.url.length)) : 'N/A',
+            urlEndsWith: image.url && image.url.length > 50 ? '...' + image.url.substring(image.url.length - 50) : image.url || 'N/A'
+          };
+          
+          // エラーイベントの基本情報を追加（targetの情報は取得しない）
+          if (e && typeof e === 'object' && 'type' in e) {
+            errorInfo.errorType = (e as { type?: string }).type;
+          }
+          
+          // エラーの原因を推測
+          if (!image.url || image.url.length === 0) {
+            errorInfo.reason = 'URL is empty';
+          } else if (image.url.startsWith('/')) {
+            errorInfo.reason = 'URL is relative path (should be absolute)';
+          } else if (!image.url.startsWith('http://') && !image.url.startsWith('https://')) {
+            errorInfo.reason = 'URL format is invalid';
+          } else {
+            errorInfo.reason = 'Image file may not exist or CORS/authentication issue';
+          }
+          
+          logger.error('Image load error in PostureImageGrid', errorInfo, 'PostureImageGrid');
+        }
         setImageError(true);
+      }}
+      onLoad={() => {
+        // 成功ログは出力しない（大量のログを避ける）
       }}
     />
   );

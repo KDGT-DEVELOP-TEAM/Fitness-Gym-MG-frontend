@@ -24,25 +24,39 @@ function shouldLog(level: LogLevel): boolean {
 
 /**
  * Mask sensitive information from error objects
+ * Uses WeakSet to prevent infinite recursion from circular references
  */
-function maskSensitiveData(data: unknown): unknown {
+function maskSensitiveData(data: unknown, seen = new WeakSet()): unknown {
   if (!data || typeof data !== 'object') {
     return data;
   }
 
-  const masked = { ...(data as Record<string, unknown>) };
-  const sensitiveKeys = ['token', 'password', 'pass', 'access_token', 'refresh_token', 'authorization'];
-
-  for (const key of Object.keys(masked)) {
-    const lowerKey = key.toLowerCase();
-    if (sensitiveKeys.some(sk => lowerKey.includes(sk))) {
-      masked[key] = '***MASKED***';
-    } else if (typeof masked[key] === 'object' && masked[key] !== null) {
-      masked[key] = maskSensitiveData(masked[key]);
-    }
+  // 循環参照を検出
+  if (seen.has(data as object)) {
+    return '[Circular]';
   }
+  seen.add(data as object);
 
-  return masked;
+  try {
+    const masked = { ...(data as Record<string, unknown>) };
+    const sensitiveKeys = ['token', 'password', 'pass', 'access_token', 'refresh_token', 'authorization'];
+
+    for (const key of Object.keys(masked)) {
+      const lowerKey = key.toLowerCase();
+      if (sensitiveKeys.some(sk => lowerKey.includes(sk))) {
+        masked[key] = '***MASKED***';
+      } else if (typeof masked[key] === 'object' && masked[key] !== null) {
+        masked[key] = maskSensitiveData(masked[key], seen);
+      }
+    }
+
+    return masked;
+  } catch (e) {
+    // オブジェクトの処理中にエラーが発生した場合（例: getterが例外をスロー）
+    return `[Error masking data: ${e instanceof Error ? e.message : String(e)}]`;
+  } finally {
+    seen.delete(data as object);
+  }
 }
 
 /**
