@@ -52,7 +52,7 @@ export const LessonDetail: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#faf8f1] py-8">
-      <div className="w-full max-w-6xl mx-auto bg-white rounded-xl shadow-md border border-gray-200 p-6 md:p-8 space-y-6">
+      <div className="w-[1200px] max-w-[calc(100%-2rem)] mx-auto bg-white rounded-xl shadow-md border border-gray-200 p-6 md:p-8 space-y-6">
         <div className="-mx-6 md:-mx-8 -mt-6 md:-mt-8 px-6 md:px-8 border-2 border-green-400 rounded-lg p-5 md:p-6 bg-white shadow-sm">
           <h1 className="text-4xl font-normal text-gray-800 mb-2">レッスン詳細</h1>
           <p className="text-lg text-gray-500">登録済みのレッスン情報を表示します</p>
