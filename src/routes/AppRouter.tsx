@@ -7,6 +7,8 @@ import { CustomerManagement } from '../pages/CustomerManagement';
 import { UserManagement } from '../pages/UserManagement';
 import { CustomerSelect } from '../pages/CustomerSelect';
 import { LessonCreate } from '../pages/common/LessonCreate';
+import { LessonHistory } from '../pages/common/LessonHistory';
+import { PostureImageList } from '../pages/common/PostureImageList';
 import { MainLayout } from '../components/common/MainLayout';
 import { HiHome, HiUsers, HiUserGroup, HiDocumentAdd, HiClock, HiPhotograph, HiArrowLeft } from 'react-icons/hi';
 import { ROUTES } from '../constants/routes';
@@ -74,6 +76,34 @@ const LessonCreateWithMenu: React.FC = () => {
   );
 };
 
+// レッスン履歴一覧用のラッパーコンポーネント
+const LessonHistoryWithMenu: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  if (!id) {
+    return <LessonHistory />;
+  }
+  const menuItems = getCustomerRelatedMenuItems(id);
+  return (
+    <MainLayout menuItems={menuItems}>
+      <LessonHistory />
+    </MainLayout>
+  );
+};
+
+// 姿勢一覧用のラッパーコンポーネント
+const PostureImageListWithMenu: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  if (!id) {
+    return <PostureImageList />;
+  }
+  const menuItems = getCustomerRelatedMenuItems(id);
+  return (
+    <MainLayout menuItems={menuItems}>
+      <PostureImageList />
+    </MainLayout>
+  );
+};
+
 export const AppRouter = () => {
   return (
     <BrowserRouter>
@@ -84,6 +114,14 @@ export const AppRouter = () => {
           <Route index element={<Navigate to="/trainer/home" replace />} />
           <Route path="home" element={<MainLayout menuItems={trainerMenuItems}><CustomerSelect /></MainLayout>} />
           <Route path="home/newlessons/:customerId" element={<LessonCreateWithMenu />} />
+        </Route>
+
+        {/* レッスン履歴一覧と姿勢一覧（全ロール共通） */}
+        <Route path={ROUTES.LESSON_HISTORY} element={<ProtectedRoute roles={['ADMIN', 'MANAGER', 'TRAINER']} />}>
+          <Route index element={<LessonHistoryWithMenu />} />
+        </Route>
+        <Route path={ROUTES.POSTURE_LIST} element={<ProtectedRoute roles={['ADMIN', 'MANAGER', 'TRAINER']} />}>
+          <Route index element={<PostureImageListWithMenu />} />
         </Route>
 
         {/* レッスン作成画面（全ロール共通 - 旧パス互換性のため残す） */}
