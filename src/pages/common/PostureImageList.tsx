@@ -368,8 +368,13 @@ export const usePostureImageList = () => {
   // 注意: ヘッダーは使用されていません - UIはPostureImageListContent内で処理されます
 
   const content = loading ? (
-    <div className="flex items-center justify-center h-screen">
-      <div className="text-lg">読み込み中...</div>
+    <div className="p-8 font-poppins">
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#68BE6B] mb-4"></div>
+          <p className="text-gray-600">データを読み込んでいます...</p>
+        </div>
+      </div>
     </div>
   ) : error ? (
     <div className="flex items-center justify-center h-screen">
