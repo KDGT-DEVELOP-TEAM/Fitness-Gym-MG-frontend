@@ -8,6 +8,7 @@ import { UserManagement } from '../pages/UserManagement';
 import { CustomerSelect } from '../pages/CustomerSelect';
 import { LessonCreate } from '../pages/common/LessonCreate';
 import { LessonHistory } from '../pages/common/LessonHistory';
+import { LessonDetail } from '../pages/common/LessonDetail';
 import { PostureImageList } from '../pages/common/PostureImageList';
 import { MainLayout } from '../components/common/MainLayout';
 import { HiHome, HiUsers, HiUserGroup, HiDocumentAdd, HiClock, HiPhotograph, HiArrowLeft } from 'react-icons/hi';
@@ -169,8 +170,7 @@ export const AppRouter = () => {
         </Route>
 
         <Route path="/lesson/:lessonId" element={<ProtectedRoute roles={['ADMIN', 'MANAGER', 'TRAINER']} />}>
-          {/* <Route index element={<LessonDetailPage />} />
-          <Route path="edit" element={<LessonEditPage />} /> */}
+          <Route index element={<LessonDetail />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/login" replace />} />

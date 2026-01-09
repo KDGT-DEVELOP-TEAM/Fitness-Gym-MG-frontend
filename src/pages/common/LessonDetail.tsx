@@ -10,13 +10,13 @@ import { FORM_STYLES } from '../../styles/formStyles';
 import { logger } from '../../utils/logger';
 
 export const LessonDetail: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { lessonId } = useParams<{ lessonId: string }>();
   const { stores, users, customers } = useOptions();
 
   // カスタムフックを使用してデータを取得
-  const { lesson, loading: lessonLoading } = useLessonData(id);
-  const { posturePreviews, loading: imagesLoading } = usePostureImagesForLesson(id, null);
-  const { trainings, loading: trainingsLoading } = useTrainingsForLesson(id);
+  const { lesson, loading: lessonLoading } = useLessonData(lessonId);
+  const { posturePreviews, loading: imagesLoading } = usePostureImagesForLesson(lessonId, null);
+  const { trainings, loading: trainingsLoading } = useTrainingsForLesson(lessonId);
 
   const loading = lessonLoading || imagesLoading || trainingsLoading;
 
@@ -25,7 +25,7 @@ export const LessonDetail: React.FC = () => {
   const findName = (list: Option[], targetId?: string | null) =>
     list.find((o) => o.id === targetId)?.name ?? '';
 
-  if (!id) {
+  if (!lessonId) {
     return (
       <div className="p-6">
         <p className="text-red-600">レッスンIDが指定されていません。</p>
