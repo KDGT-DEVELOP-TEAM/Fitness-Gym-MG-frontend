@@ -100,6 +100,7 @@ const PostureImageListContent: React.FC<{
           onCompare={onCompare}
           onDelete={onDelete}
           onExitSelectionMode={onExitSelectionMode}
+          isModalOpen={showCompareModal}
         />
       </div>
     </>

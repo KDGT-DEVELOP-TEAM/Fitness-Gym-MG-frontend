@@ -8,6 +8,7 @@ interface PostureImageListFloatingButtonsProps {
   onCompare: () => void;
   onDelete: () => void;
   onExitSelectionMode: () => void;
+  isModalOpen?: boolean;
 }
 
 /**
@@ -20,7 +21,13 @@ export const PostureImageListFloatingButtons: React.FC<PostureImageListFloatingB
   onCompare,
   onDelete,
   onExitSelectionMode,
+  isModalOpen = false,
 }) => {
+  // モーダルが開いている時は、フローティングボタンを非表示にする
+  if (isModalOpen) {
+    return null;
+  }
+
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3">
       {!isSelectionMode ? (
