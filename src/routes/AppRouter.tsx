@@ -13,6 +13,7 @@ import { PostureImageList } from '../pages/common/PostureImageList';
 import { MainLayout } from '../components/common/MainLayout';
 import { HiHome, HiUsers, HiUserGroup, HiDocumentAdd, HiClock, HiPhotograph, HiArrowLeft } from 'react-icons/hi';
 import { ROUTES } from '../constants/routes';
+import { useLessonData } from '../hooks/useLessonData';
 // 以下のコンポーネントは実際の実装に合わせてインポートしてください
 // import { CustomerSelectPage } from '../pages/trainer/CustomerSelectPage';
 // import { UserListPage } from '../pages/admin/UserListPage';
@@ -39,7 +40,7 @@ const managerMenuItems = [
 ];
 
 // 顧客IDに基づいて動的にメニューアイテムを生成する関数
-const getCustomerRelatedMenuItems = (customerId: string) => [
+const getCustomerRelatedMenuItems = (customerId: string, lessonId?: string) => [
   { 
     path: '/trainer/home', 
     label: 'Home', 
@@ -55,6 +56,12 @@ const getCustomerRelatedMenuItems = (customerId: string) => [
     path: ROUTES.LESSON_HISTORY.replace(':customerId', customerId),
     label: '履歴一覧',
     icon: <HiClock className="w-5 h-5" />,
+    subItems: lessonId ? [
+      {
+        path: `/lesson/${lessonId}`,
+        label: 'レッスン詳細',
+      },
+    ] : undefined,
   },
   {
     path: ROUTES.POSTURE_LIST.replace(':customerId', customerId),
@@ -101,6 +108,31 @@ const PostureImageListWithMenu: React.FC = () => {
   return (
     <MainLayout menuItems={menuItems}>
       <PostureImageList />
+    </MainLayout>
+  );
+};
+
+// レッスン詳細用のラッパーコンポーネント
+const LessonDetailWithMenu: React.FC = () => {
+  const { lessonId } = useParams<{ lessonId: string }>();
+  const { lesson, loading } = useLessonData(lessonId);
+  
+  if (!lessonId) {
+    return <LessonDetail />;
+  }
+  
+  if (loading || !lesson) {
+    return (
+      <MainLayout menuItems={trainerMenuItems}>
+        <LessonDetail />
+      </MainLayout>
+    );
+  }
+  
+  const menuItems = getCustomerRelatedMenuItems(lesson.customerId, lessonId);
+  return (
+    <MainLayout menuItems={menuItems}>
+      <LessonDetail />
     </MainLayout>
   );
 };
@@ -170,7 +202,7 @@ export const AppRouter = () => {
         </Route>
 
         <Route path="/lesson/:lessonId" element={<ProtectedRoute roles={['ADMIN', 'MANAGER', 'TRAINER']} />}>
-          <Route index element={<LessonDetail />} />
+          <Route index element={<LessonDetailWithMenu />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/login" replace />} />
