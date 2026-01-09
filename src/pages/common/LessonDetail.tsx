@@ -2,28 +2,32 @@ import React from 'react';
 import { useParams } from 'react-router-dom';
 import { formatDateTime } from '../../utils/dateFormatter';
 import { getPosturePositionLabel, ALL_POSTURE_POSITIONS } from '../../constants/posture';
-import { useOptions, Option } from '../../hooks/useOptions';
 import { useLessonData } from '../../hooks/useLessonData';
 import { usePostureImagesForLesson } from '../../hooks/usePostureImagesForLesson';
-import { useTrainingsForLesson } from '../../hooks/useTrainingsForLesson';
 import { FORM_STYLES } from '../../styles/formStyles';
 import { logger } from '../../utils/logger';
 
 export const LessonDetail: React.FC = () => {
   const { lessonId } = useParams<{ lessonId: string }>();
-  const { stores, users, customers } = useOptions();
 
-  // カスタムフックを使用してデータを取得
+  // カスタムフックを使用してデータを取得（1回のAPI呼び出しで全てのデータを取得）
   const { lesson, loading: lessonLoading } = useLessonData(lessonId);
-  const { posturePreviews, loading: imagesLoading } = usePostureImagesForLesson(lessonId, null);
-  const { trainings, loading: trainingsLoading } = useTrainingsForLesson(lessonId);
+  
+  // lessonからtrainingsとpostureImagesを抽出
+  // orderNoでソート（バックエンドから順序が保証されているが、念のため）
+  const trainings = React.useMemo(() => {
+    if (!lesson?.trainings || !Array.isArray(lesson.trainings)) {
+      return [];
+    }
+    return [...lesson.trainings].sort((a, b) => (a.orderNo || 0) - (b.orderNo || 0));
+  }, [lesson?.trainings]);
+  
+  const postureImages = lesson?.postureImages;
+  
+  // 署名付きURLの取得のみを行う（レッスン詳細の取得は不要）
+  const { posturePreviews, loading: imagesLoading } = usePostureImagesForLesson(postureImages);
 
-  const loading = lessonLoading || imagesLoading || trainingsLoading;
-
-  // LessonResponseにはstoreName, trainerName, customerNameが含まれているため、
-  // findNameは使用しない（後方互換性のため残す）
-  const findName = (list: Option[], targetId?: string | null) =>
-    list.find((o) => o.id === targetId)?.name ?? '';
+  const loading = lessonLoading || imagesLoading;
 
   if (!lessonId) {
     return (

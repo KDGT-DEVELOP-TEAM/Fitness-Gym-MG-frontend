@@ -13,10 +13,11 @@ import {
   ResponsiveContainer,
   ReferenceLine,
 } from 'recharts';
-import { useLessonsByCustomer } from '../../hooks/useLesson';
 import { customerApi } from '../../api/customerApi';
+import { lessonApi } from '../../api/lessonApi';
 import { Lesson } from '../../types/lesson';
 import { getErrorMessage } from '../../utils/errorMessages';
+import axios from 'axios';
 
 // 型定義
 interface BMIHistoryItem {
@@ -31,8 +32,10 @@ const ITEMS_PER_PAGE = 10;
 export const LessonHistory: React.FC = () => {
   const { customerId } = useParams<{ customerId: string }>();
   const navigate = useNavigate();
-  const { lessons, loading: lessonsLoading, error: lessonsError } = useLessonsByCustomer(customerId);
   
+  const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [lessonsLoading, setLessonsLoading] = useState(false);
+  const [lessonsError, setLessonsError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [bmiData, setBmiData] = useState<BMIHistoryItem[]>([]);
   const [selectedDataPoint, setSelectedDataPoint] = useState<string | null>(null);
@@ -40,27 +43,49 @@ export const LessonHistory: React.FC = () => {
   const [customerLoading, setCustomerLoading] = useState(true);
   const [customerError, setCustomerError] = useState<string | null>(null);
 
-  // 顧客情報を取得して身長を設定
+  // レッスン一覧と顧客情報を並列取得
   useEffect(() => {
-    const fetchCustomer = async () => {
+    const fetchData = async () => {
       if (!customerId) {
         setCustomerLoading(false);
+        setLessonsLoading(false);
         return;
       }
 
+      setLessonsLoading(true);
+      setCustomerLoading(true);
+      setLessonsError(null);
+      setCustomerError(null);
+
       try {
-        setCustomerLoading(true);
-        setCustomerError(null);
-        const customer = await customerApi.getProfile(customerId);
-        setCustomerHeight(customer.height || 189);
+        // レッスン一覧と顧客情報を並列取得
+        const [lessonsResponse, customerResponse] = await Promise.all([
+          lessonApi.getByCustomer(customerId),
+          customerApi.getProfile(customerId)
+        ]);
+
+        setLessons(lessonsResponse.data || []);
+        setCustomerHeight(customerResponse.height || 189);
       } catch (err) {
-        setCustomerError(getErrorMessage(err));
+        // エラーが発生した場合、どちらのAPI呼び出しでエラーが発生したかを判定
+        if (axios.isAxiosError(err)) {
+          const errorMessage = err.response?.data?.message || err.message;
+          setLessonsError(errorMessage);
+          setCustomerError(errorMessage);
+        } else if (err instanceof Error) {
+          setLessonsError(err.message);
+          setCustomerError(err.message);
+        } else {
+          setLessonsError('不明なエラーが発生しました');
+          setCustomerError('不明なエラーが発生しました');
+        }
       } finally {
+        setLessonsLoading(false);
         setCustomerLoading(false);
       }
     };
 
-    fetchCustomer();
+    fetchData();
   }, [customerId]);
 
   // BMIデータを抽出

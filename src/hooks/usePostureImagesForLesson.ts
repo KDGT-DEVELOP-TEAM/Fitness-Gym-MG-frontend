@@ -3,40 +3,33 @@ import { PosturePreview, PosturePosition } from '../constants/posture';
 import { TIME_CONSTANTS } from '../constants/time';
 import { logger } from '../utils/logger';
 import { isPosturePosition } from '../constants/posture';
-import { lessonApi } from '../api/lessonApi';
 import { postureApi } from '../api/postureApi';
 import { PostureImage } from '../types/posture';
 
 /**
- * Custom hook to fetch posture images for a lesson
+ * Custom hook to generate signed URLs for posture images
  * 
- * @param lessonId - Lesson ID
- * @param postureGroupId - Optional posture group ID (if null, searches by lesson_id)
- * @returns Posture previews, loading state, and error
+ * @param postureImages - Posture images array (already fetched from lesson response)
+ * @returns Posture previews with signed URLs, loading state
  */
 export const usePostureImagesForLesson = (
-  lessonId: string | undefined,
-  postureGroupId: string | null | undefined
+  postureImages: PostureImage[] | undefined
 ) => {
   const [posturePreviews, setPosturePreviews] = useState<PosturePreview[]>([]);
   const [loading, setLoading] = useState(false);
 
   const loadPostureImages = useCallback(async () => {
-    if (!lessonId) {
+    if (!postureImages || postureImages.length === 0) {
+      setPosturePreviews([]);
+      setLoading(false);
       return;
     }
 
     setLoading(true);
     try {
-      // バックエンドAPIからレッスン詳細を取得
-      // GET /api/lessons/{lesson_id}
-      // レスポンス: LessonResponse (postureImagesフィールドが含まれる)
-      logger.debug('Fetching posture images for lesson', { lessonId }, 'usePostureImagesForLesson');
-      const lessonResponse = await lessonApi.getById(lessonId);
-      
       // バックエンドのレスポンス構造: LessonResponse.postureImages (PostureImageResponse[])
       // PostureImageResponseはcamelCase (storageKey, takenAt, position, consentPublication)
-      const images: PostureImage[] = (lessonResponse as any).postureImages || [];
+      const images: PostureImage[] = postureImages;
 
       if (!images || !Array.isArray(images) || images.length === 0) {
         logger.debug('No posture images found for lesson', { lessonId }, 'usePostureImagesForLesson');
@@ -107,15 +100,17 @@ export const usePostureImagesForLesson = (
       setLoading(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lessonId]);
+  }, [postureImages]);
 
   useEffect(() => {
-    if (!lessonId) {
+    if (!postureImages || postureImages.length === 0) {
+      setPosturePreviews([]);
+      setLoading(false);
       return;
     }
     loadPostureImages();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lessonId, loadPostureImages]);
+  }, [postureImages, loadPostureImages]);
 
   return { posturePreviews, loading };
 };
