@@ -97,8 +97,8 @@ export const LessonHistory: React.FC = () => {
   // ページネーション処理
   const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
   const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
-  const currentLessons = lessons.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(lessons.length / ITEMS_PER_PAGE);
+  const currentLessons = (lessons || []).slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil((lessons || []).length / ITEMS_PER_PAGE);
 
   // 日付ごとにグループ化
   const groupedLessons = useMemo(() => {

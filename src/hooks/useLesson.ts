@@ -106,7 +106,7 @@ export const useLessonsByCustomer = (customerId?: string) => {
     setError(null);
     try {
       const response = await lessonApi.getByCustomer(customerId);
-      const data = response.items;
+      const data = response.data || [];
       setLessons(data);
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
