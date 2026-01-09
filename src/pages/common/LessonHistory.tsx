@@ -29,9 +29,9 @@ interface BMIHistoryItem {
 const ITEMS_PER_PAGE = 10;
 
 export const LessonHistory: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { customerId } = useParams<{ customerId: string }>();
   const navigate = useNavigate();
-  const { lessons, loading: lessonsLoading, error: lessonsError } = useLessonsByCustomer(id);
+  const { lessons, loading: lessonsLoading, error: lessonsError } = useLessonsByCustomer(customerId);
   
   const [currentPage, setCurrentPage] = useState(1);
   const [bmiData, setBmiData] = useState<BMIHistoryItem[]>([]);
@@ -43,7 +43,7 @@ export const LessonHistory: React.FC = () => {
   // 顧客情報を取得して身長を設定
   useEffect(() => {
     const fetchCustomer = async () => {
-      if (!id) {
+      if (!customerId) {
         setCustomerLoading(false);
         return;
       }
@@ -51,7 +51,7 @@ export const LessonHistory: React.FC = () => {
       try {
         setCustomerLoading(true);
         setCustomerError(null);
-        const customer = await customerApi.getProfile(id);
+        const customer = await customerApi.getProfile(customerId);
         setCustomerHeight(customer.height || 189);
       } catch (err) {
         setCustomerError(getErrorMessage(err));
@@ -61,7 +61,7 @@ export const LessonHistory: React.FC = () => {
     };
 
     fetchCustomer();
-  }, [id]);
+  }, [customerId]);
 
   // BMIデータを抽出
   useEffect(() => {
@@ -180,7 +180,7 @@ export const LessonHistory: React.FC = () => {
     );
   }
 
-  if (!id) {
+  if (!customerId) {
     return (
       <div className="p-8 text-center">
         <p className="text-red-600 text-lg">顧客IDが指定されていません</p>

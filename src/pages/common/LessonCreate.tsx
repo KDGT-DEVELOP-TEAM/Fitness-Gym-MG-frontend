@@ -340,7 +340,7 @@ export const LessonCreate: React.FC = () => {
       }
       // 姿勢画像一覧ページに遷移
       if (formData.customerId) {
-        navigate(ROUTES.POSTURE_LIST.replace(':id', formData.customerId));
+        navigate(ROUTES.POSTURE_LIST.replace(':customerId', formData.customerId));
       } else {
         navigate(ROUTES.LESSON_FORM);
       }

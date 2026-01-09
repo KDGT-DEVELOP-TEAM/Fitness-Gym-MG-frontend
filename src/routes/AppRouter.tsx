@@ -46,17 +46,17 @@ const getCustomerRelatedMenuItems = (customerId: string) => [
     isBackButton: true,
   },
   { 
-    path: `/trainer/home/newlessons/${customerId}`, 
+    path: `/trainer/newlessons/${customerId}`, 
     label: '新規レッスン入力', 
     icon: <HiDocumentAdd className="w-5 h-5" /> 
   },
   {
-    path: ROUTES.LESSON_HISTORY.replace(':id', customerId),
+    path: ROUTES.LESSON_HISTORY.replace(':customerId', customerId),
     label: '履歴一覧',
     icon: <HiClock className="w-5 h-5" />,
   },
   {
-    path: ROUTES.POSTURE_LIST.replace(':id', customerId),
+    path: ROUTES.POSTURE_LIST.replace(':customerId', customerId),
     label: '姿勢一覧',
     icon: <HiPhotograph className="w-5 h-5" />,
   },
@@ -78,11 +78,11 @@ const LessonCreateWithMenu: React.FC = () => {
 
 // レッスン履歴一覧用のラッパーコンポーネント
 const LessonHistoryWithMenu: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
-  if (!id) {
+  const { customerId } = useParams<{ customerId: string }>();
+  if (!customerId) {
     return <LessonHistory />;
   }
-  const menuItems = getCustomerRelatedMenuItems(id);
+  const menuItems = getCustomerRelatedMenuItems(customerId);
   return (
     <MainLayout menuItems={menuItems}>
       <LessonHistory />
@@ -92,11 +92,11 @@ const LessonHistoryWithMenu: React.FC = () => {
 
 // 姿勢一覧用のラッパーコンポーネント
 const PostureImageListWithMenu: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
-  if (!id) {
+  const { customerId } = useParams<{ customerId: string }>();
+  if (!customerId) {
     return <PostureImageList />;
   }
-  const menuItems = getCustomerRelatedMenuItems(id);
+  const menuItems = getCustomerRelatedMenuItems(customerId);
   return (
     <MainLayout menuItems={menuItems}>
       <PostureImageList />
@@ -113,7 +113,7 @@ export const AppRouter = () => {
         <Route path="/trainer" element={<ProtectedRoute roles={['TRAINER']} />}>
           <Route index element={<Navigate to="/trainer/home" replace />} />
           <Route path="home" element={<MainLayout menuItems={trainerMenuItems}><CustomerSelect /></MainLayout>} />
-          <Route path="home/newlessons/:customerId" element={<LessonCreateWithMenu />} />
+          <Route path="newlessons/:customerId" element={<LessonCreateWithMenu />} />
         </Route>
 
         {/* レッスン履歴一覧と姿勢一覧（全ロール共通） */}
