@@ -37,7 +37,6 @@ export const LessonHistory: React.FC = () => {
   const [lessonsLoading, setLessonsLoading] = useState(false);
   const [lessonsError, setLessonsError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [bmiData, setBmiData] = useState<BMIHistoryItem[]>([]);
   const [selectedDataPoint, setSelectedDataPoint] = useState<string | null>(null);
   const [customerHeight, setCustomerHeight] = useState<number>(189); // デフォルト値
   const [customerLoading, setCustomerLoading] = useState(true);
@@ -88,35 +87,29 @@ export const LessonHistory: React.FC = () => {
     fetchData();
   }, [customerId]);
 
-  // BMIデータを抽出
-  useEffect(() => {
+  // BMIデータを抽出（useMemoでメモ化）
+  const bmiData = useMemo(() => {
     if (!lessons || lessons.length === 0) {
-      setBmiData([]);
-      return;
+      return [];
     }
 
     const bmiHistory: BMIHistoryItem[] = lessons
       .filter((lesson) => lesson.bmi !== null && lesson.weight !== null && lesson.startDate)
       .map((lesson) => {
-        const bmi = lesson.bmi!;
-        const weight = lesson.weight!;
         const date = new Date(lesson.startDate);
         const formattedDate = `${date.getMonth() + 1}/${date.getDate()}`;
 
         return {
           date: formattedDate,
-          bmi: bmi,
-          weight: weight,
+          dateTime: date.getTime(), // ソート用のタイムスタンプ
+          bmi: lesson.bmi!,
+          weight: lesson.weight!,
         };
       })
-      .sort((a, b) => {
-        // 日付順にソート（M/D形式なので文字列として比較）
-        const dateA = new Date(a.date);
-        const dateB = new Date(b.date);
-        return dateA.getTime() - dateB.getTime();
-      });
+      .sort((a, b) => a.dateTime - b.dateTime) // タイムスタンプでソート
+      .map(({ dateTime, ...rest }) => rest); // タイムスタンプを削除
 
-    setBmiData(bmiHistory);
+    return bmiHistory;
   }, [lessons]);
 
   // ページネーション処理
@@ -138,22 +131,22 @@ export const LessonHistory: React.FC = () => {
     }, {} as Record<string, Lesson[]>);
   }, [currentLessons]);
 
-  const formatDate = (dateStr: string) => {
+  const formatDate = useCallback((dateStr: string) => {
     const date = new Date(dateStr);
     const month = date.getMonth() + 1;
     const day = date.getDate();
     const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
     const weekday = weekdays[date.getDay()];
     return `${month}月${day}日 (${weekday})`;
-  };
+  }, []);
 
-  const formatTime = (dateTimeStr: string) => {
+  const formatTime = useCallback((dateTimeStr: string) => {
     if (!dateTimeStr) return '';
     const date = new Date(dateTimeStr);
     const hours = date.getHours().toString().padStart(2, '0');
     const minutes = date.getMinutes().toString().padStart(2, '0');
     return `${hours}:${minutes}`;
-  };
+  }, []);
 
   const handleLessonClick = (lessonId: string) => {
     // レッスン詳細画面へ遷移（ルートが未実装の場合は将来の実装用に準備）
