@@ -52,9 +52,9 @@ export const LessonHistory: React.FC = () => {
       }
 
       setLessonsLoading(true);
-      setCustomerLoading(true);
+        setCustomerLoading(true);
       setLessonsError(null);
-      setCustomerError(null);
+        setCustomerError(null);
 
       try {
         // レッスン一覧と顧客情報を並列取得
@@ -208,12 +208,13 @@ export const LessonHistory: React.FC = () => {
 
   return (
     <div className="p-8 font-poppins">
-      <h1 className="text-3xl font-semibold mb-6 text-gray-800">身長: {customerHeight}cm</h1>
-
       {/* BMIの推移グラフ */}
       {bmiData.length > 0 && (
         <div className="mb-8 bg-white border border-[#DFDFDF] rounded-[15px] p-6">
-          <h2 className="text-xl font-semibold mb-4 text-gray-800">BMIの推移</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-gray-800">BMIの推移</h2>
+            <span className="text-sm text-gray-600">身長: {customerHeight}cm</span>
+          </div>
           <ResponsiveContainer width="100%" height={600}>
             <ComposedChart
               data={bmiData}

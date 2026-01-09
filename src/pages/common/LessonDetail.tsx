@@ -21,7 +21,7 @@ export const LessonDetail: React.FC = () => {
     }
     return [...lesson.trainings].sort((a, b) => (a.orderNo || 0) - (b.orderNo || 0));
   }, [lesson?.trainings]);
-  
+
   const postureImages = lesson?.postureImages;
   
   // 署名付きURLの取得のみを行う（レッスン詳細の取得は不要）
