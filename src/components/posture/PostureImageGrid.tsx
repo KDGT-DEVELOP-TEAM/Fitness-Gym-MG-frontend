@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { PostureImage } from '../../types/posture';
 import { groupByDate, formatDateForDisplay } from '../../utils/dateFormatter';
 import { COLOR_CLASSES } from '../../constants/colors';
@@ -16,6 +16,38 @@ const positionColors: Record<PosturePosition, string> = {
   right: `${COLOR_CLASSES.PRIMARY_PINK} text-black`,
   back: `${COLOR_CLASSES.PRIMARY_PINK} text-black`,
   left: `${COLOR_CLASSES.PRIMARY_PINK} text-black`,
+};
+
+// mock-storage.example.comのURLを検出する関数
+const isMockUrl = (url: string | undefined): boolean => {
+  return url ? url.includes('mock-storage.example.com') : false;
+};
+
+// 画像表示用のコンポーネント
+const ImageDisplay: React.FC<{ image: PostureImage }> = ({ image }) => {
+  const [imageError, setImageError] = useState(false);
+  
+  // mock URLまたはURLがない場合はプレースホルダーを表示
+  if (!image.url || isMockUrl(image.url) || imageError) {
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100 text-gray-400">
+        <div className="text-sm mb-1">画像なし</div>
+        <div className="text-xs">{positionLabels[image.position]}</div>
+      </div>
+    );
+  }
+  
+  return (
+    <img
+      src={image.url}
+      alt={positionLabels[image.position]}
+      className="w-full h-full object-cover"
+      loading="lazy"
+      onError={() => {
+        setImageError(true);
+      }}
+    />
+  );
 };
 
 interface PostureImageGridProps {
@@ -67,6 +99,7 @@ export const PostureImageGrid: React.FC<PostureImageGridProps> = ({
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             {dateImages.map((image) => {
               const isSelected = selectedImageIds.has(image.id);
+              
               return (
                 <div
                   key={image.id}
@@ -77,18 +110,7 @@ export const PostureImageGrid: React.FC<PostureImageGridProps> = ({
                       : ''
                   } ${!isSelectionMode ? 'cursor-default' : ''}`}
                 >
-                  {image.url ? (
-                    <img
-                      src={image.url}
-                      alt={positionLabels[image.position]}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">
-                      画像なし
-                    </div>
-                  )}
+                  <ImageDisplay image={image} />
                   {/* 下部オーバーレイ */}
                   <div className="absolute bottom-0 left-0 right-0 bg-white bg-opacity-60 rounded-b-lg px-4 py-4 flex items-center justify-between">
                     <div className="text-sm font-medium text-gray-800">

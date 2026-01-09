@@ -22,8 +22,19 @@ export const formatTime = (time: string): string => {
   return time.substring(0, 5); // HH:MM形式に変換
 };
 
-export const formatDateForGrouping = (date: string | Date): string => {
+export const formatDateForGrouping = (date: string | Date | null | undefined): string => {
+  // null/undefinedチェック
+  if (!date) {
+    return '日付不明';
+  }
+  
   const d = typeof date === 'string' ? new Date(date) : date;
+  
+  // Invalid Dateチェック
+  if (isNaN(d.getTime())) {
+    return '日付不明';
+  }
+  
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const targetDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -43,8 +54,19 @@ export const formatDateForGrouping = (date: string | Date): string => {
   }
 };
 
-export const formatDateTimeForCompare = (date: string | Date): string => {
+export const formatDateTimeForCompare = (date: string | Date | null | undefined): string => {
+  // null/undefinedチェック
+  if (!date) {
+    return '日付不明';
+  }
+  
   const d = typeof date === 'string' ? new Date(date) : date;
+  
+  // Invalid Dateチェック
+  if (isNaN(d.getTime())) {
+    return '日付不明';
+  }
+  
   const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
   const weekday = weekdays[d.getDay()];
   const hours = d.getHours().toString().padStart(2, '0');
@@ -52,10 +74,14 @@ export const formatDateTimeForCompare = (date: string | Date): string => {
   return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 ${weekday}曜日 ${hours}:${minutes}`;
 };
 
-export const groupByDate = <T extends { taken_at: string }>(items: T[]): Map<string, T[]> => {
+export const groupByDate = <T extends { takenAt?: string | null }>(items: T[]): Map<string, T[]> => {
   const grouped = new Map<string, T[]>();
   items.forEach((item) => {
-    const dateKey = formatDateForGrouping(item.taken_at);
+    // takenAtがundefinedやnullの場合はスキップ
+    if (!item.takenAt) {
+      return;
+    }
+    const dateKey = formatDateForGrouping(item.takenAt);
     if (!grouped.has(dateKey)) {
       grouped.set(dateKey, []);
     }

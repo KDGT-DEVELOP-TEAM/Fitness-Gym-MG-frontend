@@ -204,6 +204,12 @@ export const usePostureImageList = () => {
             return null;
           }
 
+          // takenAtのバリデーション
+          if (!img.takenAt) {
+            logger.warn('Missing takenAt for image', { imageId: img.id }, 'PostureImageList');
+            return null; // takenAtがない画像は除外
+          }
+
           const position: PosturePosition = img.position;
           const signedUrl = signedUrlMap.get(img.id) || '';
 

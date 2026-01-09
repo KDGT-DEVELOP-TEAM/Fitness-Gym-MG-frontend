@@ -87,18 +87,56 @@ export const LessonCreate: React.FC = () => {
   // カメラ開始
   const startCamera = async () => {
     try {
-      const media = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user' },
-        audio: false,
-      });
-      setStream(media);
-      if (videoRef.current) {
-        videoRef.current.srcObject = media;
-        await videoRef.current.play();
-      }
       setError('');
+      
+      // まずフロントカメラ（iPad用）を試行
+      let media: MediaStream | null = null;
+      try {
+        media = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'user' },
+          audio: false,
+        });
+      } catch (frontError) {
+        // フロントカメラが取得できない場合、背面カメラ（Mac用）を試行
+        try {
+          media = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'environment' },
+            audio: false,
+          });
+        } catch (backError) {
+          // 背面カメラも取得できない場合、利用可能なカメラを列挙
+          try {
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const videoDevices = devices.filter(device => device.kind === 'videoinput');
+            
+            if (videoDevices.length === 0) {
+              throw new Error('利用可能なカメラが見つかりません');
+            }
+            
+            // 最初の利用可能なカメラを使用
+            media = await navigator.mediaDevices.getUserMedia({
+              video: { deviceId: { exact: videoDevices[0].deviceId } },
+              audio: false,
+            });
+          } catch (deviceError) {
+            throw new Error('カメラへのアクセスが拒否されたか、カメラが利用できません');
+          }
+        }
+      }
+      
+      if (media) {
+        setStream(media);
+        if (videoRef.current) {
+          videoRef.current.srcObject = media;
+          await videoRef.current.play();
+        }
+      }
     } catch (err) {
-      setError(handleError(err, 'LessonForm'));
+      const errorMessage = err instanceof Error 
+        ? err.message 
+        : 'カメラの開始に失敗しました。ブラウザの設定でカメラへのアクセスが許可されているか確認してください。';
+      setError(errorMessage);
+      logger.error('Camera start failed', err, 'LessonCreate');
     }
   };
 
@@ -118,25 +156,14 @@ export const LessonCreate: React.FC = () => {
   }, [stream]);
 
   // posture_group を作成（まだ無ければ）
+  // 注意: レッスン作成前は姿勢グループを作成できないため、nullを返す
   const ensurePostureGroup = async (): Promise<string | null> => {
-    if (postureGroupId) return postureGroupId;
-    if (!formData.customerId) {
-      setError('顧客を選択してください');
-      return null;
+    // 既に姿勢グループIDが設定されている場合（レッスン作成後）はそれを返す
+    if (postureGroupId && !postureGroupId.startsWith('temp-')) {
+      return postureGroupId;
     }
-    
-    try {
-      // バックエンドの仕様: lessonIdが必要なため、レッスン作成前は姿勢グループを作成できない
-      // 一時的な姿勢グループIDを生成（実際の作成はレッスン作成後に行う）
-      const tempId = `temp-${Date.now()}`;
-      setPostureGroupId(tempId);
-      logger.debug('Temporary posture group ID created', { id: tempId }, 'LessonForm');
-      return tempId;
-    } catch (error) {
-      logger.error('Failed to create posture group', error, 'LessonForm');
-      setError(handleError(error, 'LessonForm'));
-      return null;
-    }
+    // レッスン作成前は姿勢グループを作成できないため、nullを返す
+    return null;
   };
 
   const captureAndUpload = async (position: PosturePosition) => {
@@ -187,9 +214,13 @@ export const LessonCreate: React.FC = () => {
           return;
         }
 
+        // レッスン作成前は姿勢グループが存在しないため、ローカルプレビューのみ表示
+        // レッスン作成後に姿勢グループが作成され、画像をアップロードできるようになる
         const groupId = await ensurePostureGroup();
         if (!groupId) {
-          updatePreview('', '');
+          // レッスン作成前はローカルプレビューのみ表示（storageKeyは空文字列で保存）
+          logger.debug('Posture group not created yet, showing local preview only', { position }, 'LessonForm');
+          updatePreview('', ''); // localUrlはupdatePreview内で使用される
           resolve();
           return;
         }
@@ -245,17 +276,85 @@ export const LessonCreate: React.FC = () => {
   };
 
   // レッスン作成後に posture_group を作成してレッスンIDと紐づける
+  // その後、ローカルに保存された画像をアップロードする
   const linkPostureGroupToLesson = async (lessonId: string) => {
-    if (!postureGroupId || !postureGroupId.startsWith('temp-')) return;
-    try {
-      // レッスンIDで姿勢グループを作成（バックエンドが自動的に紐づける）
-      await postureApi.createPostureGroup(lessonId);
-      logger.debug('Posture group created and linked to lesson', { lessonId }, 'LessonForm');
-    } catch (error) {
-      // 画面遷移は続行するが、エラーは表示
-      logger.warn('Failed to create posture group for lesson', error, 'LessonForm');
-      setError(handleError(error, 'LessonForm'));
+    logger.debug('Creating posture group for lesson', { lessonId }, 'LessonForm');
+    
+    // レッスンIDで姿勢グループを作成（バックエンドが自動的に紐づける）
+    const postureGroup = await postureApi.createPostureGroup(lessonId);
+    if (!postureGroup?.id) {
+      throw new Error('姿勢グループの作成に失敗しました');
     }
+    
+    setPostureGroupId(postureGroup.id);
+    logger.debug('Posture group created and linked to lesson', { lessonId, postureGroupId: postureGroup.id }, 'LessonForm');
+    
+    // ローカルに保存された画像をアップロード
+    await uploadLocalPostureImages(postureGroup.id);
+  };
+
+  // ローカルに保存された姿勢画像をアップロード
+  const uploadLocalPostureImages = async (groupId: string) => {
+    // posturePreviewsからローカルURLのみの画像を取得（storageKeyがないもの）
+    const localImages = posturePreviews.filter(p => p.url && p.url.startsWith('blob:') && !p.storageKey);
+    
+    if (localImages.length === 0) {
+      logger.debug('No local images to upload', {}, 'LessonForm');
+      return;
+    }
+
+    logger.debug('Uploading local posture images', { count: localImages.length, groupId }, 'LessonForm');
+    
+    const failedUploads: Array<{ position: PosturePosition; error: unknown }> = [];
+    
+    // 各画像をアップロード
+    for (const preview of localImages) {
+      try {
+        logger.debug('Starting upload for image', { position: preview.position, groupId }, 'LessonForm');
+        
+        // blob URLからBlobを取得
+        const response = await fetch(preview.url);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch blob URL: ${response.statusText}`);
+        }
+        
+        const blob = await response.blob();
+        logger.debug('Blob fetched successfully', { position: preview.position, blobSize: blob.size }, 'LessonForm');
+        
+        const file = new File([blob], `${preview.position}.jpg`, { type: 'image/jpeg' });
+        
+        // 画像をアップロード
+        logger.debug('Calling uploadImage API', { position: preview.position, groupId, fileSize: file.size }, 'LessonForm');
+        const uploadResponse = await postureApi.uploadImage(file, groupId, preview.position, false);
+        
+        if (!uploadResponse?.signedUrl || !uploadResponse?.storageKey) {
+          throw new Error('アップロードレスポンスが不正です');
+        }
+        
+        // プレビューを更新
+        setPosturePreviews((prev) => {
+          const filtered = prev.filter((p) => p.position !== preview.position);
+          return [...filtered, { 
+            position: preview.position, 
+            url: uploadResponse.signedUrl, 
+            storageKey: uploadResponse.storageKey 
+          }];
+        });
+        logger.debug('Local image uploaded successfully', { position: preview.position, storageKey: uploadResponse.storageKey }, 'LessonForm');
+      } catch (error) {
+        logger.error('Failed to upload local image', { position: preview.position, error }, 'LessonForm');
+        failedUploads.push({ position: preview.position, error });
+        // エラーが発生しても続行（他の画像のアップロードを試みる）
+      }
+    }
+    
+    // アップロードに失敗した画像がある場合はエラーをスロー
+    if (failedUploads.length > 0) {
+      const failedPositions = failedUploads.map(f => f.position).join(', ');
+      throw new Error(`以下の姿勢画像のアップロードに失敗しました: ${failedPositions}`);
+    }
+    
+    logger.debug('All local images uploaded successfully', { count: localImages.length }, 'LessonForm');
   };
   const displayStartDate = formData.startDate ? formData.startDate.replace('T', ' ') : '';
 
@@ -336,7 +435,16 @@ export const LessonCreate: React.FC = () => {
 
       const created = await lessonApi.create(formData.customerId, lessonRequest);
       if (created?.id) {
-        await linkPostureGroupToLesson(created.id);
+        // 姿勢グループの作成と画像アップロードを実行
+        // エラーが発生した場合は画面遷移を停止
+        try {
+          await linkPostureGroupToLesson(created.id);
+        } catch (postureError) {
+          // 姿勢グループの作成または画像アップロードに失敗した場合
+          logger.error('Failed to create posture group or upload images', postureError, 'LessonForm');
+          setError('レッスンは保存されましたが、姿勢画像のアップロードに失敗しました。後で再度アップロードしてください。');
+          return; // 画面遷移を停止
+        }
       }
       // 姿勢画像一覧ページに遷移
       if (formData.customerId) {
