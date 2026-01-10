@@ -3,8 +3,14 @@ import { storage } from '../utils/storage';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
 
+// 開発環境でのデバッグ用ログ
+if (import.meta.env.DEV) {
+  console.log('[axiosConfig] APIベースURL:', API_BASE_URL);
+}
+
 const axiosInstance: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -17,6 +23,17 @@ axiosInstance.interceptors.request.use(
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
+    // デバッグ用：トークンの確認
+    if (import.meta.env.DEV) {
+      console.log('[axiosConfig] リクエスト送信:', {
+        url: config.url,
+        method: config.method,
+        baseURL: config.baseURL,
+        hasToken: !!token
+      });
+    }
+    
     return config;
   },
   (error) => Promise.reject(error)

@@ -30,13 +30,15 @@ cp .env.example .env
 `.env`ファイルに以下の環境変数を設定してください：
 
 ```
-VITE_API_BASE_URL=http://localhost:3001/api
+VITE_API_BASE_URL=http://localhost:8080/api
 ```
 
 **注意**: 
-- Viteでは環境変数に `VITE_` プレフィックスが必要です
+- Viteでは環境変数に `VITE_` プレフィックスが必要です（`REACT_APP_`ではない）
 - 環境変数は `import.meta.env.VITE_*` でアクセスします
 - APIベースURLはバックエンドサーバーのURLに合わせて設定してください（デフォルト: http://localhost:8080/api）
+- 公共WiFi環境では、バックエンドサーバーの実際のIPアドレスを使用する場合は `http://192.168.x.x:8080/api` などの形式
+- 同じマシンで動作している場合は `http://127.0.0.1:8080/api` も使用可能
 
 ### 3. 開発サーバーの起動
 
@@ -304,3 +306,108 @@ fitnessgym-mg-frontend/
 ### ユーザー管理
 - ユーザー一覧表示
 - ユーザー管理機能
+
+## トラブルシューティング
+
+### 公共WiFiでログインが失敗する場合
+
+公共WiFi環境では、ネットワーク設定によって接続に失敗する可能性があります。以下の手順で対処してください。
+
+#### 1. バックエンドのIPアドレスを確認
+
+```bash
+# macOS/Linux
+ifconfig | grep "inet "
+
+# Windows
+ipconfig
+```
+
+#### 2. フロントエンドの`.env`ファイルを更新
+
+バックエンドサーバーの実際のIPアドレスを使用する場合：
+
+```env
+VITE_API_BASE_URL=http://[バックエンドのIPアドレス]:8080/api
+```
+
+例：
+```env
+VITE_API_BASE_URL=http://192.168.1.100:8080/api
+```
+
+同じマシンで動作している場合は：
+```env
+VITE_API_BASE_URL=http://127.0.0.1:8080/api
+```
+
+#### 3. バックエンドの`application.properties`を更新
+
+フロントエンドの実際のIPアドレスをCORS許可オリジンに追加：
+
+```properties
+cors.allowed-origins=http://[フロントエンドのIPアドレス]:3000,http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173
+```
+
+例：
+```properties
+cors.allowed-origins=http://192.168.1.101:3000,http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173
+```
+
+または、環境変数を使用：
+```bash
+export CORS_ALLOWED_ORIGINS=http://192.168.1.101:3000,http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173
+```
+
+#### 4. 開発サーバーを再起動
+
+環境変数を変更した場合は、開発サーバーを再起動してください：
+
+```bash
+# フロントエンド
+npm run dev
+
+# バックエンド
+./gradlew bootRun
+```
+
+#### 5. ブラウザの開発者ツールで確認
+
+- コンソールタブでエラーメッセージを確認
+- ネットワークタブでリクエストが正しいURLに送信されているか確認
+- CORSエラーが表示されている場合は、バックエンドのCORS設定を確認
+
+#### 6. バックエンドの接続確認
+
+バックエンドサーバーが正しく起動しているか確認：
+
+```bash
+curl http://localhost:8080/api/auth/login
+```
+
+または、ブラウザで以下にアクセス：
+```
+http://localhost:8080/api/health
+```
+
+（健康チェックエンドポイントが実装されている場合）
+
+### その他のよくある問題
+
+#### 環境変数が読み込まれない
+
+- `.env`ファイルがプロジェクトルート（`fitnessgym-mg-frontend/`）にあるか確認
+- ファイル名が`.env`であることを確認（`.env.local`や`.env.development`ではない）
+- 開発サーバーを再起動
+
+#### CORSエラーが発生する
+
+- バックエンドの`application.properties`でCORS許可オリジンが正しく設定されているか確認
+- フロントエンドの実際のURL（IPアドレスとポート）がCORS設定に含まれているか確認
+- バックエンドサーバーを再起動
+
+#### 401エラー（認証失敗）
+
+- ログイン情報が正しいか確認
+- ブラウザの開発者ツールでリクエストヘッダーに`Authorization: Bearer <token>`が含まれているか確認
+- トークンが正しく保存されているか確認（`localStorage`を確認）

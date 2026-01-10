@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react';
-import { useLessonHistory } from '../../hooks/useLessonHistory';
 import { useStores } from '../../hooks/useStore';
 import { LessonCard } from '../../components/lesson/LessonCard2';
 import { LoadingRow, EmptyRow } from '../../components/common/TableStatusRows';
@@ -16,32 +15,27 @@ export const AdminDashboard: React.FC = () => {
   const [viewMode, setViewMode] = useState<'week' | 'month'>('week');
   const [currentPage, setCurrentPage] = useState(1);
   const [homeData, setHomeData] = useState<AdminHomeResponse | null>(null);
+  const [loading, setLoading] = useState(true);
   const [apiError, setApiError] = useState<string | null>(null);
 
   useEffect(() => {
+    setLoading(true);
+    setApiError(null);
     adminHomeApi.getHome({
       chartType: viewMode,
       page: currentPage - 1, // フロントエンドは1ベース、バックエンドは0ベース
       size: ITEMS_PER_PAGE,
     })
-      .then(data => setHomeData(data))
+      .then(data => {
+        setHomeData(data);
+        setLoading(false);
+      })
       .catch(err => {
         console.error("Admin Home API Fetch Error:", err);
         setApiError("ダッシュボードデータの取得に失敗しました。");
-        alert("統計情報の取得に失敗しました。ページを再読み込みしてください。");
+        setLoading(false);
       });
   }, [viewMode, currentPage]);
-
-  // --- 1. バックエンド連携フック (既存維持) ---
-  const { history, chartData, total, loading, error: historyError, refetch } = useLessonHistory(
-    selectedStoreId, 
-    viewMode
-  );
-
-  // ページ変更時や条件変更時にバックエンドへ再リクエスト
-  useEffect(() => {
-    refetch(currentPage - 1);
-  }, [currentPage, refetch]);
 
   const handleStoreChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedStoreId(e.target.value);
@@ -59,8 +53,13 @@ export const AdminDashboard: React.FC = () => {
     return stores.find(s => s.id === selectedStoreId)?.name || '店舗を選択中...';
   }, [stores, selectedStoreId]);
 
+  // homeDataからデータを取得
+  const chartData = homeData?.chartData || null;
+  const recentLessons = homeData?.recentLessons || [];
+  const totalLessonCount = homeData?.totalLessonCount || 0;
+
   // 総ページ数の計算
-  const totalPages = Math.ceil(total / ITEMS_PER_PAGE) || 1;
+  const totalPages = Math.ceil(totalLessonCount / ITEMS_PER_PAGE) || 1;
 
   // グラフの最新へのスクロール制御
   useLayoutEffect(() => {
@@ -76,9 +75,8 @@ export const AdminDashboard: React.FC = () => {
     }
   }, [chartData]);
 
-  // ① どちらのエラーも画面に表示
-  const displayError = apiError || historyError;
-  if (displayError) return <div className="p-10 text-red-500 text-center font-bold">⚠️ {displayError}</div>;
+  // エラー表示
+  if (apiError) return <div className="p-10 text-red-500 text-center font-bold">⚠️ {apiError}</div>;
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
@@ -106,7 +104,7 @@ export const AdminDashboard: React.FC = () => {
                 </div>
             </div>
             <p className="text-sm text-gray-500 px-3 py-1">
-              <span className="font-bold text-green-600">{total}</span> 件の実施済みレッスン履歴
+              <span className="font-bold text-green-600">{totalLessonCount}</span> 件の実施済みレッスン履歴
             </p>
           </div>
         </div>
@@ -130,8 +128,13 @@ export const AdminDashboard: React.FC = () => {
         </div>
 
         <div ref={scrollContainerRef} className="relative h-64 w-full overflow-x-auto scroll-smooth custom-scrollbar">
+          {loading ? (
+            <div className="flex items-center justify-center h-full">
+              <p className="text-gray-400 text-sm">データを読み込み中...</p>
+            </div>
+          ) : chartData?.series && chartData.series.length > 0 ? (
           <div className="flex items-end space-x-12 px-4 pb-5 min-w-max h-full">
-            {chartData?.series.map((d, i) => (
+              {chartData.series.map((d, i) => (
               <div key={i} className="flex flex-col items-center w-12 h-full justify-end group">
                 <span className="text-[10px] font-black text-green-500 mb-2 opacity-0 group-hover:opacity-100 transition-all transform translate-y-1 group-hover:translate-y-0">{d.count}</span>
                 <div 
@@ -146,6 +149,11 @@ export const AdminDashboard: React.FC = () => {
               </div>
             ))}
           </div>
+          ) : (
+            <div className="flex items-center justify-center h-full">
+              <p className="text-gray-400 text-sm">グラフデータがありません</p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -164,8 +172,8 @@ export const AdminDashboard: React.FC = () => {
             <tbody className="divide-y divide-gray-50 bg-white">
             {loading ? (
                 <LoadingRow colSpan={4} />
-              ) : history.length > 0 ? (
-                history.map(lesson => <LessonCard key={lesson.id} lesson={lesson} />)
+              ) : recentLessons.length > 0 ? (
+                recentLessons.map(lesson => <LessonCard key={lesson.id} lesson={lesson} />)
               ) : (
                 <EmptyRow colSpan={4} message="実施済みのレッスン履歴が見つかりませんでした。" />
               )}
