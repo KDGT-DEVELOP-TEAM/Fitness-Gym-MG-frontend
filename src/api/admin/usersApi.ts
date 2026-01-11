@@ -4,8 +4,17 @@ import { User, UserRequest, UserListParams } from '../../types/api/user';
 
 export const adminUsersApi = {
   getUsers: (params?: UserListParams): Promise<PaginatedResponse<User>> => {
-    const query = new URLSearchParams(params as Record<string, string>).toString();
-    return axiosInstance.get<SpringPage<User>>(`/admin/users?${query}`)
+    const queryParams = new URLSearchParams();
+    if (params?.page !== undefined) queryParams.append('page', String(params.page));
+    if (params?.size !== undefined) queryParams.append('size', String(params.size));
+    if (params?.name) queryParams.append('name', params.name);
+    if (params?.role) queryParams.append('role', params.role);
+    if (params?.sort) queryParams.append('sort', params.sort);
+    
+    const queryString = queryParams.toString();
+    const url = queryString ? `/admin/users?${queryString}` : '/admin/users';
+    
+    return axiosInstance.get<SpringPage<User>>(url)
       .then(res => convertPageResponse(res.data));
   },
 
