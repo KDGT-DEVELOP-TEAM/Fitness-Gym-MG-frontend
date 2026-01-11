@@ -8,9 +8,9 @@ interface UserCardProps {
 
 export const UserCard: React.FC<UserCardProps> = ({ user, onEdit }) => {
   const roleLabels: { [key: string]: string } = {
-    admin: '管理者',
-    manager: '店長',
-    trainer: 'トレーナー',
+    ADMIN: '本部',
+    MANAGER: '店長',
+    TRAINER: 'トレーナー',
   };
 
   return (

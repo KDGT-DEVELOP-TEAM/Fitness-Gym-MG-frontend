@@ -8,6 +8,12 @@ export const UserList: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
+  const roleLabels: { [key: string]: string } = {
+    ADMIN: '本部',
+    MANAGER: '店長',
+    TRAINER: 'トレーナー',
+  };
+
   useEffect(() => {
     const fetchUsers = async () => {
       setLoading(true);
@@ -44,7 +50,7 @@ export const UserList: React.FC = () => {
               <tr key={user.id}>
                 <td className="px-4 py-2 border">{user.name}</td>
                 <td className="px-4 py-2 border">{user.email}</td>
-                <td className="px-4 py-2 border">{user.role}</td>
+                <td className="px-4 py-2 border">{roleLabels[user.role] || user.role}</td>
               </tr>
             ))}
           </tbody>
