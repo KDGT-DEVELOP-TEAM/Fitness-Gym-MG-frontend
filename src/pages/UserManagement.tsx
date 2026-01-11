@@ -180,7 +180,7 @@ export const UserManagement: React.FC = () => {
       )}
 
       {/* ユーザー一覧テーブル */}
-      <div className="bg-white rounded-[2rem] shadow-2xl shadow-gray-200/50 border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-[2rem] shadow-sm border-2 border-gray-50 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y table-fixed divide-gray-50">
             <thead className="bg-gray-50/50">

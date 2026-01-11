@@ -112,7 +112,7 @@ export const AdminDashboard: React.FC = () => {
       </div>
 
       {/* 2. 統計グラフ */}
-      <div className="bg-white p-8 rounded-[2rem] shadow-2xl shadow-gray-200/50 border border-gray-100">
+      <div className="bg-white p-8 rounded-[2rem] shadow-sm border-2 border-gray-50">
         <div className="flex justify-between items-center mb-5">
           <h2 className="text-sm font-black text-gray-400 uppercase tracking-[0.2em]">レッスン回数グラフ</h2>
           <div className="flex bg-gray-50 p-1.5 rounded-2xl border border-gray-100">
@@ -159,7 +159,7 @@ export const AdminDashboard: React.FC = () => {
       </div>
 
       {/* 3. 履歴詳細テーブル */}
-      <div className="bg-white rounded-[2rem] shadow-2xl shadow-gray-200/50 border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-[2rem] shadow-sm border-2 border-gray-50 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full table-fixed divide-y divide-gray-50">
             <thead className="bg-gray-50/50">
