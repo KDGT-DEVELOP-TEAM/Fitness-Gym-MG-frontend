@@ -167,7 +167,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
           </div>
           <div>
             <label className="block text-sm font-medium">電話番号 <RequiredBadge /></label>
-            <input type="tel" name="phone" value={formData.phone || ''} onChange={handleChange} required maxLength={12} pattern="^[0-9-]+$" className="w-full border p-2 rounded" />
+            <input type="tel" name="phone" value={formData.phone || ''} onChange={handleChange} required maxLength={12} pattern="^[0-9\-]+$" className="w-full border p-2 rounded" />
           </div>
           <div>
             <label className="block text-sm font-medium">身長 (cm) <RequiredBadge /></label>
