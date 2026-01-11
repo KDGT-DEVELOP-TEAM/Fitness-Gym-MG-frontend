@@ -137,7 +137,7 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
     );
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-8 max-h-[70vh] overflow-y-auto px-1 custom-scrollbar">
+        <form onSubmit={handleSubmit} className="space-y-6 max-h-[70vh] overflow-y-auto px-2">
 
             {/* エラーメッセージ表示エリア */}
             {(errorMsg || errorMessages.length > 0) && (
@@ -159,43 +159,47 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
                 </div>
             )}
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Email */}
-                <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1">メールアドレス <RequiredBadge /></label>
-                    <input type="email" name="email" value={formData.email} onChange={handleChange} required maxLength={255} disabled={isEditMode} className="w-full border p-2 rounded disabled:bg-gray-100 shadow-sm" />
+            {/* 基本情報セクション */}
+            <section className="space-y-4">
+                <h3 className="text-lg font-medium border-b pb-2">基本情報</h3>
+                <div className="grid grid-cols-2 gap-4">
+                    {/* Email */}
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">メールアドレス <RequiredBadge /></label>
+                        <input type="email" name="email" value={formData.email} onChange={handleChange} required maxLength={255} disabled={isEditMode} className="w-full border p-2 rounded disabled:bg-gray-100 shadow-sm" />
+                    </div>
+
+                    {/* Role */}
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">権限ロール <RequiredBadge /></label>
+                        <select name="role" value={formData.role} onChange={handleChange} required className="w-full border p-2 rounded shadow-sm">
+                            <option value="ADMIN">管理者</option>
+                            <option value="MANAGER">店長</option>
+                            <option value="TRAINER">トレーナー</option>
+                        </select>
+                    </div>
                 </div>
 
-                {/* Role */}
-                <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1">権限ロール <RequiredBadge /></label>
-                    <select name="role" value={formData.role} onChange={handleChange} required className="w-full border p-2 rounded shadow-sm">
-                        <option value="ADMIN">管理者</option>
-                        <option value="MANAGER">店長</option>
-                        <option value="TRAINER">トレーナー</option>
-                    </select>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Name */}
-                <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1">氏名 <RequiredBadge /></label>
-                    <input type="text" name="name" value={formData.name} onChange={handleChange} required minLength={2} maxLength={100} className="w-full border p-2 rounded shadow-sm" />
+                <div className="grid grid-cols-2 gap-4">
+                    {/* Name */}
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">氏名 <RequiredBadge /></label>
+                        <input type="text" name="name" value={formData.name} onChange={handleChange} required minLength={2} maxLength={100} className="w-full border p-2 rounded shadow-sm" />
+                    </div>
+                    
+                    {/* Kana */}
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">ふりがな <RequiredBadge /></label>
+                        <input type="text" name="kana" value={formData.kana} onChange={handleChange} required minLength={2} maxLength={100} className="w-full border p-2 rounded shadow-sm" />
+                    </div>
                 </div>
                 
-                {/* Kana */}
+                {/* Password */}
                 <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1">ふりがな <RequiredBadge /></label>
-                    <input type="text" name="kana" value={formData.kana} onChange={handleChange} required minLength={2} maxLength={100} className="w-full border p-2 rounded shadow-sm" />
+                    <label className="block text-sm font-bold text-gray-700 mb-1">パスワード {isEditMode && '(変更する場合のみ)'}</label>
+                    <input type="password" name="pass" value={formData.pass} onChange={handleChange} required={!isEditMode} className="w-full border p-2 rounded shadow-sm" />
                 </div>
-            </div>
-            
-            {/* Password */}
-            <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">パスワード {isEditMode && '(変更する場合のみ)'}</label>
-                <input type="password" name="pass" value={formData.pass} onChange={handleChange} required={!isEditMode} className="w-full border p-2 rounded shadow-sm" />
-            </div>
+            </section>
             
             {/* 🔑 manager（店長）の時のみ表示 */}
             {formData.role === 'MANAGER' && (
@@ -247,16 +251,16 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
 
             {/* 有効/無効の切り替え */}
             {isEditMode && (
-                <div className="flex items-center p-2 bg-gray-50 rounded-lg">
+                <div className="flex items-center p-4 bg-gray-50 rounded-2xl border border-gray-100">
                     <input
                         id="active"
                         name="active"
                         type="checkbox"
                         checked={formData.active}
                         onChange={handleChange}
-                        className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                        className="w-5 h-5 text-green-600 rounded"
                     />
-                    <label htmlFor="active" className="ml-2 block text-sm font-bold text-gray-700">
+                    <label htmlFor="active" className="ml-3 text-sm font-bold text-gray-700">
                         このユーザーを有効な状態にする
                     </label>
                 </div>
@@ -266,7 +270,7 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
                 <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full px-4 py-3 text-white bg-green-600 rounded-xl font-bold hover:bg-green-700 disabled:bg-gray-400 shadow-md transition-all active:scale-[0.98]"
+                    className="w-full py-4 bg-green-600 text-white font-bold rounded-2xl hover:bg-green-700 shadow-lg transition-all active:scale-[0.98] disabled:opacity-50"
                 >
                     {isSubmitting ? '処理中...' : isEditMode ? '情報を更新する' : '新規ユーザーを登録する'}
                 </button>
@@ -275,7 +279,7 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
                     <button
                         type="button"
                         onClick={() => initialData && window.confirm('本当に削除しますか？') && onDelete(initialData.id)}
-                        className="w-full px-4 py-2 text-red-600 font-bold bg-white border border-red-200 rounded-xl hover:bg-red-50 transition-all"
+                        className="w-full py-3 text-red-500 font-bold hover:bg-red-50 rounded-2xl transition-all"
                         disabled={isSubmitting}
                     >
                         ユーザーを削除

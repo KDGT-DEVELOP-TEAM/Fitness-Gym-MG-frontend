@@ -132,20 +132,20 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
         <h3 className="text-lg font-medium border-b pb-2">基本情報</h3>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium">氏名 <RequiredBadge /></label>
-            <input name="name" value={formData.name} onChange={handleChange} required maxLength={100} className="w-full border p-2 rounded" />
+            <label className="block text-sm font-bold text-gray-700 mb-1">氏名 <RequiredBadge /></label>
+            <input name="name" value={formData.name} onChange={handleChange} required maxLength={100} className="w-full border p-2 rounded shadow-sm" />
           </div>
           <div>
-            <label className="block text-sm font-medium">ふりがな <RequiredBadge /></label>
-            <input name="kana" value={formData.kana || ''} onChange={handleChange} required maxLength={100} className="w-full border p-2 rounded" />
+            <label className="block text-sm font-bold text-gray-700 mb-1">ふりがな <RequiredBadge /></label>
+            <input name="kana" value={formData.kana || ''} onChange={handleChange} required maxLength={100} className="w-full border p-2 rounded shadow-sm" />
           </div>
           <div>
-            <label className="block text-sm font-medium">誕生日 <RequiredBadge /></label>
-            <input type="date" name="birthday" value={formData.birthday} onChange={handleChange} required className="w-full border p-2 rounded" />
+            <label className="block text-sm font-bold text-gray-700 mb-1">誕生日 <RequiredBadge /></label>
+            <input type="date" name="birthday" value={formData.birthday} onChange={handleChange} required className="w-full border p-2 rounded shadow-sm" />
           </div>
           <div>
-            <label className="block text-sm font-medium">性別 <RequiredBadge /></label>
-            <select name="gender" value={formData.gender} onChange={handleChange} className="w-full border p-2 rounded">
+            <label className="block text-sm font-bold text-gray-700 mb-1">性別 <RequiredBadge /></label>
+            <select name="gender" value={formData.gender} onChange={handleChange} className="w-full border p-2 rounded shadow-sm">
               <option value="MALE">男</option>
               <option value="FEMALE">女</option>
             </select>
@@ -158,20 +158,20 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
         <h3 className="text-lg font-medium border-b pb-2">連絡先・詳細</h3>
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2">
-            <label className="block text-sm font-medium">住所 <RequiredBadge /></label>
-            <input type="text" name="address" value={formData.address || ''} onChange={handleChange} required maxLength={200} className="w-full border p-2 rounded" />
+            <label className="block text-sm font-bold text-gray-700 mb-1">住所 <RequiredBadge /></label>
+            <input type="text" name="address" value={formData.address || ''} onChange={handleChange} required maxLength={200} className="w-full border p-2 rounded shadow-sm" />
           </div>
           <div className="col-span-2">
-            <label className="block text-sm font-medium">メールアドレス <RequiredBadge /></label>
-            <input type="email" name="email" value={formData.email || ''} onChange={handleChange} required maxLength={255} className="w-full border p-2 rounded" />
+            <label className="block text-sm font-bold text-gray-700 mb-1">メールアドレス <RequiredBadge /></label>
+            <input type="email" name="email" value={formData.email || ''} onChange={handleChange} required maxLength={255} className="w-full border p-2 rounded shadow-sm" />
           </div>
           <div>
-            <label className="block text-sm font-medium">電話番号 <RequiredBadge /></label>
-            <input type="tel" name="phone" value={formData.phone || ''} onChange={handleChange} required maxLength={12} pattern="^[0-9\-]+$" className="w-full border p-2 rounded" />
+            <label className="block text-sm font-bold text-gray-700 mb-1">電話番号 <RequiredBadge /></label>
+            <input type="tel" name="phone" value={formData.phone || ''} onChange={handleChange} required maxLength={12} pattern="^[0-9\-]+$" className="w-full border p-2 rounded shadow-sm" />
           </div>
           <div>
-            <label className="block text-sm font-medium">身長 (cm) <RequiredBadge /></label>
-            <input type="number" step="0.1" name="height" value={formData.height || ''} onChange={handleChange} required min="50" max="300" className="w-full border p-2 rounded" />
+            <label className="block text-sm font-bold text-gray-700 mb-1">身長 (cm) <RequiredBadge /></label>
+            <input type="number" step="0.1" name="height" value={formData.height || ''} onChange={handleChange} required min="50" max="300" className="w-full border p-2 rounded shadow-sm" />
           </div>
         </div>
       </section>
@@ -181,16 +181,16 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
         <h3 className="text-lg font-medium border-b pb-2">健康情報・禁忌等</h3>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-red-600 font-bold">禁忌事項 (Taboo)</label>
-            <textarea name="taboo" value={formData.taboo || ''} onChange={handleChange} rows={2} maxLength={100} className="w-full border p-2 rounded border-red-200 bg-red-50" />
+            <label className="block text-sm font-bold text-gray-700 mb-1">禁忌事項 (Taboo)</label>
+            <textarea name="taboo" value={formData.taboo || ''} onChange={handleChange} rows={2} maxLength={100} className="w-full border p-2 rounded border-red-200 bg-red-50 shadow-sm" />
           </div>
           <div>
-            <label className="block text-sm font-medium">既往歴 (Medical History)</label>
-            <textarea name="medical" value={formData.medical || ''} onChange={handleChange} rows={2} maxLength={100} className="w-full border p-2 rounded" />
+            <label className="block text-sm font-bold text-gray-700 mb-1">既往歴 (Medical History)</label>
+            <textarea name="medical" value={formData.medical || ''} onChange={handleChange} rows={2} maxLength={100} className="w-full border p-2 rounded shadow-sm" />
           </div>
           <div>
-            <label className="block text-sm font-medium">自由記入メモ (Memo)</label>
-            <textarea name="memo" value={formData.memo || ''} onChange={handleChange} rows={3} maxLength={500} className="w-full border p-2 rounded" />
+            <label className="block text-sm font-bold text-gray-700 mb-1">自由記入メモ (Memo)</label>
+            <textarea name="memo" value={formData.memo || ''} onChange={handleChange} rows={3} maxLength={500} className="w-full border p-2 rounded shadow-sm" />
           </div>
         </div>
 
