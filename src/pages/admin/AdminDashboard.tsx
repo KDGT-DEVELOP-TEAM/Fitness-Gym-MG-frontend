@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useLayoutEffect, useMemo } from 're
 import { useStores } from '../../hooks/useStore';
 import { LessonCard } from '../../components/lesson/LessonCard2';
 import { LoadingRow, EmptyRow } from '../../components/common/TableStatusRows';
+import { Pagination } from '../../components/common/Pagination';
 import { adminHomeApi } from '../../api/admin/homeApi'; 
 import { AdminHomeResponse } from '../../types/admin/home'
 
@@ -183,29 +184,11 @@ export const AdminDashboard: React.FC = () => {
       </div>
 
       {/* 4. ページネーション */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between bg-white px-6 py-4 rounded-2xl border border-gray-100 shadow-sm">
-          <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest">
-            Page {currentPage} of {totalPages}
-          </p>
-          <div className="flex gap-3">
-            <button 
-              onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} 
-              disabled={currentPage === 1} 
-              className="h-10 px-6 bg-white border border-gray-200 rounded-xl text-xs font-black text-gray-600 disabled:opacity-30 hover:bg-gray-50 transition-all shadow-sm active:scale-95"
-            >
-              PREV
-            </button>
-            <button 
-              onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))} 
-              disabled={currentPage === totalPages} 
-              className="h-10 px-6 bg-white border border-gray-200 rounded-xl text-xs font-black text-gray-600 disabled:opacity-30 hover:bg-gray-50 transition-all shadow-sm active:scale-95"
-            >
-              NEXT
-            </button>
-          </div>
-        </div>
-      )}
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+      />
     </div>
   );
 };

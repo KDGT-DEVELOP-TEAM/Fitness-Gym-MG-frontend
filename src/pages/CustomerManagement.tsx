@@ -3,6 +3,7 @@ import { useCustomers } from '../hooks/useCustomer';
 import { CustomerCard } from '../components/customer/CustomerCard';
 import { CustomerFormModal } from '../components/customer/CustomerFormModal';
 import { LoadingRow, EmptyRow } from '../components/common/TableStatusRows';
+import { Pagination } from '../components/common/Pagination';
 import { Customer, CustomerRequest } from '../types/api/customer';
 import { useAuth } from '../context/AuthContext';
 import { adminCustomersApi } from '../api/admin/customersApi';
@@ -186,29 +187,11 @@ if (!service) return;
       </div>
 
       {/* ページネーション */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between bg-white px-6 py-4 rounded-2xl border border-gray-100 shadow-sm">
-          <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-            Page {currentPage} / {totalPages}
-          </span>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-              className="px-4 py-2 text-xs font-bold rounded-xl border border-gray-200 bg-white text-gray-600 disabled:opacity-40 transition-all hover:bg-gray-50 active:scale-95"
-            >
-              Prev
-            </button>
-            <button
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages}
-              className="px-4 py-2 text-xs font-bold rounded-xl border border-gray-200 bg-white text-gray-600 disabled:opacity-40 transition-all hover:bg-gray-50 active:scale-95"
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      )}
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+      />
 
       {/* モーダル */}
       <CustomerFormModal 

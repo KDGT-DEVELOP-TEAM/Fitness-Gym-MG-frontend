@@ -4,6 +4,7 @@ import { useStores } from '../hooks/useStore';
 import { UserCard } from '../components/user/UserCard'; 
 import UserFormModal from '../components/user/UserFormModal'; 
 import { LoadingRow, EmptyRow } from '../components/common/TableStatusRows';
+import { Pagination } from '../components/common/Pagination';
 import { UserRole, User, UserRequest, UserListItem } from '../types/api/user'; // UserRequestを使用
 import { useAuth } from '../context/AuthContext';
 import { adminUsersApi } from '../api/admin/usersApi';
@@ -210,29 +211,11 @@ export const UserManagement: React.FC = () => {
       </div>
 
       {/* ページネーション */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between px-2">
-          <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest">
-            Page {currentPage} of {totalPages}
-          </p>
-          <div className="flex gap-3">
-            <button
-              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-              className="h-10 px-6 bg-white border border-gray-200 rounded-xl text-xs font-black text-gray-600 disabled:opacity-30 hover:bg-gray-50 transition-all shadow-sm active:scale-95"
-            >
-              PREV
-            </button>
-            <button
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages}
-              className="h-10 px-6 bg-white border border-gray-200 rounded-xl text-xs font-black text-gray-600 disabled:opacity-30 hover:bg-gray-50 transition-all shadow-sm active:scale-95"
-            >
-              NEXT
-            </button>
-          </div>
-        </div>
-      )}
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+      />
       
       {/* モーダル */}
       <UserFormModal 
