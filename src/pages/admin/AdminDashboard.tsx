@@ -23,6 +23,7 @@ export const AdminDashboard: React.FC = () => {
     setLoading(true);
     setApiError(null);
     adminHomeApi.getHome({
+      storeId: selectedStoreId === 'all' ? undefined : selectedStoreId,
       chartType: viewMode,
       page: currentPage - 1, // フロントエンドは1ベース、バックエンドは0ベース
       size: ITEMS_PER_PAGE,
@@ -36,7 +37,7 @@ export const AdminDashboard: React.FC = () => {
         setApiError("ダッシュボードデータの取得に失敗しました。");
         setLoading(false);
       });
-  }, [viewMode, currentPage]);
+  }, [viewMode, currentPage, selectedStoreId]);
 
   const handleStoreChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedStoreId(e.target.value);
