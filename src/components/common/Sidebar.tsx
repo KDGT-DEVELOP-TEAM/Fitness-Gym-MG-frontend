@@ -147,7 +147,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ menuItems }) => {
           onClick={handleLogoutClick}
           className="text-center text-lg text-white px-6 py-2 rounded-xl bg-[rgba(122,183,122,0.4)] border border-[rgba(122,183,122,0.6)] hover:bg-[rgba(122,183,122,0.5)] transition-all"
         >
-          Log out
+          ログアウト
         </button>
       </div>
 
