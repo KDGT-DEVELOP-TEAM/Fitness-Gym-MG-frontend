@@ -84,31 +84,29 @@ export const AdminDashboard: React.FC = () => {
     <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
       
       {/* ヘッダー */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div className="space-y-3">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="flex flex-wrap items-center gap-6">
           <h1 className="text-3xl font-black text-gray-900 tracking-tight">統計情報</h1>
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="relative group">
-                <select 
-                className="h-10 pl-6 pr-10 bg-white border-2 border-gray-50 rounded-2xl text-sm font-black text-gray-600 focus:border-green-500 focus:ring-0 outline-none cursor-pointer shadow-sm transition-all hover:border-gray-200 appearance-none"
-                value={selectedStoreId}
-                onChange={(e) => {
-                    setSelectedStoreId(e.target.value);
-                    setCurrentPage(1);
-                }}
-                >
-                <option value="all">全店舗</option>
-                {stores.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                </select>
-                {/* カスタム矢印アイコン */}
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7"/></svg>
-                </div>
-            </div>
-            <p className="text-sm text-gray-500 px-3 py-1">
-              <span className="font-bold text-green-600">{totalLessonCount}</span> 件の実施済みレッスン履歴
-            </p>
+          <div className="relative group">
+              <select 
+              className="h-10 pl-6 pr-10 bg-white border-2 border-gray-50 rounded-2xl text-sm font-black text-gray-600 focus:border-green-500 focus:ring-0 outline-none cursor-pointer shadow-sm transition-all hover:border-gray-200 appearance-none"
+              value={selectedStoreId}
+              onChange={(e) => {
+                  setSelectedStoreId(e.target.value);
+                  setCurrentPage(1);
+              }}
+              >
+              <option value="all">全店舗</option>
+              {stores.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
+              {/* カスタム矢印アイコン */}
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7"/></svg>
+              </div>
           </div>
+          <p className="text-sm text-gray-500 px-3 py-1">
+            <span className="font-bold text-green-600">{totalLessonCount}</span> 件の実施済みレッスン履歴
+          </p>
         </div>
       </div>
 
