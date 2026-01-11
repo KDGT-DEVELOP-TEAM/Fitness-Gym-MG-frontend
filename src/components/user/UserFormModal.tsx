@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import UserForm from './UserForm';
 import { User, UserRequest } from '../../types/api/user'; 
 import { Store } from '../../types/store'; 
@@ -37,7 +38,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
     }
   };
 
-  return (
+  return createPortal(
     <div onClick={handleSafeClose} className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-center items-center p-4">
       <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl relative overflow-hidden animate-in zoom-in-95 duration-300">
         {!isSubmitting && (
@@ -73,7 +74,8 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
           />
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

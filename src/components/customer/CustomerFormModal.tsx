@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Customer, CustomerRequest } from '../../types/api/customer';
 import { CustomerForm } from './CustomerForm';
 
@@ -33,7 +34,7 @@ export const CustomerFormModal: React.FC<CustomerFormModalProps> = ({ isOpen, on
     }
   };
 
-  return (
+  return createPortal(
     <div onClick={handleSafeClose} className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-center items-center p-4">
       <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl relative overflow-hidden animate-in zoom-in-95 duration-200">
         {!isSubmitting && (
@@ -52,6 +53,7 @@ export const CustomerFormModal: React.FC<CustomerFormModalProps> = ({ isOpen, on
           <CustomerForm initialData={initialData} onSubmit={onSubmit} onDelete={onDelete} isSubmitting={isSubmitting} />
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
