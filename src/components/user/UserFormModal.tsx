@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import UserForm from './UserForm';
 import { User, UserRequest } from '../../types/api/user'; 
 import { Store } from '../../types/store'; 
@@ -16,6 +16,19 @@ interface UserFormModalProps {
 const UserFormModal: React.FC<UserFormModalProps> = ({ 
   isOpen, onClose, initialData, stores, onSubmit, onDelete, isSubmitting 
 }) => {
+  // モーダルが開いている時、背景のスクロールを無効化
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    // クリーンアップ: コンポーネントがアンマウントされる時も元に戻す
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const handleSafeClose = () => {

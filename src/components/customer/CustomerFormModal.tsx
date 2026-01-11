@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Customer, CustomerRequest } from '../../types/api/customer';
 import { CustomerForm } from './CustomerForm';
 
@@ -12,6 +12,19 @@ interface CustomerFormModalProps {
 }
 
 export const CustomerFormModal: React.FC<CustomerFormModalProps> = ({ isOpen, onClose, initialData, onSubmit, onDelete, isSubmitting }) => {
+  // モーダルが開いている時、背景のスクロールを無効化
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    // クリーンアップ: コンポーネントがアンマウントされる時も元に戻す
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const handleSafeClose = () => {
