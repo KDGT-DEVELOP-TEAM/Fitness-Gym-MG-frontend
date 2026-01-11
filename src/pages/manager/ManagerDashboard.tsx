@@ -167,7 +167,7 @@ export const ManagerDashboard: React.FC = () => {
             {loading ? (
                 <LoadingRow colSpan={4} />
               ) : history.length > 0 ? (
-                history.map(lesson => <LessonCard key={lesson.id} lesson={lesson} />)
+                history.map(lesson => <LessonCard key={lesson.id} lesson={lesson} from="home" />)
               ) : (
                 <EmptyRow colSpan={4} message="実施済みのレッスン履歴が見つかりませんでした。" />
               )}

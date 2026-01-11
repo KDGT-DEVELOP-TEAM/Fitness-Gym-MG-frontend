@@ -1,30 +1,45 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { LessonHistoryItem } from '../../types/lesson';
 
 interface LessonCardProps {
-lesson: LessonHistoryItem;
+  lesson: LessonHistoryItem;
+  from?: 'home' | 'history';
 }
   
 const formatDateTime = (dateString: string | undefined | null) => {
-if (!dateString) return { dateStr: '-', timeStr: '--:--' };
+  if (!dateString) return { dateStr: '-', timeStr: '--:--' };
 
-const dateObj = new Date(dateString);
-    // 不正な日付文字列の場合は fallback
-    if (isNaN(dateObj.getTime())) return { dateStr: '不正な日付', timeStr: '--:--' };
+  const dateObj = new Date(dateString);
+  // 不正な日付文字列の場合は fallback
+  if (isNaN(dateObj.getTime())) return { dateStr: '不正な日付', timeStr: '--:--' };
 
-    return {
-        dateStr: dateObj.toLocaleDateString('ja-JP'),
-        timeStr: dateObj.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })
-    };
+  return {
+    dateStr: dateObj.toLocaleDateString('ja-JP'),
+    timeStr: dateObj.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })
+  };
 }
 
-export const LessonCard: React.FC<LessonCardProps> = ({ lesson }) => {
-    // 日付・時刻のパース
-    const start = formatDateTime(lesson.startDate);
-    const end = formatDateTime(lesson.endDate);
+export const LessonCard: React.FC<LessonCardProps> = ({ lesson, from }) => {
+  const navigate = useNavigate();
+  
+  // 日付・時刻のパース
+  const start = formatDateTime(lesson.startDate);
+  const end = formatDateTime(lesson.endDate);
+
+  const handleClick = () => {
+    if (from === 'home') {
+      navigate(`/lesson/${lesson.id}?from=home`);
+    } else {
+      navigate(`/lesson/${lesson.id}`);
+    }
+  };
 
     return (
-        <tr className="hover:bg-green-50/30 transition-colors group">
+        <tr 
+            className="hover:bg-green-50/30 transition-colors group cursor-pointer"
+            onClick={handleClick}
+        >
         {/* 1. レッスン日時 */}
         <td className="px-8 py-6">
             <div className="flex flex-col items-center text-center">

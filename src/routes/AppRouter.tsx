@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useParams, useSearchParams } from 'react-router-dom';
 import { ProtectedRoute } from './ProtectedRoute';
 import { Login } from '../pages/auth/Login';
 import { AdminDashboard } from '../pages/admin/AdminDashboard';
@@ -14,6 +14,7 @@ import { MainLayout } from '../components/common/MainLayout';
 import { HiHome, HiUsers, HiUserGroup, HiDocumentAdd, HiClock, HiPhotograph, HiArrowLeft } from 'react-icons/hi';
 import { ROUTES } from '../constants/routes';
 import { useLessonData } from '../hooks/useLessonData';
+import { useAuth } from '../context/AuthContext';
 // 以下のコンポーネントは実際の実装に合わせてインポートしてください
 // import { CustomerSelectPage } from '../pages/trainer/CustomerSelectPage';
 // import { UserListPage } from '../pages/admin/UserListPage';
@@ -39,44 +40,133 @@ const managerMenuItems = [
   { path: '/manager/customers', label: '顧客管理', icon: <HiUserGroup className="w-5 h-5" /> },
 ];
 
-// 顧客IDに基づいて動的にメニューアイテムを生成する関数
-const getCustomerRelatedMenuItems = (customerId: string, lessonId?: string) => [
-  { 
-    path: '/trainer/home', 
-    label: 'Home', 
-    icon: <HiArrowLeft className="w-5 h-5" />,
-    isBackButton: true,
-  },
-  { 
-    path: `/trainer/newlessons/${customerId}`, 
-    label: '新規レッスン入力', 
-    icon: <HiDocumentAdd className="w-5 h-5" /> 
-  },
-  {
-    path: ROUTES.LESSON_HISTORY.replace(':customerId', customerId),
-    label: '履歴一覧',
-    icon: <HiClock className="w-5 h-5" />,
-    subItems: lessonId ? [
+// ロールに応じた履歴一覧パスを取得
+const getHistoryPath = (role: string, customerId: string): string => {
+  switch (role.toUpperCase()) {
+    case 'ADMIN':
+      return ROUTES.LESSON_HISTORY_ADMIN.replace(':customerId', customerId);
+    case 'MANAGER':
+      return ROUTES.LESSON_HISTORY_MANAGER.replace(':customerId', customerId);
+    case 'TRAINER':
+    default:
+      return ROUTES.LESSON_HISTORY_TRAINER.replace(':customerId', customerId);
+  }
+};
+
+// ロールに応じた姿勢一覧パスを取得
+const getPosturePath = (role: string, customerId: string): string => {
+  switch (role.toUpperCase()) {
+    case 'ADMIN':
+      return ROUTES.POSTURE_LIST_ADMIN.replace(':customerId', customerId);
+    case 'MANAGER':
+      return ROUTES.POSTURE_LIST_MANAGER.replace(':customerId', customerId);
+    case 'TRAINER':
+    default:
+      return ROUTES.POSTURE_LIST_TRAINER.replace(':customerId', customerId);
+  }
+};
+
+// ロールに応じたHomeパスを取得
+const getHomePath = (role: string): string => {
+  switch (role.toUpperCase()) {
+    case 'ADMIN':
+      return '/admin/home';
+    case 'MANAGER':
+      return '/manager/home';
+    case 'TRAINER':
+    default:
+      return '/trainer/home';
+  }
+};
+
+// 顧客IDに基づいて動的にメニューアイテムを生成する関数（ロール対応版）
+const getCustomerRelatedMenuItems = (customerId: string, role: string, lessonId?: string) => {
+  const menuItems: any[] = [
+    { 
+      path: getHomePath(role), 
+      label: 'Home', 
+      icon: <HiArrowLeft className="w-5 h-5" />,
+      isBackButton: true,
+    },
+  ];
+  
+  // Adminロールの場合は「新規レッスン入力」を表示しない
+  if (role.toUpperCase() !== 'ADMIN') {
+    menuItems.push({
+      path: `/trainer/newlessons/${customerId}`, 
+      label: '新規レッスン入力', 
+      icon: <HiDocumentAdd className="w-5 h-5" /> 
+    });
+  }
+  
+  menuItems.push(
+    {
+      path: getHistoryPath(role, customerId),
+      label: '履歴一覧',
+      icon: <HiClock className="w-5 h-5" />,
+      subItems: lessonId ? [
+        {
+          path: `/lesson/${lessonId}`,
+          label: 'レッスン詳細',
+        },
+      ] : undefined,
+    },
+    {
+      path: getPosturePath(role, customerId),
+      label: '姿勢一覧',
+      icon: <HiPhotograph className="w-5 h-5" />,
+    }
+  );
+  
+  return menuItems;
+};
+
+// 統計画面（Home）から遷移した場合のメニューアイテムを生成する関数
+const getHomeMenuItems = (role: string, lessonId: string, customerId: string) => {
+  const homePath = getHomePath(role);
+  const menuItems: any[] = [
+    {
+      path: homePath,
+      label: 'Home',
+      icon: <HiArrowLeft className="w-5 h-5" />,
+      isBackButton: true,
+      subItems: [
+        {
+          path: `/lesson/${lessonId}`,
+          label: 'レッスン詳細',
+        },
+      ],
+    },
+  ];
+  
+  // customerIdが存在する場合のみ、履歴一覧と姿勢一覧のメニューを追加
+  if (customerId) {
+    menuItems.push(
       {
-        path: `/lesson/${lessonId}`,
-        label: 'レッスン詳細',
+        path: getHistoryPath(role, customerId),
+        label: '履歴一覧',
+        icon: <HiClock className="w-5 h-5" />,
       },
-    ] : undefined,
-  },
-  {
-    path: ROUTES.POSTURE_LIST.replace(':customerId', customerId),
-    label: '姿勢一覧',
-    icon: <HiPhotograph className="w-5 h-5" />,
-  },
-];
+      {
+        path: getPosturePath(role, customerId),
+        label: '姿勢一覧',
+        icon: <HiPhotograph className="w-5 h-5" />,
+      }
+    );
+  }
+  
+  return menuItems;
+};
 
 // 顧客IDを取得してメニューアイテムを生成するラッパーコンポーネント
 const LessonCreateWithMenu: React.FC = () => {
   const { customerId } = useParams<{ customerId: string }>();
+  const { user } = useAuth();
   if (!customerId) {
     return <LessonCreate />;
   }
-  const menuItems = getCustomerRelatedMenuItems(customerId);
+  const role = user?.role || 'TRAINER';
+  const menuItems = getCustomerRelatedMenuItems(customerId, role);
   return (
     <MainLayout menuItems={menuItems}>
       <LessonCreate />
@@ -87,10 +177,12 @@ const LessonCreateWithMenu: React.FC = () => {
 // レッスン履歴一覧用のラッパーコンポーネント
 const LessonHistoryWithMenu: React.FC = () => {
   const { customerId } = useParams<{ customerId: string }>();
+  const { user } = useAuth();
   if (!customerId) {
     return <LessonHistory />;
   }
-  const menuItems = getCustomerRelatedMenuItems(customerId);
+  const role = user?.role || 'TRAINER';
+  const menuItems = getCustomerRelatedMenuItems(customerId, role);
   return (
     <MainLayout menuItems={menuItems}>
       <LessonHistory />
@@ -101,10 +193,12 @@ const LessonHistoryWithMenu: React.FC = () => {
 // 姿勢一覧用のラッパーコンポーネント
 const PostureImageListWithMenu: React.FC = () => {
   const { customerId } = useParams<{ customerId: string }>();
+  const { user } = useAuth();
   if (!customerId) {
     return <PostureImageList />;
   }
-  const menuItems = getCustomerRelatedMenuItems(customerId);
+  const role = user?.role || 'TRAINER';
+  const menuItems = getCustomerRelatedMenuItems(customerId, role);
   return (
     <MainLayout menuItems={menuItems}>
       <PostureImageList />
@@ -115,13 +209,29 @@ const PostureImageListWithMenu: React.FC = () => {
 // レッスン詳細用のラッパーコンポーネント
 const LessonDetailWithMenu: React.FC = () => {
   const { lessonId } = useParams<{ lessonId: string }>();
+  const [searchParams] = useSearchParams();
+  const { user } = useAuth();
   const { lesson, loading } = useLessonData(lessonId);
   
   if (!lessonId) {
     return <LessonDetail />;
   }
   
+  const role = user?.role || 'TRAINER';
+  const from = searchParams.get('from');
+  const customerId = searchParams.get('customerId');
+  
   if (loading || !lesson) {
+    // ローディング中は遷移元に応じたメニューを表示
+    if (from === 'home') {
+      // ローディング中はcustomerIdが分からないので、空文字列を渡す（履歴一覧と姿勢一覧は表示されない）
+      const menuItems = getHomeMenuItems(role, lessonId, '');
+      return (
+        <MainLayout menuItems={menuItems}>
+          <LessonDetail />
+        </MainLayout>
+      );
+    }
     return (
       <MainLayout menuItems={trainerMenuItems}>
         <LessonDetail />
@@ -129,12 +239,36 @@ const LessonDetailWithMenu: React.FC = () => {
     );
   }
   
-  const menuItems = getCustomerRelatedMenuItems(lesson.customerId, lessonId);
-  return (
-    <MainLayout menuItems={menuItems}>
-      <LessonDetail />
-    </MainLayout>
-  );
+  // 遷移元に応じてメニューを切り替え
+  if (from === 'home') {
+    // 統計画面（Home）から遷移した場合
+    // lessonが利用可能な場合、customerIdを使って履歴一覧と姿勢一覧のメニューを追加
+    if (lesson && lesson.customerId) {
+      const menuItems = getHomeMenuItems(role, lessonId, lesson.customerId);
+      return (
+        <MainLayout menuItems={menuItems}>
+          <LessonDetail />
+        </MainLayout>
+      );
+    } else {
+      // lessonがまだ読み込まれていない場合（ローディング中）
+      const menuItems = getHomeMenuItems(role, lessonId, '');
+      return (
+        <MainLayout menuItems={menuItems}>
+          <LessonDetail />
+        </MainLayout>
+      );
+    }
+  } else {
+    // 履歴一覧から遷移した場合（デフォルト）
+    const targetCustomerId = customerId || lesson.customerId;
+    const menuItems = getCustomerRelatedMenuItems(targetCustomerId, role, lessonId);
+    return (
+      <MainLayout menuItems={menuItems}>
+        <LessonDetail />
+      </MainLayout>
+    );
+  }
 };
 
 export const AppRouter = () => {
@@ -149,7 +283,27 @@ export const AppRouter = () => {
           <Route path="newlessons/:customerId" element={<LessonCreateWithMenu />} />
         </Route>
 
-        {/* レッスン履歴一覧と姿勢一覧（全ロール共通） */}
+        {/* レッスン履歴一覧（ロールごと） */}
+        <Route path={ROUTES.LESSON_HISTORY_ADMIN} element={<ProtectedRoute roles={['ADMIN']} />}>
+          <Route index element={<LessonHistoryWithMenu />} />
+        </Route>
+        <Route path={ROUTES.LESSON_HISTORY_MANAGER} element={<ProtectedRoute roles={['MANAGER']} />}>
+          <Route index element={<LessonHistoryWithMenu />} />
+        </Route>
+        <Route path={ROUTES.LESSON_HISTORY_TRAINER} element={<ProtectedRoute roles={['TRAINER']} />}>
+          <Route index element={<LessonHistoryWithMenu />} />
+        </Route>
+        {/* 姿勢一覧（ロールごと） */}
+        <Route path={ROUTES.POSTURE_LIST_ADMIN} element={<ProtectedRoute roles={['ADMIN']} />}>
+          <Route index element={<PostureImageListWithMenu />} />
+        </Route>
+        <Route path={ROUTES.POSTURE_LIST_MANAGER} element={<ProtectedRoute roles={['MANAGER']} />}>
+          <Route index element={<PostureImageListWithMenu />} />
+        </Route>
+        <Route path={ROUTES.POSTURE_LIST_TRAINER} element={<ProtectedRoute roles={['TRAINER']} />}>
+          <Route index element={<PostureImageListWithMenu />} />
+        </Route>
+        {/* 旧パス（互換性のため残す） */}
         <Route path={ROUTES.LESSON_HISTORY} element={<ProtectedRoute roles={['ADMIN', 'MANAGER', 'TRAINER']} />}>
           <Route index element={<LessonHistoryWithMenu />} />
         </Route>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useCustomers } from '../hooks/useCustomer'; 
 import { CustomerCard } from '../components/customer/CustomerCard';
 import { CustomerFormModal } from '../components/customer/CustomerFormModal';
@@ -9,11 +10,13 @@ import { useAuth } from '../context/AuthContext';
 import { adminCustomersApi } from '../api/admin/customersApi';
 import { managerCustomersApi } from '../api/manager/customersApi';
 import { customerApi } from '../api/customerApi';
+import { ROUTES } from '../constants/routes';
 
 const ITEMS_PER_PAGE = 10;
 
 export const CustomerManagement: React.FC = () => {
   const { user: authUser } = useAuth();
+  const navigate = useNavigate();
   const { 
     customers,
     total,
@@ -104,6 +107,25 @@ if (!service) return;
     setIsModalOpen(true);
   };
 
+  const handleHistoryClick = (customerId: string) => {
+    if (!authUser) return;
+    const role = authUser.role?.toUpperCase() || 'TRAINER';
+    let historyPath: string;
+    switch (role) {
+      case 'ADMIN':
+        historyPath = ROUTES.LESSON_HISTORY_ADMIN.replace(':customerId', customerId);
+        break;
+      case 'MANAGER':
+        historyPath = ROUTES.LESSON_HISTORY_MANAGER.replace(':customerId', customerId);
+        break;
+      case 'TRAINER':
+      default:
+        historyPath = ROUTES.LESSON_HISTORY_TRAINER.replace(':customerId', customerId);
+        break;
+    }
+    navigate(historyPath);
+  };
+
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
       {/* ヘッダー */}
@@ -178,7 +200,8 @@ if (!service) return;
                       const age = new Date().getFullYear() - new Date(b).getFullYear();
                       return isNaN(age) ? 0 : age;
                     }}
-                    onEdit={(c) => handleEditClick(c as Customer)} 
+                    onEdit={(c) => handleEditClick(c as Customer)}
+                    onHistoryClick={handleHistoryClick}
                   />
               )))}
             </tbody>

@@ -173,7 +173,7 @@ export const AdminDashboard: React.FC = () => {
             {loading ? (
                 <LoadingRow colSpan={4} />
               ) : recentLessons.length > 0 ? (
-                recentLessons.map(lesson => <LessonCard key={lesson.id} lesson={lesson} />)
+                recentLessons.map(lesson => <LessonCard key={lesson.id} lesson={lesson} from="home" />)
               ) : (
                 <EmptyRow colSpan={4} message="実施済みのレッスン履歴が見つかりませんでした。" />
               )}

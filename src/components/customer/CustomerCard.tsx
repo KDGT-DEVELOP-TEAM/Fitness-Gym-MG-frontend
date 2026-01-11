@@ -5,15 +5,27 @@ interface CustomerCardProps {
   customer: CustomerListItem;
   calculateAge: (birthdate: string) => number;
   onEdit: (customer: CustomerListItem) => void;
+  onHistoryClick?: (customerId: string) => void;
 }
 
-export const CustomerCard: React.FC<CustomerCardProps> = ({ customer, calculateAge, onEdit }) => {
+export const CustomerCard: React.FC<CustomerCardProps> = ({ customer, calculateAge, onEdit, onHistoryClick }) => {
+  const handleNameClick = () => {
+    if (onHistoryClick) {
+      onHistoryClick(customer.id);
+    }
+  };
+
   return (
     <tr className="hover:bg-green-50/30 transition-colors group">
       {/* 氏名 */}
       <td className="px-8 py-6">
         <div className="flex flex-col items-center text-center">
-          <span className="text-base font-bold text-gray-900 group-hover:text-green-600 transition-colors">
+          <span 
+            className={`text-base font-bold text-gray-900 group-hover:text-green-600 transition-colors ${
+              onHistoryClick ? 'cursor-pointer' : ''
+            }`}
+            onClick={handleNameClick}
+          >
             {customer.name}
           </span>
           <span className="text-[11px] font-bold text-gray-400 uppercase tracking-tight">

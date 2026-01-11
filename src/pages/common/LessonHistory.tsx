@@ -149,9 +149,13 @@ export const LessonHistory: React.FC = () => {
   }, []);
 
   const handleLessonClick = (lessonId: string) => {
-    // レッスン詳細画面へ遷移（ルートが未実装の場合は将来の実装用に準備）
+    // レッスン詳細画面へ遷移（履歴一覧から遷移するため、customerIdをクエリパラメータに追加）
     try {
-      navigate(`/lesson/${lessonId}`);
+      if (customerId) {
+        navigate(`/lesson/${lessonId}?from=history&customerId=${customerId}`);
+      } else {
+        navigate(`/lesson/${lessonId}`);
+      }
     } catch (err) {
       console.log('Lesson clicked:', lessonId, 'Route may not be implemented yet');
     }
