@@ -1,20 +1,8 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FiChevronRight, FiUser, FiClock } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
 import { ROUTES } from '../../constants/routes';
-import {
-  ComposedChart,
-  Line,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  ReferenceLine,
-} from 'recharts';
 import { customerApi } from '../../api/customerApi';
 import { lessonApi } from '../../api/lessonApi';
 import { Lesson } from '../../types/lesson';
@@ -23,9 +11,11 @@ import axios from 'axios';
 
 // 型定義
 interface BMIHistoryItem {
-  date: string;
+  date: string; // X軸ラベル用（短い形式）
+  dateFull: string; // ツールチップ用（完全な形式）
   bmi: number;
   weight: number;
+  originalDate: Date; // 元の日付オブジェクト
 }
 
 // ページネーション用の定数
@@ -44,6 +34,7 @@ export const LessonHistory: React.FC = () => {
   const [customerHeight, setCustomerHeight] = useState<number>(189); // デフォルト値
   const [customerLoading, setCustomerLoading] = useState(true);
   const [customerError, setCustomerError] = useState<string | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // レッスン一覧と顧客情報を並列取得
   useEffect(() => {
@@ -101,12 +92,15 @@ export const LessonHistory: React.FC = () => {
       .map((lesson) => {
         const date = new Date(lesson.startDate);
         const formattedDate = `${date.getMonth() + 1}/${date.getDate()}`;
+        const formattedDateFull = `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
 
         return {
           date: formattedDate,
+          dateFull: formattedDateFull,
           dateTime: date.getTime(), // ソート用のタイムスタンプ
           bmi: lesson.bmi!,
           weight: lesson.weight!,
+          originalDate: date,
         };
       })
       .sort((a, b) => a.dateTime - b.dateTime) // タイムスタンプでソート
@@ -190,11 +184,87 @@ export const LessonHistory: React.FC = () => {
   // 初期BMI（最初のレッスンのBMI）
   const initialBMI = bmiData.length > 0 ? bmiData[0].bmi : null;
 
+  // グラフの最新へのスクロール制御
+  useLayoutEffect(() => {
+    if (scrollContainerRef.current && bmiData.length > 0) {
+      const scrollToEnd = () => {
+        if (scrollContainerRef.current) {
+          scrollContainerRef.current.scrollLeft = scrollContainerRef.current.scrollWidth;
+        }
+      };
+      const rafId = requestAnimationFrame(scrollToEnd);
+      return () => cancelAnimationFrame(rafId);
+    }
+  }, [bmiData]);
+
+  // グラフの計算用定数
+  const chartHeight = 384; // 256 * 1.5 = 384px
+  const chartPadding = { top: 20, right: 100, bottom: 40, left: 40 }; // 右側のパディングを増やしてツールチップの余裕を確保
+  const chartWidth = Math.max(1200, bmiData.length * 90); // 800 * 1.5 = 1200px、データポイントごとに90px
+  const graphHeight = chartHeight - chartPadding.top - chartPadding.bottom;
+  const graphWidth = chartWidth - chartPadding.left - chartPadding.right;
+  const bmiMin = 18;
+  const bmiMax = 40;
+  const bmiRange = bmiMax - bmiMin;
+
+  // BMI値からY座標を計算
+  const getYPosition = (bmi: number) => {
+    const normalized = (bmi - bmiMin) / bmiRange;
+    return chartPadding.top + graphHeight - (normalized * graphHeight);
+  };
+
+  // X座標を計算（データポイント間の間隔）
+  const getXPosition = (index: number) => {
+    if (bmiData.length <= 1) return chartPadding.left;
+    return chartPadding.left + (index / (bmiData.length - 1)) * graphWidth;
+  };
+
+  // スムーズな曲線のパスを生成（ベジェ曲線）
+  const generatePath = () => {
+    if (bmiData.length === 0) return '';
+    if (bmiData.length === 1) {
+      const x = getXPosition(0);
+      const y = getYPosition(bmiData[0].bmi);
+      return `M ${x} ${y}`;
+    }
+
+    const points = bmiData.map((data, i) => ({
+      x: getXPosition(i),
+      y: getYPosition(data.bmi),
+    }));
+
+    let path = `M ${points[0].x} ${points[0].y}`;
+    
+    for (let i = 0; i < points.length - 1; i++) {
+      const current = points[i];
+      const next = points[i + 1];
+      const controlPoint1X = current.x + (next.x - current.x) / 2;
+      const controlPoint1Y = current.y;
+      const controlPoint2X = current.x + (next.x - current.x) / 2;
+      const controlPoint2Y = next.y;
+      path += ` C ${controlPoint1X} ${controlPoint1Y}, ${controlPoint2X} ${controlPoint2Y}, ${next.x} ${next.y}`;
+    }
+
+    return path;
+  };
+
+  // エリアのパスを生成（線の下を塗りつぶす）
+  const generateAreaPath = () => {
+    const linePath = generatePath();
+    if (!linePath || bmiData.length === 0) return '';
+    
+    const firstX = getXPosition(0);
+    const lastX = getXPosition(bmiData.length - 1);
+    const bottomY = chartPadding.top + graphHeight;
+    
+    return `${linePath} L ${lastX} ${bottomY} L ${firstX} ${bottomY} Z`;
+  };
+
   // ローディング表示
   const loading = lessonsLoading || customerLoading;
   if (loading) {
     return (
-      <div className="p-8 font-poppins">
+      <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#68BE6B] mb-4"></div>
@@ -209,13 +279,13 @@ export const LessonHistory: React.FC = () => {
   const error = lessonsError || customerError;
   if (error) {
     return (
-      <div className="p-8 font-poppins">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-          <div className="text-red-600 text-lg font-semibold mb-2">エラーが発生しました</div>
+      <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
+        <div className="bg-red-50 border-2 border-red-100 rounded-2xl p-6 text-center">
+          <div className="text-red-600 text-lg font-bold mb-2">エラーが発生しました</div>
           <p className="text-red-700 mb-4">{error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            className="px-6 py-2 bg-red-600 text-white rounded-2xl hover:bg-red-700 transition-colors shadow-sm"
           >
             再読み込み
           </button>
@@ -226,152 +296,221 @@ export const LessonHistory: React.FC = () => {
 
   if (!customerId) {
     return (
-      <div className="p-8 text-center">
+      <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500 text-center">
         <p className="text-red-600 text-lg">顧客IDが指定されていません</p>
       </div>
     );
   }
 
   return (
-    <div className="p-8 font-poppins">
+    <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
       {/* BMIの推移グラフ */}
       {bmiData.length > 0 && (
-        <div className="mb-8 bg-white border border-[#DFDFDF] rounded-[15px] p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-gray-800">BMIの推移</h2>
-            <span className="text-sm text-gray-600">身長: {customerHeight}cm</span>
+        <div className="bg-white p-8 rounded-[2rem] shadow-sm border-2 border-gray-50">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-sm font-black text-gray-400 uppercase tracking-[0.2em]">BMIの推移</h2>
+            <div className="flex flex-col items-end">
+              <span className="text-sm text-gray-600">身長: {customerHeight}cm</span>
+              <div className="flex items-center gap-2 mt-1">
+                <div className="w-3 h-3 rounded-full bg-[#ED7D95]"></div>
+                <span className="text-sm text-gray-600">BMI</span>
+              </div>
+            </div>
           </div>
-          <ResponsiveContainer width="100%" height={600}>
-            <ComposedChart
-              data={bmiData}
-              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="#E5E5E5" />
-              <XAxis
-                dataKey="date"
-                stroke="#666"
-                style={{ fontSize: '14px' }}
-              />
-              <YAxis
-                yAxisId="left"
-                stroke="#666"
-                domain={[18, 40]}
-                ticks={[20, 25, 30, 35, 40]}
-                style={{ fontSize: '14px' }}
-              />
-              <YAxis
-                yAxisId="right"
-                orientation="right"
-                stroke="#666"
-                domain={[18, 40]}
-                ticks={[20, 25, 30, 35, 40]}
-                style={{ fontSize: '14px' }}
-              />
-              <Tooltip content={() => null} cursor={false} />
-              <Legend
-                wrapperStyle={{ paddingTop: '20px' }}
-                iconType="circle"
-              />
-              {/* BMI値5ずつの横線（グレー） */}
-              {[20, 25, 30, 35, 40].map((value) => (
-                <ReferenceLine
-                  key={value}
-                  y={value}
-                  yAxisId="left"
-                  stroke="#D3D3D3"
-                  strokeWidth={1}
-                />
-              ))}
-              {/* 初期BMIの基準線 */}
-              {initialBMI && (
-                <ReferenceLine
-                  y={initialBMI}
-                  yAxisId="left"
-                  stroke="#5B9BD5"
-                  strokeDasharray="3 3"
-                  label={{ value: '初期BMI', position: 'insideTopRight', fill: '#5B9BD5' }}
-                />
-              )}
-              {/* BMIエリア（塗りつぶし） */}
-              <Area
-                yAxisId="left"
-                type="monotone"
-                dataKey="bmi"
-                fill="#ED7D95"
-                fillOpacity={0.15}
-                stroke="none"
-                legendType="none"
-                activeDot={false}
-                isAnimationActive={false}
-              />
-              {/* BMIライン */}
-              <Line
-                yAxisId="left"
-                type="monotone"
-                dataKey="bmi"
-                stroke="#ED7D95"
-                strokeWidth={2}
-                isAnimationActive={false}
-                dot={(props: any) => {
-                  const { cx, cy, payload } = props;
-                  const isSelected = selectedDataPoint === payload?.date;
+          <div className="flex items-start">
+            {/* Y軸の目盛り（左側、固定表示） */}
+            {bmiData.length > 0 && (
+              <div className="flex-shrink-0 h-96 relative pr-3" style={{ width: `${chartPadding.left}px` }}>
+                {[40, 35, 30, 25, 20].map((value) => {
+                  const y = getYPosition(value);
                   return (
-                    <circle
-                      cx={cx}
-                      cy={cy}
-                      r={isSelected ? 12 : 10}
-                      fill="#ED7D95"
-                      stroke={isSelected ? '#fff' : 'none'}
-                      strokeWidth={isSelected ? 3 : 0}
-                      style={{ cursor: 'pointer', transition: 'all 0.2s ease' }}
-                      onClick={() => {
-                        if (payload && payload.date) {
-                          setSelectedDataPoint(prev => prev === payload.date ? null : payload.date);
-                        }
-                      }}
-                    />
+                    <span
+                      key={value}
+                      className="absolute text-[10px] text-gray-400 font-black text-right pr-2"
+                      style={{ top: `${y - 5}px`, width: `${chartPadding.left}px` }}
+                    >
+                      {value}
+                    </span>
                   );
-                }}
-                activeDot={false}
-                name="BMI"
-                label={(props: any) => {
-                  const { x, y, index } = props;
-                  const dataPoint = bmiData[index];
-                  if (!dataPoint || !dataPoint.date) return null;
-                  if (selectedDataPoint === dataPoint.date) {
+                })}
+              </div>
+            )}
+            <div ref={scrollContainerRef} className="relative h-96 flex-1 overflow-x-auto scroll-smooth custom-scrollbar">
+              {bmiData.length === 0 ? (
+                <div className="flex items-center justify-center h-full">
+                  <p className="text-gray-400 text-sm">グラフデータがありません</p>
+                </div>
+              ) : (
+                <div className="relative" style={{ width: `${chartWidth}px`, height: `${chartHeight}px`, minWidth: `${chartWidth}px` }}>
+                  <svg width={chartWidth} height={chartHeight} className="absolute inset-0" style={{ minWidth: `${chartWidth}px` }}>
+                  {/* グリッド線（BMI値5ずつ） */}
+                  {[20, 25, 30, 35, 40].map((value) => {
+                    const y = getYPosition(value);
                     return (
-                      <g className="pointer-events-none">
-                        {/* 吹き出しの三角形 */}
-                        <polygon
-                          points={`${x},${y - 10} ${x - 8},${y - 20} ${x + 8},${y - 20}`}
-                          fill="#68BE6B"
-                          filter="drop-shadow(0 2px 4px rgba(0,0,0,0.1))"
+                      <line
+                        key={value}
+                        x1={chartPadding.left}
+                        y1={y}
+                        x2={chartWidth}
+                        y2={y}
+                        stroke="#D3D3D3"
+                        strokeWidth={1}
+                        strokeDasharray="3 3"
+                      />
+                    );
+                  })}
+
+                  {/* 初期BMIの基準線 */}
+                  {initialBMI && (
+                    <>
+                      <line
+                        x1={chartPadding.left}
+                        y1={getYPosition(initialBMI)}
+                        x2={chartWidth}
+                        y2={getYPosition(initialBMI)}
+                        stroke="#5B9BD5"
+                        strokeWidth={2}
+                        strokeDasharray="3 3"
+                      />
+                      <text
+                        x={chartWidth - 5}
+                        y={getYPosition(initialBMI) - 5}
+                        fill="#5B9BD5"
+                        fontSize="10"
+                        fontWeight="bold"
+                        textAnchor="end"
+                      >
+                        初期BMI
+                      </text>
+                    </>
+                  )}
+
+                  {/* BMIエリア（塗りつぶし） */}
+                  <path
+                    d={generateAreaPath()}
+                    fill="#ED7D95"
+                    fillOpacity={0.15}
+                  />
+
+                  {/* BMIライン */}
+                  <path
+                    d={generatePath()}
+                    fill="none"
+                    stroke="#ED7D95"
+                    strokeWidth={2}
+                  />
+
+                  {/* データポイント */}
+                  {bmiData.map((data, index) => {
+                    const x = getXPosition(index);
+                    const y = getYPosition(data.bmi);
+                    const isSelected = selectedDataPoint === data.date;
+                    
+                    return (
+                      <g 
+                        key={index}
+                        className="group cursor-pointer"
+                        onClick={() => {
+                          setSelectedDataPoint(prev => prev === data.date ? null : data.date);
+                        }}
+                      >
+                        {/* データポイント（円形） */}
+                        <circle
+                          cx={x}
+                          cy={y}
+                          r={isSelected ? 12 : 10}
+                          fill="#ED7D95"
+                          stroke={isSelected ? '#fff' : 'none'}
+                          strokeWidth={isSelected ? 3 : 0}
+                          className="transition-all duration-200"
+                          style={{
+                            filter: 'drop-shadow(0 2px 4px rgba(237, 125, 149, 0.2))'
+                          }}
                         />
-                        <foreignObject x={x - 65} y={y - 100} width="130" height="80">
-                          <div className="bg-[#68BE6B] rounded-xl px-3.5 py-2.5 text-white text-[13px] shadow-lg text-center pointer-events-none flex flex-col justify-center items-center h-full w-full box-border">
-                            <div className="font-semibold mb-1 text-sm">{dataPoint.date}</div>
-                            <div className="mb-0.5 text-sm">BMI: {dataPoint.bmi}</div>
-                            <div className="text-sm">体重: {dataPoint.weight}kg</div>
-                          </div>
-                        </foreignObject>
+                        {/* ホバー時の強調用の円 */}
+                        <circle
+                          cx={x}
+                          cy={y}
+                          r={12}
+                          fill="#ED7D95"
+                          fillOpacity={0}
+                          className="opacity-0 group-hover:opacity-20 transition-opacity duration-200"
+                        />
+                        
+                        {/* 日付の表示 */}
+                        <text
+                          x={x}
+                          y={chartHeight - chartPadding.bottom + 15}
+                          fill="#9CA3AF"
+                          fontSize="10"
+                          fontWeight="900"
+                          textAnchor="middle"
+                          className="uppercase tracking-tighter"
+                        >
+                          {data.date}
+                        </text>
+                        
+                        {/* 選択時のツールチップ */}
+                        {isSelected && (() => {
+                          const tooltipWidth = 160;
+                          const tooltipHeight = 100;
+                          // ツールチップの位置を計算（デフォルトはデータポイントの中央）
+                          let tooltipX = x - tooltipWidth / 2;
+                          const tooltipY = y - tooltipHeight - 15;
+                          
+                          // 右端の境界（グラフの右端から少し内側）
+                          const rightBoundary = chartWidth - 10; // 10pxの余裕
+                          // 左端の境界
+                          const leftBoundary = chartPadding.left;
+                          
+                          // 右端を超える場合は調整
+                          if (tooltipX + tooltipWidth > rightBoundary) {
+                            tooltipX = rightBoundary - tooltipWidth;
+                          }
+                          // 左端を超える場合は調整
+                          if (tooltipX < leftBoundary) {
+                            tooltipX = leftBoundary;
+                          }
+                          
+                          // 三角形のポインターの位置を計算（データポイントを指すように）
+                          const pointerX = Math.max(
+                            tooltipX + 10, // 左端から10px以上
+                            Math.min(x, tooltipX + tooltipWidth - 10) // 右端から10px以上、かつデータポイントの位置
+                          );
+                          
+                          return (
+                            <g className="pointer-events-none">
+                              <polygon
+                                points={`${pointerX},${y - 10} ${pointerX - 10},${y - 25} ${pointerX + 10},${y - 25}`}
+                                fill="white"
+                                stroke="#ED7D95"
+                                strokeWidth={2}
+                                filter="drop-shadow(0 2px 4px rgba(0,0,0,0.1))"
+                              />
+                              <foreignObject x={tooltipX} y={tooltipY} width={tooltipWidth} height={tooltipHeight}>
+                                <div className="bg-white rounded-2xl px-5 py-4 border-2 border-[#ED7D95] shadow-sm text-center pointer-events-none flex flex-col justify-center items-center h-full w-full box-border">
+                                  <div className="font-black text-[#ED7D95] mb-2 text-base whitespace-nowrap">{data.dateFull}</div>
+                                  <div className="mb-1.5 text-sm font-bold text-gray-700">BMI: <span className="text-[#ED7D95]">{data.bmi.toFixed(1)}</span></div>
+                                  <div className="text-sm font-bold text-gray-700">体重: <span className="text-[#ED7D95]">{data.weight}kg</span></div>
+                                </div>
+                              </foreignObject>
+                            </g>
+                          );
+                        })()}
                       </g>
                     );
-                  }
-                  return null;
-                }}
-              />
-            </ComposedChart>
-          </ResponsiveContainer>
+                  })}
+                </svg>
+              </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
       {/* 履歴一覧 */}
-      <div className="mb-6">
-        <h2 className="text-2xl font-semibold mb-4 text-gray-800">履歴一覧</h2>
-      </div>
-
       {lessons.length === 0 ? (
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-12 text-center">
+        <div className="bg-white rounded-[2rem] shadow-sm border-2 border-gray-50 p-12 text-center">
           <p className="text-gray-500 text-lg">レッスン履歴がありません</p>
         </div>
       ) : (
@@ -392,7 +531,7 @@ export const LessonHistory: React.FC = () => {
                   <div
                     key={lesson.id}
                     onClick={() => handleLessonClick(lesson.id)}
-                    className="group bg-white border border-[#DFDFDF] rounded-[15px] p-5 hover:shadow-md transition-shadow cursor-pointer flex items-center justify-between relative"
+                    className="group bg-white rounded-[2rem] shadow-sm border-2 border-gray-50 p-5 hover:bg-green-50/30 transition-colors cursor-pointer flex items-center justify-between relative"
                   >
                     {/* 右側の緑のアクセントバーと矢印 */}
                     <div className="absolute right-4 top-4 bottom-4 bg-[#68BE6B] rounded-full w-[30px] transition-transform group-hover:scale-105 flex items-center justify-center">
