@@ -149,8 +149,8 @@ export const PostureImageGrid: React.FC<PostureImageGridProps> = ({
 
   if (groupedImages.size === 0) {
     return (
-      <div className="text-center py-12 text-gray-500">
-        画像がありません
+      <div className="bg-white rounded-[2rem] shadow-sm border-2 border-gray-50 p-12 text-center">
+        <p className="text-gray-500 text-lg">画像がありません</p>
       </div>
     );
   }
@@ -164,7 +164,7 @@ export const PostureImageGrid: React.FC<PostureImageGridProps> = ({
             data-date-key={dateKey}
             className="mb-3 flex items-center w-full"
           >
-            <span className={`${COLOR_CLASSES.PRIMARY_GREEN} text-white px-4 py-2 rounded-full whitespace-nowrap flex-shrink-0`}>
+            <span className={`${COLOR_CLASSES.PRIMARY_GREEN} text-white px-4 py-2 rounded-full whitespace-nowrap flex-shrink-0 shadow-sm`}>
               {dateKey}
             </span>
             <div
@@ -181,15 +181,15 @@ export const PostureImageGrid: React.FC<PostureImageGridProps> = ({
                 <div
                   key={image.id}
                   onClick={() => onToggleSelection(image.id)}
-                  className={`relative aspect-square rounded-lg overflow-hidden cursor-pointer transition-all shadow-md ${
+                  className={`relative aspect-square rounded-[2rem] overflow-hidden cursor-pointer transition-all shadow-sm border-2 border-gray-50 bg-white ${
                     isSelected
-                      ? `ring-4 ${COLOR_CLASSES.PRIMARY_PINK.replace('bg-', 'ring-')}`
+                      ? `ring-4 ring-[#ED7D95]`
                       : ''
                   } ${!isSelectionMode ? 'cursor-default' : ''}`}
                 >
                   <ImageDisplay image={image} />
                   {/* 下部オーバーレイ */}
-                  <div className="absolute bottom-0 left-0 right-0 bg-white bg-opacity-60 rounded-b-lg px-4 py-4 flex items-center justify-between">
+                  <div className="absolute bottom-0 left-0 right-0 bg-white bg-opacity-80 rounded-b-[2rem] px-4 py-4 flex items-center justify-between">
                     <div className="text-sm font-medium text-gray-800">
                       {image.takenAt ? formatDateForDisplay(image.takenAt) : ''}
                     </div>

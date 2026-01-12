@@ -74,16 +74,14 @@ const PostureImageListContent: React.FC<{
 }) => {
   return (
     <>
-      <div className={COLOR_CLASSES.BACKGROUND_LIGHT}>
+      <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
         {/* 画像一覧 */}
-        <div className="px-6 pt-6 pb-6">
-          <PostureImageGrid
-            images={images}
-            isSelectionMode={isSelectionMode}
-            selectedImageIds={selectedImageIds}
-            onToggleSelection={onToggleSelection}
-          />
-        </div>
+        <PostureImageGrid
+          images={images}
+          isSelectionMode={isSelectionMode}
+          selectedImageIds={selectedImageIds}
+          onToggleSelection={onToggleSelection}
+        />
 
         {/* 比較モーダル */}
         <PostureCompareModal
@@ -368,7 +366,7 @@ export const usePostureImageList = () => {
   // 注意: ヘッダーは使用されていません - UIはPostureImageListContent内で処理されます
 
   const content = loading ? (
-    <div className="p-8 font-poppins">
+    <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#68BE6B] mb-4"></div>
@@ -377,8 +375,11 @@ export const usePostureImageList = () => {
       </div>
     </div>
   ) : error ? (
-    <div className="flex items-center justify-center h-screen">
-      <div className="text-lg text-red-600">エラー: {error}</div>
+    <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
+      <div className="bg-red-50 border-2 border-red-100 rounded-2xl p-6 text-center">
+        <div className="text-red-600 text-lg font-bold mb-2">エラーが発生しました</div>
+        <p className="text-red-700">{error}</p>
+      </div>
     </div>
   ) : (
     <PostureImageListContent
