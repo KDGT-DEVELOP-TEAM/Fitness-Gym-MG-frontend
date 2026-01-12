@@ -11,8 +11,9 @@ import { LessonHistory } from '../pages/common/LessonHistory';
 import { LessonDetail } from '../pages/common/LessonDetail';
 import { PostureImageList } from '../pages/common/PostureImageList';
 import { CustomerProfile } from '../pages/CustomerProfile';
+import { AuditLogPage } from '../pages/admin/AuditLogPage';
 import { MainLayout } from '../components/common/MainLayout';
-import { HiHome, HiUsers, HiUserGroup, HiDocumentAdd, HiClock, HiPhotograph, HiArrowLeft, HiUser } from 'react-icons/hi';
+import { HiHome, HiUsers, HiUserGroup, HiDocumentAdd, HiClock, HiPhotograph, HiArrowLeft, HiUser, HiClipboardList } from 'react-icons/hi';
 import { ROUTES } from '../constants/routes';
 import { useLessonData } from '../hooks/useLessonData';
 import { useAuth } from '../context/AuthContext';
@@ -33,6 +34,7 @@ const adminMenuItems = [
   { path: '/admin/home', label: 'Home', icon: <HiHome className="w-5 h-5" /> },
   { path: '/admin/users', label: 'ユーザー管理', icon: <HiUsers className="w-5 h-5" /> },
   { path: '/admin/customers', label: '顧客管理', icon: <HiUserGroup className="w-5 h-5" /> },
+  { path: '/admin/logs', label: '監査ログ', icon: <HiClipboardList className="w-5 h-5" /> },
 ];
 
 const managerMenuItems = [
@@ -407,11 +409,11 @@ export const AppRouter = () => {
           <Route path="users/create" element={<UserCreatePage />} />
           <Route path="users/:userId/edit" element={<UserEditPage />} /> */}
           <Route path="customers" element={<MainLayout menuItems={adminMenuItems}><CustomerManagement /></MainLayout>} />
+          <Route path="logs" element={<MainLayout menuItems={adminMenuItems}><AuditLogPage /></MainLayout>} />
           {/* <Route path="customers/create" element={<CustomerCreatePage />} />
           <Route path="customers/:customerId/disable" element={<CustomerDisablePage />} />
           <Route path="customers/:customerId/enable" element={<CustomerEnablePage />} />
-          <Route path="customers/delete" element={<CustomerDeletePage />} />
-          <Route path="logs" element={<AuditLogPage />} /> */}
+          <Route path="customers/delete" element={<CustomerDeletePage />} /> */}
         </Route>
 
         <Route path="/manager" element={<ProtectedRoute roles={['MANAGER']} />}>

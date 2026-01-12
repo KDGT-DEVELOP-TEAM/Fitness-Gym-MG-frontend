@@ -21,6 +21,8 @@ export const ROUTES = {
   CUSTOMER_LIST: '/customers/list',
   USER_MANAGEMENT: '/users',
   USER_LIST: '/users/list',
+  // 監査ログ
+  AUDIT_LOG_ADMIN: '/admin/logs',
   // レッスン詳細（Homeから - ロールごと）
   LESSON_DETAIL_FROM_HOME_ADMIN: '/admin/home/lesson/:customerId/:lessonId',
   LESSON_DETAIL_FROM_HOME_MANAGER: '/manager/home/lesson/:customerId/:lessonId',
