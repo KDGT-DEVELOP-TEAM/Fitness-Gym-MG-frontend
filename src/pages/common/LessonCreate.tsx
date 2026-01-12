@@ -13,6 +13,7 @@ import { FORM_STYLES } from '../../styles/formStyles';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import { validateRequired, validateDateRange, validateNumericRange, validateNextLesson } from '../../utils/validators';
 import { ERROR_MESSAGES } from '../../constants/errorMessages';
+import { useAuth } from '../../context/AuthContext';
 type PosturePreview = {
   position: PosturePosition;
   url: string;
@@ -24,6 +25,7 @@ export const LessonCreate: React.FC = () => {
   const [searchParams] = useSearchParams();
   const params = useParams<{ customerId?: string }>();
   const { stores, users, customers } = useOptions();
+  const { user } = useAuth();
   const [trainings, setTrainings] = useState<TrainingInput[]>([]);
   const [posturePreviews, setPosturePreviews] = useState<PosturePreview[]>([]);
   const [postureGroupId, setPostureGroupId] = useState<string | null>(null);
@@ -64,6 +66,16 @@ export const LessonCreate: React.FC = () => {
       }
     }
   }, [params.customerId, searchParams, customers]);
+
+  // ログインユーザーIDを自動設定
+  useEffect(() => {
+    if (user?.id) {
+      setFormData((prev) => ({
+        ...prev,
+        userId: user.id,
+      }));
+    }
+  }, [user?.id]);
 
   const handleTrainingChange = (index: number, key: keyof TrainingInput, value: string) => {
     setTrainings((prev) => {
@@ -479,21 +491,16 @@ export const LessonCreate: React.FC = () => {
         <div className="space-y-4">
           <h2 className={FORM_STYLES.sectionHeading}>顧客・体重</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 md:gap-y-5 md:gap-x-12">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+            <div className="flex flex-col gap-1">
               <label className={FORM_STYLES.label}>顧客：</label>
-            <select
-                className={`${FORM_STYLES.input} sm:flex-1`}
-                value={formData.customerId}
-                onChange={(e) => setFormData({ ...formData, customerId: e.target.value })}
-              required
-            >
-              <option value="">選択してください</option>
-                {customers.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                </option>
-              ))}
-            </select>
+              <input
+                className={FORM_STYLES.inputReadOnly}
+                value={(() => {
+                  const selectedCustomer = customers.find(c => c.id === formData.customerId);
+                  return selectedCustomer?.name || '';
+                })()}
+                readOnly
+              />
           </div>
 
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
@@ -514,21 +521,13 @@ export const LessonCreate: React.FC = () => {
         <div className="space-y-4">
           <h2 className={FORM_STYLES.sectionHeading}>担当・店舗</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 md:gap-y-5 md:gap-x-12">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+            <div className="flex flex-col gap-1">
               <label className={FORM_STYLES.label}>担当：</label>
-            <select
-                className={`${FORM_STYLES.input} sm:flex-1`}
-              value={formData.userId}
-              onChange={(e) => setFormData({ ...formData, userId: e.target.value })}
-              required
-            >
-              <option value="">選択してください</option>
-              {users.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.name}
-                </option>
-              ))}
-            </select>
+              <input
+                className={FORM_STYLES.inputReadOnly}
+                value={user?.name || ''}
+                readOnly
+              />
           </div>
 
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
