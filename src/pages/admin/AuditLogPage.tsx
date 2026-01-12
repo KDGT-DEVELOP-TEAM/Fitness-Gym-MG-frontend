@@ -142,18 +142,32 @@ export const AuditLogPage: React.FC = () => {
                 paginatedLogs.map((log) => {
                   const { dateStr, timeStr } = formatDateTime(log.createdAt);
                   return (
-                    <tr key={log.id} className="hover:bg-gray-50/50 transition-colors">
-                      <td className="px-8 py-5 text-center">
-                        <div className="text-sm font-medium text-gray-700">{dateStr}</div>
-                        <div className="text-xs text-gray-500 mt-1">{timeStr}</div>
+                    <tr key={log.id} className="hover:bg-green-50/30 transition-colors group">
+                      <td className="px-8 py-6">
+                        <div className="flex flex-col items-center text-center">
+                          <span className="text-base font-bold text-gray-900 group-hover:text-green-600 transition-colors">
+                            {dateStr}
+                          </span>
+                          <span className="text-[11px] font-black text-gray-400 uppercase tracking-wider mt-0.5">
+                            {timeStr}
+                          </span>
+                        </div>
                       </td>
-                      <td className="px-8 py-5 text-center text-sm font-medium text-gray-700">
-                        {log.userName || '-'}
+                      <td className="px-8 py-6">
+                        <div className="flex justify-center items-center">
+                          <span className="text-sm font-bold text-gray-600">
+                            {log.userName || '-'}
+                          </span>
+                        </div>
                       </td>
-                      <td className="px-8 py-5 text-center text-sm font-medium text-gray-700">
-                        {log.customerName || '-'}
+                      <td className="px-8 py-6">
+                        <div className="flex flex-col items-center text-center">
+                          <span className="text-base font-bold text-gray-900 group-hover:text-green-600 transition-colors">
+                            {log.customerName || '-'}
+                          </span>
+                        </div>
                       </td>
-                      <td className="px-8 py-5 text-center">
+                      <td className="px-8 py-6 text-center">
                         {(() => {
                           const actionLabel = getActionLabel(log.action);
                           let className = 'inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ';
