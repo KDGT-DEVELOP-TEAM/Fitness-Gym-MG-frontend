@@ -151,32 +151,64 @@ const getLessonDetailMenuItems = (role: string, customerId: string, lessonId: st
   
   const lessonDetailPath = getLessonDetailPath(role, customerId, lessonId, from);
   
-  // メニュー項目を順序通りに構築
+  // from === 'home'の場合は、通常のHome画面と同じメニュー構造にする
+  if (from === 'home') {
+    const roleUpper = role.toUpperCase();
+    let baseMenuItems: any[] = [];
+    
+    // ロールに応じた基本メニューを取得
+    switch (roleUpper) {
+      case 'ADMIN':
+        baseMenuItems = [...adminMenuItems];
+        break;
+      case 'MANAGER':
+        baseMenuItems = [...managerMenuItems];
+        break;
+      case 'TRAINER':
+      default:
+        baseMenuItems = [...trainerMenuItems];
+        break;
+    }
+    
+    // Homeメニューにサブメニューとして「レッスン詳細」を追加
+    const menuItems = baseMenuItems.map(item => {
+      if (item.path === homePath && item.label === 'Home') {
+        return {
+          ...item,
+          subItems: [
+            {
+              path: lessonDetailPath,
+              label: 'レッスン詳細',
+            },
+          ],
+        };
+      }
+      return item;
+    });
+    
+    return menuItems;
+  }
+  
+  // from === 'history'の場合は、従来通りのメニュー構造
   const menuItems: any[] = [
-    // 1. Home（from === 'home'の場合のみレッスン詳細をサブメニューとして表示）
+    // 1. Home
     {
       path: homePath,
       label: 'Home',
       icon: <HiHome className="w-5 h-5" />,
-      subItems: from === 'home' ? [
-        {
-          path: lessonDetailPath,
-          label: 'レッスン詳細',
-        },
-      ] : undefined,
     },
     
-    // 2. 履歴一覧（from === 'history'の場合のみレッスン詳細をサブメニューとして表示）
+    // 2. 履歴一覧（レッスン詳細をサブメニューとして表示）
     {
       path: historyPath,
       label: '履歴一覧',
       icon: <HiClock className="w-5 h-5" />,
-      subItems: from === 'history' ? [
+      subItems: [
         {
           path: lessonDetailPath,
           label: 'レッスン詳細',
         },
-      ] : undefined,
+      ],
     },
     
     // 3. 姿勢一覧
