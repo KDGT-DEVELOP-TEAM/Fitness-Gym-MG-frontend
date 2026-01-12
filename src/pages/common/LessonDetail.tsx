@@ -64,7 +64,7 @@ export const LessonDetail: React.FC = () => {
 
         <div className="space-y-4">
           <h2 className={FORM_STYLES.sectionHeading}>顧客・体重</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 md:gap-y-5 md:gap-x-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-y-4 md:gap-y-5 md:gap-x-12">
             <div className="flex flex-col gap-1">
               <label className={FORM_STYLES.label}>顧客：</label>
               <input className={FORM_STYLES.inputReadOnly} value={lesson.customerName || ''} readOnly />
@@ -192,16 +192,6 @@ export const LessonDetail: React.FC = () => {
           ))}
         </div>
 
-        <div className="space-y-2">
-          <label className={FORM_STYLES.label}>備考欄</label>
-          <textarea
-            className={`${FORM_STYLES.inputReadOnly} min-h-[180px]`}
-            value={lesson.memo ?? ''}
-            readOnly
-            rows={5}
-          />
-        </div>
-
         <div className="border-2 border-gray-50 rounded-[2rem] p-4 space-y-3 bg-white shadow-sm">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-800">姿勢（正面/右/背面/左）</h2>
@@ -238,6 +228,16 @@ export const LessonDetail: React.FC = () => {
               );
             })}
           </div>
+        </div>
+
+        <div className="space-y-2">
+          <label className={FORM_STYLES.label}>備考欄</label>
+          <textarea
+            className={`${FORM_STYLES.inputReadOnly} min-h-[180px]`}
+            value={lesson.memo ?? ''}
+            readOnly
+            rows={5}
+          />
         </div>
       </div>
     </div>
