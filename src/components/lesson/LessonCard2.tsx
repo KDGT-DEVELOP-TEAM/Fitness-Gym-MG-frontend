@@ -1,6 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LessonHistoryItem } from '../../types/lesson';
+import { useAuth } from '../../context/AuthContext';
+import { ROUTES } from '../../constants/routes';
 
 interface LessonCardProps {
   lesson: LessonHistoryItem;
@@ -22,17 +24,46 @@ const formatDateTime = (dateString: string | undefined | null) => {
 
 export const LessonCard: React.FC<LessonCardProps> = ({ lesson, from }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   
   // 日付・時刻のパース
   const start = formatDateTime(lesson.startDate);
   const end = formatDateTime(lesson.endDate);
 
   const handleClick = () => {
-    if (from === 'home') {
-      navigate(`/lesson/${lesson.id}?from=home`);
-    } else {
-      navigate(`/lesson/${lesson.id}`);
+    if (!lesson.customerId) {
+      console.error('[LessonCard] customerId is missing');
+      return;
     }
+    
+    const role = user?.role?.toUpperCase() || 'TRAINER';
+    
+    // ロールと遷移元に応じたレッスン詳細のパスを生成
+    // Homeから遷移する場合は/home/lesson/...、履歴一覧からは/history/lesson/...
+    let lessonDetailPath: string;
+    const isFromHome = from === 'home';
+    
+    switch (role) {
+      case 'ADMIN':
+        lessonDetailPath = isFromHome
+          ? ROUTES.LESSON_DETAIL_FROM_HOME_ADMIN.replace(':customerId', lesson.customerId).replace(':lessonId', lesson.id)
+          : ROUTES.LESSON_DETAIL_FROM_HISTORY_ADMIN.replace(':customerId', lesson.customerId).replace(':lessonId', lesson.id);
+        break;
+      case 'MANAGER':
+        lessonDetailPath = isFromHome
+          ? ROUTES.LESSON_DETAIL_FROM_HOME_MANAGER.replace(':customerId', lesson.customerId).replace(':lessonId', lesson.id)
+          : ROUTES.LESSON_DETAIL_FROM_HISTORY_MANAGER.replace(':customerId', lesson.customerId).replace(':lessonId', lesson.id);
+        break;
+      case 'TRAINER':
+      default:
+        lessonDetailPath = isFromHome
+          ? ROUTES.LESSON_DETAIL_FROM_HOME_TRAINER.replace(':customerId', lesson.customerId).replace(':lessonId', lesson.id)
+          : ROUTES.LESSON_DETAIL_FROM_HISTORY_TRAINER.replace(':customerId', lesson.customerId).replace(':lessonId', lesson.id);
+        break;
+    }
+    
+    // パスで遷移元を管理するため、stateは不要
+    navigate(lessonDetailPath);
   };
 
     return (

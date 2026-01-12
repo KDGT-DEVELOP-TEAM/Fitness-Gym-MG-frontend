@@ -21,5 +21,18 @@ export const ROUTES = {
   CUSTOMER_LIST: '/customers/list',
   USER_MANAGEMENT: '/users',
   USER_LIST: '/users/list',
+  // レッスン詳細（Homeから - ロールごと）
+  LESSON_DETAIL_FROM_HOME_ADMIN: '/admin/home/lesson/:customerId/:lessonId',
+  LESSON_DETAIL_FROM_HOME_MANAGER: '/manager/home/lesson/:customerId/:lessonId',
+  LESSON_DETAIL_FROM_HOME_TRAINER: '/trainer/home/lesson/:customerId/:lessonId',
+  // レッスン詳細（履歴一覧から - ロールごと）
+  LESSON_DETAIL_FROM_HISTORY_ADMIN: '/admin/history/lesson/:customerId/:lessonId',
+  LESSON_DETAIL_FROM_HISTORY_MANAGER: '/manager/history/lesson/:customerId/:lessonId',
+  LESSON_DETAIL_FROM_HISTORY_TRAINER: '/trainer/history/lesson/:customerId/:lessonId',
+  // 旧パス（互換性のため残す）
+  LESSON_DETAIL_ADMIN: '/admin/lesson/:customerId/:lessonId',
+  LESSON_DETAIL_MANAGER: '/manager/lesson/:customerId/:lessonId',
+  LESSON_DETAIL_TRAINER: '/trainer/lesson/:customerId/:lessonId',
+  LESSON_DETAIL: '/lesson/:lessonId',
 } as const;
 

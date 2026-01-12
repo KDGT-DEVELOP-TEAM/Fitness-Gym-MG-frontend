@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, useParams, useSearchParams } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useParams, useLocation } from 'react-router-dom';
 import { ProtectedRoute } from './ProtectedRoute';
 import { Login } from '../pages/auth/Login';
 import { AdminDashboard } from '../pages/admin/AdminDashboard';
@@ -10,8 +10,9 @@ import { LessonCreate } from '../pages/common/LessonCreate';
 import { LessonHistory } from '../pages/common/LessonHistory';
 import { LessonDetail } from '../pages/common/LessonDetail';
 import { PostureImageList } from '../pages/common/PostureImageList';
+import { CustomerProfile } from '../pages/CustomerProfile';
 import { MainLayout } from '../components/common/MainLayout';
-import { HiHome, HiUsers, HiUserGroup, HiDocumentAdd, HiClock, HiPhotograph, HiArrowLeft } from 'react-icons/hi';
+import { HiHome, HiUsers, HiUserGroup, HiDocumentAdd, HiClock, HiPhotograph, HiArrowLeft, HiUser } from 'react-icons/hi';
 import { ROUTES } from '../constants/routes';
 import { useLessonData } from '../hooks/useLessonData';
 import { useAuth } from '../context/AuthContext';
@@ -88,18 +89,6 @@ const getCustomerRelatedMenuItems = (customerId: string, role: string, lessonId?
       icon: <HiArrowLeft className="w-5 h-5" />,
       isBackButton: true,
     },
-  ];
-  
-  // Adminロールの場合は「新規レッスン入力」を表示しない
-  if (role.toUpperCase() !== 'ADMIN') {
-    menuItems.push({
-      path: `/trainer/newlessons/${customerId}`, 
-      label: '新規レッスン入力', 
-      icon: <HiDocumentAdd className="w-5 h-5" /> 
-    });
-  }
-  
-  menuItems.push(
     {
       path: getHistoryPath(role, customerId),
       label: '履歴一覧',
@@ -115,44 +104,103 @@ const getCustomerRelatedMenuItems = (customerId: string, role: string, lessonId?
       path: getPosturePath(role, customerId),
       label: '姿勢一覧',
       icon: <HiPhotograph className="w-5 h-5" />,
-    }
-  );
+    },
+    {
+      path: ROUTES.CUSTOMER_PROFILE.replace(':id', customerId),
+      label: '顧客プロフィール',
+      icon: <HiUser className="w-5 h-5" />,
+    },
+  ];
+  
+  // Adminロールの場合は「新規レッスン入力」を表示しない
+  if (role.toUpperCase() !== 'ADMIN') {
+    menuItems.push({
+      path: `/trainer/newlessons/${customerId}`, 
+      label: '新規レッスン入力', 
+      icon: <HiDocumentAdd className="w-5 h-5" /> 
+    });
+  }
   
   return menuItems;
 };
 
-// 統計画面（Home）から遷移した場合のメニューアイテムを生成する関数
-const getHomeMenuItems = (role: string, lessonId: string, customerId: string) => {
+// レッスン詳細画面用のメニューアイテムを生成する関数（統一版）
+const getLessonDetailMenuItems = (role: string, customerId: string, lessonId: string, from: 'home' | 'history' = 'history') => {
   const homePath = getHomePath(role);
+  const historyPath = getHistoryPath(role, customerId);
+  
+  // レッスン詳細のパスを生成（ロールと遷移元に応じて）
+  const getLessonDetailPath = (r: string, cId: string, lId: string, f: 'home' | 'history'): string => {
+    const isFromHome = f === 'home';
+    switch (r.toUpperCase()) {
+      case 'ADMIN':
+        return isFromHome 
+          ? ROUTES.LESSON_DETAIL_FROM_HOME_ADMIN.replace(':customerId', cId).replace(':lessonId', lId)
+          : ROUTES.LESSON_DETAIL_FROM_HISTORY_ADMIN.replace(':customerId', cId).replace(':lessonId', lId);
+      case 'MANAGER':
+        return isFromHome
+          ? ROUTES.LESSON_DETAIL_FROM_HOME_MANAGER.replace(':customerId', cId).replace(':lessonId', lId)
+          : ROUTES.LESSON_DETAIL_FROM_HISTORY_MANAGER.replace(':customerId', cId).replace(':lessonId', lId);
+      case 'TRAINER':
+      default:
+        return isFromHome
+          ? ROUTES.LESSON_DETAIL_FROM_HOME_TRAINER.replace(':customerId', cId).replace(':lessonId', lId)
+          : ROUTES.LESSON_DETAIL_FROM_HISTORY_TRAINER.replace(':customerId', cId).replace(':lessonId', lId);
+    }
+  };
+  
+  const lessonDetailPath = getLessonDetailPath(role, customerId, lessonId, from);
+  
+  // メニュー項目を順序通りに構築
   const menuItems: any[] = [
+    // 1. Home（from === 'home'の場合のみレッスン詳細をサブメニューとして表示）
     {
       path: homePath,
       label: 'Home',
-      icon: <HiArrowLeft className="w-5 h-5" />,
-      isBackButton: true,
-      subItems: [
+      icon: <HiHome className="w-5 h-5" />,
+      subItems: from === 'home' ? [
         {
-          path: `/lesson/${lessonId}`,
+          path: lessonDetailPath,
           label: 'レッスン詳細',
         },
-      ],
+      ] : undefined,
+    },
+    
+    // 2. 履歴一覧（from === 'history'の場合のみレッスン詳細をサブメニューとして表示）
+    {
+      path: historyPath,
+      label: '履歴一覧',
+      icon: <HiClock className="w-5 h-5" />,
+      subItems: from === 'history' ? [
+        {
+          path: lessonDetailPath,
+          label: 'レッスン詳細',
+        },
+      ] : undefined,
+    },
+    
+    // 3. 姿勢一覧
+    {
+      path: getPosturePath(role, customerId),
+      label: '姿勢一覧',
+      icon: <HiPhotograph className="w-5 h-5" />,
+    },
+    
+    // 4. 顧客プロフィール
+    {
+      path: ROUTES.CUSTOMER_PROFILE.replace(':id', customerId),
+      label: '顧客プロフィール',
+      icon: <HiUser className="w-5 h-5" />,
     },
   ];
   
-  // customerIdが存在する場合のみ、履歴一覧と姿勢一覧のメニューを追加
-  if (customerId) {
-    menuItems.push(
-      {
-        path: getHistoryPath(role, customerId),
-        label: '履歴一覧',
-        icon: <HiClock className="w-5 h-5" />,
-      },
-      {
-        path: getPosturePath(role, customerId),
-        label: '姿勢一覧',
-        icon: <HiPhotograph className="w-5 h-5" />,
-      }
-    );
+  // 5. 新規レッスン入力（ADMIN以外、最後に追加）
+  if (role.toUpperCase() !== 'ADMIN') {
+    menuItems.push({
+      path: `/trainer/newlessons/${customerId}`, 
+      label: '新規レッスン入力', 
+      icon: <HiDocumentAdd className="w-5 h-5" /> 
+    });
   }
   
   return menuItems;
@@ -206,10 +254,26 @@ const PostureImageListWithMenu: React.FC = () => {
   );
 };
 
+// 顧客プロフィール用のラッパーコンポーネント
+const CustomerProfileWithMenu: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
+  if (!id) {
+    return <CustomerProfile />;
+  }
+  const role = user?.role || 'TRAINER';
+  const menuItems = getCustomerRelatedMenuItems(id, role);
+  return (
+    <MainLayout menuItems={menuItems}>
+      <CustomerProfile />
+    </MainLayout>
+  );
+};
+
 // レッスン詳細用のラッパーコンポーネント
 const LessonDetailWithMenu: React.FC = () => {
-  const { lessonId } = useParams<{ lessonId: string }>();
-  const [searchParams] = useSearchParams();
+  const { customerId, lessonId } = useParams<{ customerId: string; lessonId: string }>();
+  const location = useLocation();
   const { user } = useAuth();
   const { lesson, loading } = useLessonData(lessonId);
   
@@ -218,20 +282,24 @@ const LessonDetailWithMenu: React.FC = () => {
   }
   
   const role = user?.role || 'TRAINER';
-  const from = searchParams.get('from');
-  const customerId = searchParams.get('customerId');
   
-  if (loading || !lesson) {
-    // ローディング中は遷移元に応じたメニューを表示
-    if (from === 'home') {
-      // ローディング中はcustomerIdが分からないので、空文字列を渡す（履歴一覧と姿勢一覧は表示されない）
-      const menuItems = getHomeMenuItems(role, lessonId, '');
-      return (
-        <MainLayout menuItems={menuItems}>
-          <LessonDetail />
-        </MainLayout>
-      );
-    }
+  // パスから遷移元情報を判断
+  // /admin/home/lesson/... なら from='home'
+  // /admin/history/lesson/... なら from='history'
+  let from: 'home' | 'history' = 'history'; // デフォルトは'history'
+  const pathname = location.pathname;
+  
+  if (pathname.includes('/home/lesson/')) {
+    from = 'home';
+  } else if (pathname.includes('/history/lesson/')) {
+    from = 'history';
+  }
+  
+  // customerIdはパスパラメータを優先し、なければlesson.customerIdを使用
+  const targetCustomerId = customerId || lesson?.customerId || '';
+  
+  if (!targetCustomerId) {
+    // customerIdが取得できない場合はデフォルトメニュー
     return (
       <MainLayout menuItems={trainerMenuItems}>
         <LessonDetail />
@@ -239,36 +307,14 @@ const LessonDetailWithMenu: React.FC = () => {
     );
   }
   
-  // 遷移元に応じてメニューを切り替え
-  if (from === 'home') {
-    // 統計画面（Home）から遷移した場合
-    // lessonが利用可能な場合、customerIdを使って履歴一覧と姿勢一覧のメニューを追加
-    if (lesson && lesson.customerId) {
-      const menuItems = getHomeMenuItems(role, lessonId, lesson.customerId);
-      return (
-        <MainLayout menuItems={menuItems}>
-          <LessonDetail />
-        </MainLayout>
-      );
-    } else {
-      // lessonがまだ読み込まれていない場合（ローディング中）
-      const menuItems = getHomeMenuItems(role, lessonId, '');
-      return (
-        <MainLayout menuItems={menuItems}>
-          <LessonDetail />
-        </MainLayout>
-      );
-    }
-  } else {
-    // 履歴一覧から遷移した場合（デフォルト）
-    const targetCustomerId = customerId || lesson.customerId;
-    const menuItems = getCustomerRelatedMenuItems(targetCustomerId, role, lessonId);
-    return (
-      <MainLayout menuItems={menuItems}>
-        <LessonDetail />
-      </MainLayout>
-    );
-  }
+  // 統一されたメニュー生成関数を使用
+  const menuItems = getLessonDetailMenuItems(role, targetCustomerId, lessonId, from);
+  
+  return (
+    <MainLayout menuItems={menuItems}>
+      <LessonDetail />
+    </MainLayout>
+  );
 };
 
 export const AppRouter = () => {
@@ -316,6 +362,11 @@ export const AppRouter = () => {
           <Route index element={<MainLayout menuItems={trainerMenuItems}><LessonCreate /></MainLayout>} />
         </Route>
 
+        {/* 顧客プロフィール（全ロール共通） */}
+        <Route path={ROUTES.CUSTOMER_PROFILE} element={<ProtectedRoute roles={['ADMIN', 'MANAGER', 'TRAINER']} />}>
+          <Route index element={<CustomerProfileWithMenu />} />
+        </Route>
+
         <Route path="/admin" element={<ProtectedRoute roles={['ADMIN']} />}>
           <Route index element={<Navigate to="/admin/home" replace />} />
           <Route path="home" element={<MainLayout menuItems={adminMenuItems}><AdminDashboard /></MainLayout>} />
@@ -355,7 +406,37 @@ export const AppRouter = () => {
           <Route path="posture/compare" element={<PostureComparePage />} /> */}
         </Route>
 
-        <Route path="/lesson/:lessonId" element={<ProtectedRoute roles={['ADMIN', 'MANAGER', 'TRAINER']} />}>
+        {/* レッスン詳細（Homeから - ロールごと） */}
+        <Route path={ROUTES.LESSON_DETAIL_FROM_HOME_ADMIN} element={<ProtectedRoute roles={['ADMIN']} />}>
+          <Route index element={<LessonDetailWithMenu />} />
+        </Route>
+        <Route path={ROUTES.LESSON_DETAIL_FROM_HOME_MANAGER} element={<ProtectedRoute roles={['MANAGER']} />}>
+          <Route index element={<LessonDetailWithMenu />} />
+        </Route>
+        <Route path={ROUTES.LESSON_DETAIL_FROM_HOME_TRAINER} element={<ProtectedRoute roles={['TRAINER']} />}>
+          <Route index element={<LessonDetailWithMenu />} />
+        </Route>
+        {/* レッスン詳細（履歴一覧から - ロールごと） */}
+        <Route path={ROUTES.LESSON_DETAIL_FROM_HISTORY_ADMIN} element={<ProtectedRoute roles={['ADMIN']} />}>
+          <Route index element={<LessonDetailWithMenu />} />
+        </Route>
+        <Route path={ROUTES.LESSON_DETAIL_FROM_HISTORY_MANAGER} element={<ProtectedRoute roles={['MANAGER']} />}>
+          <Route index element={<LessonDetailWithMenu />} />
+        </Route>
+        <Route path={ROUTES.LESSON_DETAIL_FROM_HISTORY_TRAINER} element={<ProtectedRoute roles={['TRAINER']} />}>
+          <Route index element={<LessonDetailWithMenu />} />
+        </Route>
+        {/* 旧パス（互換性のため残す） */}
+        <Route path={ROUTES.LESSON_DETAIL_ADMIN} element={<ProtectedRoute roles={['ADMIN']} />}>
+          <Route index element={<LessonDetailWithMenu />} />
+        </Route>
+        <Route path={ROUTES.LESSON_DETAIL_MANAGER} element={<ProtectedRoute roles={['MANAGER']} />}>
+          <Route index element={<LessonDetailWithMenu />} />
+        </Route>
+        <Route path={ROUTES.LESSON_DETAIL_TRAINER} element={<ProtectedRoute roles={['TRAINER']} />}>
+          <Route index element={<LessonDetailWithMenu />} />
+        </Route>
+        <Route path={ROUTES.LESSON_DETAIL} element={<ProtectedRoute roles={['ADMIN', 'MANAGER', 'TRAINER']} />}>
           <Route index element={<LessonDetailWithMenu />} />
         </Route>
 
