@@ -171,7 +171,7 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
 
                     {/* Role */}
                     <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">権限ロール <RequiredBadge /></label>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">権限 <RequiredBadge /></label>
                         <select name="role" value={formData.role} onChange={handleChange} required className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium cursor-pointer appearance-none bg-white">
                             <option value="ADMIN">管理者</option>
                             <option value="MANAGER">店長</option>

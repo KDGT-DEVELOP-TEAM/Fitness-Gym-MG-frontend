@@ -27,7 +27,7 @@ export const UserCard: React.FC<UserCardProps> = ({ user, onEdit }) => {
         </div>
       </td>
 
-      {/* 2. 権限ロール */}
+      {/* 2. 権限 */}
       <td className="px-8 py-6 text-center">
         <span className={`px-4 py-1 text-xs font-black uppercase rounded-full tracking-widest ${
           user.role === 'ADMIN' ? 'bg-red-100 text-red-700' :

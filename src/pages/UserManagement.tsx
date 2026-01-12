@@ -138,7 +138,7 @@ export const UserManagement: React.FC = () => {
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
           </svg>
-          新規スタッフ登録
+          新規ユーザー作成
         </button>
       </div>
       
@@ -165,7 +165,7 @@ export const UserManagement: React.FC = () => {
           onChange={(e) => handleFilterChange({ role: e.target.value as UserRole | "all" })}
           className="h-14 px-6 bg-white border-2 border-gray-50 rounded-2xl text-sm font-black text-gray-600 focus:border-green-500 focus:ring-0 outline-none cursor-pointer shadow-sm transition-all"
         >
-          <option value="all">全てのロール</option>
+          <option value="all">全権限</option>
           <option value="ADMIN">管理者</option>
           <option value="MANAGER">店長</option>
           <option value="TRAINER">トレーナー</option>
@@ -186,7 +186,7 @@ export const UserManagement: React.FC = () => {
             <thead className="bg-gray-50/50">
               <tr>
                 <th className="w-[30%] text-center px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">ユーザー名</th>
-                <th className="w-[25%] text-center px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">権限ロール</th>
+                <th className="w-[25%] text-center px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">権限</th>
                 <th className="w-[20%] text-center px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">ステータス</th>
                 <th className="w-[25%] text-center px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">編集</th>
               </tr>
