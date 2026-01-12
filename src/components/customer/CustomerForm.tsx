@@ -133,19 +133,19 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">氏名 <RequiredBadge /></label>
-            <input name="name" value={formData.name} onChange={handleChange} required maxLength={100} className="w-full border p-2 rounded shadow-sm" />
+            <input name="name" value={formData.name} onChange={handleChange} required maxLength={100} className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium" />
           </div>
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">ふりがな <RequiredBadge /></label>
-            <input name="kana" value={formData.kana || ''} onChange={handleChange} required maxLength={100} className="w-full border p-2 rounded shadow-sm" />
+            <input name="kana" value={formData.kana || ''} onChange={handleChange} required maxLength={100} className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium" />
           </div>
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">誕生日 <RequiredBadge /></label>
-            <input type="date" name="birthday" value={formData.birthday} onChange={handleChange} required className="w-full border p-2 rounded shadow-sm" />
+            <input type="date" name="birthday" value={formData.birthday} onChange={handleChange} required className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium" />
           </div>
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">性別 <RequiredBadge /></label>
-            <select name="gender" value={formData.gender} onChange={handleChange} className="w-full border p-2 rounded shadow-sm">
+            <select name="gender" value={formData.gender} onChange={handleChange} className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium cursor-pointer appearance-none bg-white">
               <option value="MALE">男</option>
               <option value="FEMALE">女</option>
             </select>
@@ -159,19 +159,19 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2">
             <label className="block text-sm font-bold text-gray-700 mb-1">住所 <RequiredBadge /></label>
-            <input type="text" name="address" value={formData.address || ''} onChange={handleChange} required maxLength={200} className="w-full border p-2 rounded shadow-sm" />
+            <input type="text" name="address" value={formData.address || ''} onChange={handleChange} required maxLength={200} className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium" />
           </div>
           <div className="col-span-2">
             <label className="block text-sm font-bold text-gray-700 mb-1">メールアドレス <RequiredBadge /></label>
-            <input type="email" name="email" value={formData.email || ''} onChange={handleChange} required maxLength={255} className="w-full border p-2 rounded shadow-sm" />
+            <input type="email" name="email" value={formData.email || ''} onChange={handleChange} required maxLength={255} className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium" />
           </div>
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">電話番号 <RequiredBadge /></label>
-            <input type="tel" name="phone" value={formData.phone || ''} onChange={handleChange} required maxLength={12} pattern="^[0-9\-]+$" className="w-full border p-2 rounded shadow-sm" />
+            <input type="tel" name="phone" value={formData.phone || ''} onChange={handleChange} required maxLength={12} pattern="^[0-9\-]+$" className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium" />
           </div>
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">身長 (cm) <RequiredBadge /></label>
-            <input type="number" step="0.1" name="height" value={formData.height || ''} onChange={handleChange} required min="50" max="300" className="w-full border p-2 rounded shadow-sm" />
+            <input type="number" step="0.1" name="height" value={formData.height || ''} onChange={handleChange} required min="50" max="300" className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium" />
           </div>
         </div>
       </section>
@@ -182,19 +182,19 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">禁忌事項 (Taboo)</label>
-            <textarea name="taboo" value={formData.taboo || ''} onChange={handleChange} rows={2} maxLength={100} className="w-full border p-2 rounded border-red-200 bg-red-50 shadow-sm" />
+            <textarea name="taboo" value={formData.taboo || ''} onChange={handleChange} rows={2} maxLength={100} className="w-full px-4 py-3 border-2 border-red-200 rounded-2xl bg-red-50 shadow-sm focus:outline-none focus:border-red-300 focus:ring-0 transition-all text-gray-700 font-medium" />
           </div>
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">既往歴 (Medical History)</label>
-            <textarea name="medical" value={formData.medical || ''} onChange={handleChange} rows={2} maxLength={100} className="w-full border p-2 rounded shadow-sm" />
+            <textarea name="medical" value={formData.medical || ''} onChange={handleChange} rows={2} maxLength={100} className="w-full px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium" />
           </div>
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">自由記入メモ (Memo)</label>
-            <textarea name="memo" value={formData.memo || ''} onChange={handleChange} rows={3} maxLength={500} className="w-full border p-2 rounded shadow-sm" />
+            <textarea name="memo" value={formData.memo || ''} onChange={handleChange} rows={3} maxLength={500} className="w-full px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium" />
           </div>
         </div>
 
-        <div className="flex items-center p-4 bg-gray-50 rounded-2xl border border-gray-100">
+        <div className="flex items-center p-4 bg-gray-50 rounded-2xl border-2 border-gray-50 shadow-sm">
           <input type="checkbox" id="active" name="active" checked={formData.active} onChange={handleChange} className="w-5 h-5 text-green-600 rounded" />
           <label htmlFor="active" className="ml-3 text-sm font-bold text-gray-700">顧客ステータスを<span className={formData.active ? "text-green-600" : "text-gray-400"}>{formData.active ? "有効" : "無効"}</span>にする</label>
         </div>

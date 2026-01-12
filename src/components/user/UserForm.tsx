@@ -166,13 +166,13 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
                     {/* Email */}
                     <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1">メールアドレス <RequiredBadge /></label>
-                        <input type="email" name="email" value={formData.email} onChange={handleChange} required maxLength={255} disabled={isEditMode} className="w-full border p-2 rounded disabled:bg-gray-100 shadow-sm" />
+                        <input type="email" name="email" value={formData.email} onChange={handleChange} required maxLength={255} disabled={isEditMode} className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium disabled:bg-gray-50" />
                     </div>
 
                     {/* Role */}
                     <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1">権限ロール <RequiredBadge /></label>
-                        <select name="role" value={formData.role} onChange={handleChange} required className="w-full border p-2 rounded shadow-sm">
+                        <select name="role" value={formData.role} onChange={handleChange} required className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium cursor-pointer appearance-none bg-white">
                             <option value="ADMIN">管理者</option>
                             <option value="MANAGER">店長</option>
                             <option value="TRAINER">トレーナー</option>
@@ -184,26 +184,26 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
                     {/* Name */}
                     <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1">氏名 <RequiredBadge /></label>
-                        <input type="text" name="name" value={formData.name} onChange={handleChange} required minLength={2} maxLength={100} className="w-full border p-2 rounded shadow-sm" />
+                        <input type="text" name="name" value={formData.name} onChange={handleChange} required minLength={2} maxLength={100} className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium" />
                     </div>
                     
                     {/* Kana */}
                     <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1">ふりがな <RequiredBadge /></label>
-                        <input type="text" name="kana" value={formData.kana} onChange={handleChange} required minLength={2} maxLength={100} className="w-full border p-2 rounded shadow-sm" />
+                        <input type="text" name="kana" value={formData.kana} onChange={handleChange} required minLength={2} maxLength={100} className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium" />
                     </div>
                 </div>
                 
                 {/* Password */}
                 <div>
                     <label className="block text-sm font-bold text-gray-700 mb-1">パスワード {isEditMode && '(変更する場合のみ)'}</label>
-                    <input type="password" name="pass" value={formData.pass} onChange={handleChange} required={!isEditMode} className="w-full border p-2 rounded shadow-sm" />
+                    <input type="password" name="pass" value={formData.pass} onChange={handleChange} required={!isEditMode} className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium" />
                 </div>
             </section>
             
             {/* 🔑 manager（店長）の時のみ表示 */}
             {formData.role === 'MANAGER' && (
-                <div className="space-y-3 p-4 bg-green-50/50 rounded-xl border border-green-100 animate-in fade-in slide-in-from-top-2 duration-300">
+                <div className="space-y-3 p-4 bg-green-50/50 rounded-2xl border-2 border-green-100 shadow-sm animate-in fade-in slide-in-from-top-2 duration-300">
                     <label className="block text-sm font-bold text-green-900 flex items-center gap-2">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-7h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
@@ -221,10 +221,10 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
                                 <label 
                                     key={store.id} 
                                     className={`
-                                        flex items-center p-2.5 rounded-lg border cursor-pointer transition-all
+                                        flex items-center p-2.5 rounded-2xl border-2 cursor-pointer transition-all shadow-sm
                                         ${isSelected 
-                                            ? 'bg-white border-green-500 text-green-700 shadow-sm ring-1 ring-green-500' 
-                                            : 'bg-white/50 border-gray-200 text-gray-500 hover:bg-white'}
+                                            ? 'bg-white border-green-500 text-green-700 ring-1 ring-green-500' 
+                                            : 'bg-white/50 border-gray-50 text-gray-500 hover:bg-white'}
                                     `}
                                 >
                                     <input
@@ -251,7 +251,7 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
 
             {/* 有効/無効の切り替え */}
             {isEditMode && (
-                <div className="flex items-center p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                <div className="flex items-center p-4 bg-gray-50 rounded-2xl border-2 border-gray-50 shadow-sm">
                     <input
                         id="active"
                         name="active"

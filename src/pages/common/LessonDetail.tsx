@@ -55,11 +55,11 @@ export const LessonDetail: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#faf8f1] py-8">
-      <div className="w-[1200px] max-w-[calc(100%-2rem)] mx-auto bg-white rounded-xl shadow-md border border-gray-200 p-6 md:p-8 space-y-6">
-        <div className="-mx-6 md:-mx-8 -mt-6 md:-mt-8 px-6 md:px-8 border-2 border-green-400 rounded-lg p-5 md:p-6 bg-white shadow-sm">
-          <h1 className="text-4xl font-normal text-gray-800 mb-2">レッスン詳細</h1>
-          <p className="text-lg text-gray-500">登録済みのレッスン情報を表示します</p>
+    <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
+      <div className="bg-white rounded-[2rem] shadow-sm border-2 border-gray-50 p-6 md:p-8 space-y-6">
+        <div className="border-2 border-sidebar rounded-[2rem] p-5 md:p-6 bg-white shadow-sm">
+          <h1 className="text-3xl font-black text-gray-900 tracking-tight mb-2">レッスン詳細</h1>
+          <p className="text-sm text-gray-500">登録済みのレッスン情報を表示します</p>
         </div>
 
         <div className="space-y-4">
@@ -153,7 +153,7 @@ export const LessonDetail: React.FC = () => {
           </div>
         </div>
 
-        <div className="border-2 border-gray-300 rounded-lg p-4 space-y-3 bg-white">
+        <div className="border-2 border-gray-50 rounded-[2rem] p-4 space-y-3 bg-white shadow-sm">
           <div className="text-lg font-medium text-gray-800">トレーニング内容</div>
 
           {trainings.length === 0 && (
@@ -163,7 +163,7 @@ export const LessonDetail: React.FC = () => {
           {trainings.map((t, idx) => (
             <div
               key={idx}
-              className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4 border border-gray-200 rounded-lg p-3 bg-gray-50"
+              className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4 border-2 border-gray-50 rounded-2xl p-3 bg-gray-50/50"
             >
               <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3 flex-1">
                 <div className="flex items-center gap-2 md:min-w-[100px]">
@@ -179,7 +179,7 @@ export const LessonDetail: React.FC = () => {
 
               <div className="flex items-center gap-2 md:gap-3">
                 <span className="text-lg font-semibold text-gray-800">回数：</span>
-                <div className="flex items-center gap-2 border-2 border-gray-300 rounded-lg px-2 py-1 bg-white">
+                <div className="flex items-center gap-2 border-2 border-gray-50 rounded-2xl px-2 py-1 bg-white shadow-sm">
                   <input
                     type="number"
                     className="w-16 text-center border-none focus:outline-none text-lg bg-white"
@@ -202,7 +202,7 @@ export const LessonDetail: React.FC = () => {
           />
         </div>
 
-        <div className="border-2 border-gray-300 rounded-xl p-4 space-y-3 bg-gray-50">
+        <div className="border-2 border-gray-50 rounded-[2rem] p-4 space-y-3 bg-white shadow-sm">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-800">姿勢（正面/右/背面/左）</h2>
             <span className="text-sm text-gray-500">閲覧専用</span>
@@ -213,10 +213,10 @@ export const LessonDetail: React.FC = () => {
               return (
                 <div
                   key={pos}
-                  className="border border-gray-200 rounded-lg p-2 flex flex-col space-y-2 bg-white"
+                  className="border-2 border-gray-50 rounded-2xl p-2 flex flex-col space-y-2 bg-white shadow-sm"
                 >
                   <div className="text-sm font-medium text-gray-800">{getPosturePositionLabel(pos)}</div>
-                  <div className="h-24 bg-white flex items-center justify-center border border-dashed border-gray-200 rounded">
+                  <div className="h-24 bg-white flex items-center justify-center border-2 border-dashed border-gray-50 rounded-2xl">
                     {preview ? (
                       <img 
                         src={preview.url} 
