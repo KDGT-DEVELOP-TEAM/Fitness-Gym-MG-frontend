@@ -91,6 +91,12 @@ const getCustomerRelatedMenuItems = (customerId: string, role: string, lessonId?
       icon: <HiArrowLeft className="w-5 h-5" />,
       isBackButton: true,
     },
+    // 新規レッスン入力をHomeの直後に配置（ADMIN以外）
+    ...(role.toUpperCase() !== 'ADMIN' ? [{
+      path: `/trainer/newlessons/${customerId}`, 
+      label: '新規レッスン入力', 
+      icon: <HiDocumentAdd className="w-5 h-5" /> 
+    }] : []),
     {
       path: getHistoryPath(role, customerId),
       label: '履歴一覧',
@@ -113,15 +119,6 @@ const getCustomerRelatedMenuItems = (customerId: string, role: string, lessonId?
       icon: <HiUser className="w-5 h-5" />,
     },
   ];
-  
-  // Adminロールの場合は「新規レッスン入力」を表示しない
-  if (role.toUpperCase() !== 'ADMIN') {
-    menuItems.push({
-      path: `/trainer/newlessons/${customerId}`, 
-      label: '新規レッスン入力', 
-      icon: <HiDocumentAdd className="w-5 h-5" /> 
-    });
-  }
   
   return menuItems;
 };
@@ -200,7 +197,14 @@ const getLessonDetailMenuItems = (role: string, customerId: string, lessonId: st
       icon: <HiHome className="w-5 h-5" />,
     },
     
-    // 2. 履歴一覧（レッスン詳細をサブメニューとして表示）
+    // 2. 新規レッスン入力（ADMIN以外、Homeの直後に配置）
+    ...(role.toUpperCase() !== 'ADMIN' ? [{
+      path: `/trainer/newlessons/${customerId}`, 
+      label: '新規レッスン入力', 
+      icon: <HiDocumentAdd className="w-5 h-5" /> 
+    }] : []),
+    
+    // 3. 履歴一覧（レッスン詳細をサブメニューとして表示）
     {
       path: historyPath,
       label: '履歴一覧',
@@ -213,29 +217,20 @@ const getLessonDetailMenuItems = (role: string, customerId: string, lessonId: st
       ],
     },
     
-    // 3. 姿勢一覧
+    // 4. 姿勢一覧
     {
       path: getPosturePath(role, customerId),
       label: '姿勢一覧',
       icon: <HiPhotograph className="w-5 h-5" />,
     },
     
-    // 4. 顧客プロフィール
+    // 5. 顧客プロフィール
     {
       path: ROUTES.CUSTOMER_PROFILE.replace(':id', customerId),
       label: '顧客プロフィール',
       icon: <HiUser className="w-5 h-5" />,
     },
   ];
-  
-  // 5. 新規レッスン入力（ADMIN以外、最後に追加）
-  if (role.toUpperCase() !== 'ADMIN') {
-    menuItems.push({
-      path: `/trainer/newlessons/${customerId}`, 
-      label: '新規レッスン入力', 
-      icon: <HiDocumentAdd className="w-5 h-5" /> 
-    });
-  }
   
   return menuItems;
 };
