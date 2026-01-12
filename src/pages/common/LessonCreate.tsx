@@ -460,11 +460,11 @@ export const LessonCreate: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#faf8f1] py-8">
-      <div className="w-[1200px] max-w-[calc(100%-2rem)] mx-auto bg-white rounded-xl shadow-md border border-gray-200 p-6 md:p-8 space-y-6">
-        <div className="-mx-6 md:-mx-8 -mt-6 md:-mt-8 px-6 md:px-8 border-2 border-green-400 rounded-lg p-5 md:p-6 bg-white shadow-sm">
-          <h1 className="text-4xl font-normal text-gray-800 mb-2">トレーニング内容を記録</h1>
-          <p className="text-lg text-gray-500">
+    <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
+      <div className="bg-white rounded-[2rem] shadow-sm border-2 border-gray-50 p-6 md:p-8 space-y-6">
+        <div className="border-2 border-sidebar rounded-[2rem] p-5 md:p-6 bg-white shadow-sm">
+          <h1 className="text-3xl font-black text-gray-900 tracking-tight mb-2">トレーニング内容を記録</h1>
+          <p className="text-sm text-gray-500">
             {(() => {
               const current = customers.find((c) => c.id === formData.customerId);
               if (!current) return '顧客を選択してください';
@@ -584,7 +584,7 @@ export const LessonCreate: React.FC = () => {
             <h2 className={FORM_STYLES.sectionHeading}>開始時間・終了時間</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-y-3 md:gap-x-12 md:gap-y-4">
               <div className="flex flex-row items-center gap-3 md:gap-4">
-                <label className="text-2xl font-semibold text-gray-800 whitespace-nowrap">開始時間：</label>
+                <label className={FORM_STYLES.label}>開始時間：</label>
             <input
               type="datetime-local"
                   className={`${FORM_STYLES.input} flex-1`}
@@ -595,7 +595,7 @@ export const LessonCreate: React.FC = () => {
           </div>
 
               <div className="flex flex-row items-center gap-3 md:gap-4">
-                <label className="text-2xl font-semibold text-gray-800 whitespace-nowrap">終了時間：</label>
+                <label className={FORM_STYLES.label}>終了時間：</label>
             <input
               type="datetime-local"
                   className={`${FORM_STYLES.input} flex-1`}
@@ -609,8 +609,8 @@ export const LessonCreate: React.FC = () => {
 
           <div className="space-y-3">
             <h2 className={FORM_STYLES.sectionHeading}>次回予約</h2>
-            <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
-              <span className="text-2xl font-semibold text-gray-800 whitespace-nowrap">日にち/時刻：</span>
+          <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
+            <span className={FORM_STYLES.label}>日にち/時刻：</span>
             <input
               type="datetime-local"
                 className={`${FORM_STYLES.input} md:flex-1`}
@@ -655,7 +655,7 @@ export const LessonCreate: React.FC = () => {
           </div>
         </div>
 
-        <div className="border-2 border-gray-300 rounded-lg p-4 space-y-3 bg-white">
+        <div className="border-2 border-gray-50 rounded-[2rem] p-4 space-y-3 bg-white shadow-sm">
           <div className="text-lg font-medium text-gray-800">トレーニング内容</div>
 
           {trainings.length === 0 && (
@@ -665,7 +665,7 @@ export const LessonCreate: React.FC = () => {
           {trainings.map((t, idx) => (
             <div
               key={idx}
-              className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4 border border-gray-200 rounded-lg p-3 bg-gray-50"
+              className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4 border-2 border-gray-50 rounded-2xl p-3 bg-gray-50/50"
             >
               <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3 flex-1">
                 <div className="flex items-center gap-2 md:min-w-[100px]">
@@ -684,7 +684,7 @@ export const LessonCreate: React.FC = () => {
 
               <div className="flex items-center gap-2 md:gap-3">
                 <span className="text-lg font-semibold text-gray-800">回数：</span>
-                <div className="flex items-center gap-2 border-2 border-gray-300 rounded-lg px-2 py-1 bg-white">
+                <div className="flex items-center gap-2 border-2 border-gray-50 rounded-2xl px-2 py-1 bg-white shadow-sm">
                   <button
                     type="button"
                     className="px-2 py-1 text-lg font-semibold text-gray-700 hover:text-gray-900"
@@ -731,21 +731,21 @@ export const LessonCreate: React.FC = () => {
         </div>
 
         {/* 姿勢撮影セクション */}
-        <div className="border-2 border-gray-300 rounded-xl p-4 space-y-3 bg-gray-50">
+        <div className="border-2 border-gray-50 rounded-[2rem] p-4 space-y-3 bg-white shadow-sm">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-800">姿勢（正面/右/背面/左）</h2>
             <div className="space-x-2">
               <button
                 type="button"
                 onClick={startCamera}
-                className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+                className="px-4 py-2 bg-green-500 text-white rounded-[2rem] hover:bg-green-600"
               >
                 カメラ開始
               </button>
               <button
                 type="button"
                 onClick={stopCamera}
-                className="px-4 py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-500"
+                className="px-4 py-2 bg-gray-400 text-white rounded-[2rem] hover:bg-gray-500"
               >
                 停止
               </button>
@@ -753,7 +753,7 @@ export const LessonCreate: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-black rounded-lg overflow-hidden">
+            <div className="bg-black rounded-2xl overflow-hidden">
               <video ref={videoRef} className="w-full h-64 object-cover" muted autoPlay playsInline />
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -763,7 +763,7 @@ export const LessonCreate: React.FC = () => {
                 return (
                   <div
                     key={pos}
-                    className={`border border-gray-200 rounded-lg p-2 flex flex-col space-y-2 bg-white ${
+                    className={`border-2 border-gray-50 rounded-2xl p-2 flex flex-col space-y-2 bg-white shadow-sm ${
                       isSelected ? 'ring-2 ring-green-300' : ''
                     }`}
                   >
@@ -779,7 +779,7 @@ export const LessonCreate: React.FC = () => {
                         </button>
                       )}
                     </div>
-                    <div className="h-24 bg-white flex items-center justify-center border border-dashed border-gray-200 rounded">
+                    <div className="h-24 bg-white flex items-center justify-center border-2 border-dashed border-gray-50 rounded-2xl">
                       {preview ? (
                         <img src={preview.url} alt={pos} className="max-h-24 object-contain" />
                       ) : (
@@ -788,10 +788,10 @@ export const LessonCreate: React.FC = () => {
                     </div>
                     <button
                       type="button"
-                      className={`px-3 py-2 rounded-lg border ${
+                      className={`px-3 py-2 rounded-2xl border-2 ${
                         isSelected
                           ? 'border-green-500 text-green-700 bg-green-50'
-                          : 'border-gray-300 text-gray-700 bg-white hover:bg-gray-100'
+                          : 'border-gray-50 text-gray-700 bg-white hover:bg-gray-100'
                       }`}
                       onClick={() => setSelectedPosture(pos)}
                     >
@@ -833,7 +833,7 @@ export const LessonCreate: React.FC = () => {
           <button
             type="submit"
             disabled={loading}
-            className="px-6 py-3 bg-green-500 text-white rounded-lg shadow-sm hover:bg-green-600 disabled:opacity-50"
+            className="px-6 py-3 bg-green-500 text-white rounded-[2rem] shadow-sm hover:bg-green-600 disabled:opacity-50"
           >
             {loading ? '登録中...' : '登録'}
           </button>
