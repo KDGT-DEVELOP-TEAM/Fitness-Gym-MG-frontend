@@ -50,12 +50,10 @@ export const CustomerProfile: React.FC = () => {
   }
 
   return (
-    <div className="p-8 font-poppins bg-[#FAF8F3] min-h-screen">
-      <h1 className="text-3xl font-semibold mb-6 text-gray-800">プロフィール</h1>
-
+    <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
       {/* エラーメッセージ */}
       {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+        <div className="p-4 bg-red-50 border border-red-100 rounded-2xl flex items-start gap-3">
           <HiExclamation className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
           <div className="flex-1">
             <p className="text-red-800 font-medium">エラー</p>
@@ -73,7 +71,7 @@ export const CustomerProfile: React.FC = () => {
         </div>
       )}
 
-      <div className="bg-white border border-[#DFDFDF] rounded-[15px] p-8">
+      <div className="bg-white rounded-[2rem] shadow-sm border-2 border-gray-50 p-8">
         {/* 基本情報セクション */}
         <div className="mb-8">
           <h2 className="text-xl font-semibold mb-4 text-gray-800 pb-2 border-b border-gray-200">
