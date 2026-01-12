@@ -127,16 +127,17 @@ export const AuditLogPage: React.FC = () => {
           <table className="min-w-full divide-y table-fixed divide-gray-50">
             <thead className="bg-gray-50/50">
               <tr>
-                <th className="w-[30%] text-center px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">日時</th>
-                <th className="w-[30%] text-center px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">ユーザー名</th>
-                <th className="w-[40%] text-center px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">アクション</th>
+                <th className="w-[25%] text-center px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">日時</th>
+                <th className="w-[25%] text-center px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">ユーザー名</th>
+                <th className="w-[25%] text-center px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">顧客名</th>
+                <th className="w-[25%] text-center px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">アクション</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50 bg-white">
               {loading ? (
-                <LoadingRow colSpan={3} />
+                <LoadingRow colSpan={4} />
               ) : !paginatedLogs || paginatedLogs.length === 0 ? (
-                <EmptyRow colSpan={3} message="レッスン関連のログが登録されていません" />
+                <EmptyRow colSpan={4} message="レッスン関連のログが登録されていません" />
               ) : (
                 paginatedLogs.map((log) => {
                   const { dateStr, timeStr } = formatDateTime(log.createdAt);
@@ -148,6 +149,9 @@ export const AuditLogPage: React.FC = () => {
                       </td>
                       <td className="px-8 py-5 text-center text-sm font-medium text-gray-700">
                         {log.userName || '-'}
+                      </td>
+                      <td className="px-8 py-5 text-center text-sm font-medium text-gray-700">
+                        {log.customerName || '-'}
                       </td>
                       <td className="px-8 py-5 text-center">
                         {(() => {
