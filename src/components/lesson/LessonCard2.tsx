@@ -83,14 +83,7 @@ export const LessonCard: React.FC<LessonCardProps> = ({ lesson, from }) => {
             </div>
         </td>
 
-        {/* 2. 実施店舗 */}
-        <td className="px-8 py-6 text-center">
-            <span className="inline-flex items-center px-4 py-1 rounded-full text-xs font-black tracking-widest uppercase bg-gray-50 text-gray-500 border border-gray-100 group-hover:bg-white group-hover:border-green-100 transition-all">
-            {lesson.storeName || '不明な店舗'}
-            </span>
-        </td>
-
-        {/* 3. 担当トレーナー */}
+        {/* 2. 担当トレーナー */}
         <td className="px-8 py-6">
             <div className="flex justify-center items-center">
             <span className="text-sm font-bold text-gray-600">
@@ -99,7 +92,7 @@ export const LessonCard: React.FC<LessonCardProps> = ({ lesson, from }) => {
             </div>
         </td>
 
-        {/* 4. 顧客名 */}
+        {/* 3. 顧客名 */}
         <td className="px-8 py-6">
             <div className="flex flex-col items-center text-center">
             <span className="text-base font-bold text-gray-900 group-hover:text-green-600 transition-colors">
@@ -108,6 +101,13 @@ export const LessonCard: React.FC<LessonCardProps> = ({ lesson, from }) => {
             </span>
             {/* 必要であればここにふりがな等を追加可能 */}
             </div>
+        </td>
+
+        {/* 4. 実施店舗 */}
+        <td className="px-8 py-6 text-center">
+            <span className="inline-flex items-center px-4 py-1 rounded-full text-xs font-black tracking-widest uppercase bg-gray-50 text-gray-500 border border-gray-100 group-hover:bg-white group-hover:border-green-100 transition-all">
+            {lesson.storeName || '不明な店舗'}
+            </span>
         </td>
         </tr>
     );
