@@ -61,12 +61,14 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
 
     try {
       // フォーム用データを API リクエスト用に整形
+      // birthday: type="date"のinputから取得されるため、ISO8601形式（YYYY-MM-DD）の文字列として送信
+      // height: number型として送信され、Spring Bootが自動的にBigDecimalに変換
       const requestData: CustomerRequest = {
         name: formData.name,
         kana: formData.kana,
         gender: formData.gender,
-        birthday: formData.birthday,
-        height: formData.height,
+        birthday: formData.birthday, // ISO8601形式の文字列（YYYY-MM-DD）
+        height: formData.height, // number型、Spring BootがBigDecimalに自動変換
         email: formData.email,
         phone: formData.phone,
         address: formData.address,
@@ -88,11 +90,18 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
         // エラーメッセージを取得
         let message = "保存中にエラーが発生しました。";
         if (axios.isAxiosError(err)) {
-          if (err.response?.data && isErrorResponse(err.response.data)) {
-            message = err.response.data.message || err.message;
+          // ネットワークエラーの場合
+          if (!err.response) {
+            message = "ネットワークエラーが発生しました。インターネット接続を確認してください。";
+          } else if (err.response?.data && isErrorResponse(err.response.data)) {
+            // ErrorResponse形式の場合
+            message = err.response.data.message || err.message || "保存中にエラーが発生しました。";
           } else {
-            message = (err.response?.data as { message?: string })?.message || err.message;
+            // その他のエラー
+            message = (err.response?.data as { message?: string })?.message || err.message || "保存中にエラーが発生しました。";
           }
+        } else if (err instanceof Error) {
+          message = err.message || "保存中にエラーが発生しました。";
         }
         setErrorMsg(message);
         setErrorMessages([]);
@@ -159,7 +168,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2">
             <label className="block text-sm font-bold text-gray-700 mb-1">住所 <RequiredBadge /></label>
-            <input type="text" name="address" value={formData.address || ''} onChange={handleChange} required maxLength={200} className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium" />
+            <input type="text" name="address" value={formData.address || ''} onChange={handleChange} required maxLength={500} className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium" />
           </div>
           <div className="col-span-2">
             <label className="block text-sm font-bold text-gray-700 mb-1">メールアドレス <RequiredBadge /></label>
