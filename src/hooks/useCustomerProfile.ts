@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { customerApi } from '../api/customerApi';
+import { postureApi } from '../api/postureApi';
 import { Gender, CustomerRequest } from '../types/api/customer';
 
 export interface CustomerProfileData {
@@ -74,6 +75,47 @@ export const useCustomerProfile = (customerId: string) => {
         // APIから顧客データを取得（customerApi.getProfileを使用）
         const data = await customerApi.getProfile(customerId);
 
+        // 初回姿勢画像を取得
+        let postureImages = {
+          front: undefined as string | undefined,
+          back: undefined as string | undefined,
+          left: undefined as string | undefined,
+          right: undefined as string | undefined,
+        };
+
+        if (data.firstPostureGroupId) {
+          try {
+            // 姿勢グループ一覧を取得
+            const postureGroups = await postureApi.getPostureGroups(customerId);
+            
+            // firstPostureGroupIdに一致するグループを検索
+            const firstPostureGroup = postureGroups.find(
+              (group) => group.id === data.firstPostureGroupId
+            );
+
+            if (firstPostureGroup && firstPostureGroup.images) {
+              // 各位置の画像を抽出
+              firstPostureGroup.images.forEach((image) => {
+                if (image.signedUrl && image.position) {
+                  const position = image.position.toLowerCase();
+                  if (position === 'front' && !postureImages.front) {
+                    postureImages.front = image.signedUrl;
+                  } else if (position === 'back' && !postureImages.back) {
+                    postureImages.back = image.signedUrl;
+                  } else if (position === 'left' && !postureImages.left) {
+                    postureImages.left = image.signedUrl;
+                  } else if (position === 'right' && !postureImages.right) {
+                    postureImages.right = image.signedUrl;
+                  }
+                }
+              });
+            }
+          } catch (postureError) {
+            // 姿勢画像の取得に失敗してもプロフィールの表示は続行
+            console.error('Failed to load posture images:', postureError);
+          }
+        }
+
         // 取得したデータをプロフィール形式に変換
         setProfileData({
           id: data.id,
@@ -89,12 +131,7 @@ export const useCustomerProfile = (customerId: string) => {
           medical: data.medical || '',
           taboo: data.taboo || '',
           memo: data.memo || '',
-          postureImages: {
-            front: undefined,
-            back: undefined,
-            left: undefined,
-            right: undefined,
-          },
+          postureImages,
         });
       } catch (error) {
         console.error('Failed to load profile:', error);
