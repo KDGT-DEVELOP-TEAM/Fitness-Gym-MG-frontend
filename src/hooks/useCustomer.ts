@@ -6,6 +6,7 @@ import { trainerCustomersApi } from '../api/trainer/customersApi';
 import { customerApi } from '../api/customerApi';
 import { Customer, CustomerRequest, CustomerListParams } from '../types/api/customer';
 import { useAuth } from '../context/AuthContext';
+import { useStores } from './useStore';
 
 interface ApiError {
   message: string;
@@ -13,6 +14,7 @@ interface ApiError {
 
 export const useCustomers = () => {
   const { user: authUser } = useAuth();
+  const { stores, loading: storesLoading } = useStores();
   const [allCustomers, setAllCustomers] = useState<Customer[]>([]); // トレーナー用: 全件保持
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [total, setTotal] = useState(0);
@@ -23,11 +25,21 @@ export const useCustomers = () => {
   const fetchCustomers = useCallback(async (page: number = 0) => {
     if (!authUser) return;
     
+    const role = authUser.role?.toUpperCase();
+    const isAdmin = role === 'ADMIN';
+    const isManager = role === 'MANAGER';
+    
+    // MANAGERロールの場合、storesの読み込みが完了するまで待つ
+    if (isManager && storesLoading) {
+      // storesLoading中はローディング状態を維持し、エラーメッセージは表示しない
+      setLoading(true);
+      setError(null);
+      return;
+    }
+    
     setLoading(true);
     setError(null);
     try {
-      const role = authUser.role?.toUpperCase();
-      
       if (role === 'TRAINER') {
         // トレーナーの場合: 全件取得してフロントエンドでページネーション
         const allCustomersData = await trainerCustomersApi.getCustomers();
@@ -59,17 +71,21 @@ export const useCustomers = () => {
           size: 10
         };
         
-        const isAdmin = role === 'ADMIN';
         let response;
         
         if (isAdmin) {
           response = await adminCustomersApi.getCustomers(params);
         } else {
-          // MANAGERの場合
-          const storeId = Array.isArray(authUser.storeIds) ? authUser.storeIds[0] : authUser.storeIds;
+          // MANAGERロールの場合、storeIdを取得
+          const storeId = Array.isArray(authUser.storeIds) && authUser.storeIds.length > 0
+            ? authUser.storeIds[0]
+            : (stores && stores.length > 0 ? stores[0].id : null);
+          
           if (!storeId) {
+            // storesLoadingが完了し、かつstoreIdが取得できない場合のみエラーメッセージを表示
             throw new Error('店舗IDが取得できませんでした');
           }
+          
           response = await managerCustomersApi.getCustomers(storeId, params);
         }
         
@@ -85,7 +101,7 @@ export const useCustomers = () => {
     } finally {
       setLoading(false);
     }
-  }, [searchQuery, authUser]);
+  }, [searchQuery, authUser, stores, storesLoading]);
 
   // CustomerRequest 型を受け取るように修正
   const createCustomer = (data: CustomerRequest) => adminCustomersApi.createCustomer(data);
