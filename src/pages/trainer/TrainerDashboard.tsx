@@ -5,7 +5,7 @@ import { trainerHomeApi } from '../../api/trainer/homeApi';
 import { Lesson } from '../../types/lesson';
 import { ROUTES } from '../../constants/routes';
 import { Pagination } from '../../components/common/Pagination';
-import { FiChevronRight, FiSearch, FiUser, FiMapPin } from 'react-icons/fi';
+import { FiChevronRight, FiUser, FiMapPin } from 'react-icons/fi';
 
 export const TrainerDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -146,15 +146,20 @@ export const TrainerDashboard: React.FC = () => {
       </div>
 
       {/* 検索バー */}
-      <div className="bg-white p-6 rounded-[2rem] shadow-sm border-2 border-gray-50">
-        <div className="relative">
-          <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+      <div className="flex flex-col md:flex-row gap-4">
+        <div className="relative flex-grow group">
+          <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
+            <svg className="w-5 h-5 text-gray-400 group-focus-within:text-green-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
           <input
             type="text"
             placeholder="名前を入力"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-12 pl-12 pr-4 rounded-2xl border-2 border-gray-50 focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-base"
+            className="w-full h-14 bg-white border-2 border-gray-50 pl-14 pr-6 rounded-2xl focus:border-green-500 focus:ring-0 outline-none transition-all text-gray-700 font-medium shadow-sm"
+            maxLength={100}
           />
         </div>
       </div>
