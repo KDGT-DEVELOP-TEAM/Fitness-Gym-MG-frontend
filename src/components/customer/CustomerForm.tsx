@@ -149,7 +149,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
             <input name="kana" value={formData.kana || ''} onChange={handleChange} required maxLength={100} className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium" />
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">誕生日 <RequiredBadge /></label>
+            <label className="block text-sm font-bold text-gray-700 mb-1">生年月日 <RequiredBadge /></label>
             <input type="date" name="birthday" value={formData.birthday} onChange={handleChange} required className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium" />
           </div>
           <div>

@@ -79,6 +79,17 @@ export const CustomerProfile: React.FC = () => {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
             <EditableField
+              label="氏名"
+              value={profileData.name}
+              isRequired
+              isEditing={editingField === 'name'}
+              fieldName="name"
+              onEdit={handleEdit}
+              onChange={(value) => handleChange('name', value)}
+              onBlur={handleBlur}
+              icon={<HiUser className="w-4 h-4" />}
+            />
+            <EditableField
               label="フリガナ"
               value={profileData.kana}
               isRequired
@@ -90,15 +101,16 @@ export const CustomerProfile: React.FC = () => {
               icon={<HiIdentification className="w-4 h-4" />}
             />
             <EditableField
-              label="名前"
-              value={profileData.name}
+              label="生年月日"
+              value={profileData.birthdate}
               isRequired
-              isEditing={editingField === 'name'}
-              fieldName="name"
+              isEditing={editingField === 'birthdate'}
+              fieldName="birthdate"
               onEdit={handleEdit}
-              onChange={(value) => handleChange('name', value)}
+              onChange={(value) => handleChange('birthdate', value)}
               onBlur={handleBlur}
-              icon={<HiUser className="w-4 h-4" />}
+              type="date"
+              icon={<HiCalendar className="w-4 h-4" />}
             />
             <EditableField
               label="性別"
@@ -115,18 +127,6 @@ export const CustomerProfile: React.FC = () => {
                 { value: 'FEMALE', label: '女' },
               ]}
               icon={<HiUser className="w-4 h-4" />}
-            />
-            <EditableField
-              label="生年月日"
-              value={profileData.birthdate}
-              isRequired
-              isEditing={editingField === 'birthdate'}
-              fieldName="birthdate"
-              onEdit={handleEdit}
-              onChange={(value) => handleChange('birthdate', value)}
-              onBlur={handleBlur}
-              type="date"
-              icon={<HiCalendar className="w-4 h-4" />}
             />
             <EditableField
               label="年齢"
@@ -197,37 +197,6 @@ export const CustomerProfile: React.FC = () => {
           </div>
         </div>
 
-        {/* 医療情報セクション */}
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold mb-4 text-gray-800 pb-2 border-b border-gray-200">
-            医療情報
-          </h2>
-          <div className="grid grid-cols-1 gap-x-6">
-            <EditableField
-              label="医療・既往歴"
-              value={profileData.medical}
-              isEditing={editingField === 'medical'}
-              fieldName="medical"
-              onEdit={handleEdit}
-              onChange={(value) => handleChange('medical', value)}
-              onBlur={handleBlur}
-              type="textarea"
-              icon={<HiDocumentText className="w-4 h-4" />}
-            />
-            <EditableField
-              label="禁忌事項"
-              value={profileData.taboo}
-              isEditing={editingField === 'taboo'}
-              fieldName="taboo"
-              onEdit={handleEdit}
-              onChange={(value) => handleChange('taboo', value)}
-              onBlur={handleBlur}
-              type="textarea"
-              icon={<HiExclamation className="w-4 h-4" />}
-            />
-          </div>
-        </div>
-
         {/* 初回姿勢画像セクション */}
         <div className="mb-8">
           <h2 className="text-xl font-semibold mb-4 text-gray-800 pb-2 border-b border-gray-200">
@@ -255,6 +224,37 @@ export const CustomerProfile: React.FC = () => {
                 </p>
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* 医療情報セクション */}
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold mb-4 text-gray-800 pb-2 border-b border-gray-200">
+            医療情報
+          </h2>
+          <div className="grid grid-cols-1 gap-x-6">
+            <EditableField
+              label="禁忌事項"
+              value={profileData.taboo}
+              isEditing={editingField === 'taboo'}
+              fieldName="taboo"
+              onEdit={handleEdit}
+              onChange={(value) => handleChange('taboo', value)}
+              onBlur={handleBlur}
+              type="textarea"
+              icon={<HiExclamation className="w-4 h-4" />}
+            />
+            <EditableField
+              label="既往歴"
+              value={profileData.medical}
+              isEditing={editingField === 'medical'}
+              fieldName="medical"
+              onEdit={handleEdit}
+              onChange={(value) => handleChange('medical', value)}
+              onBlur={handleBlur}
+              type="textarea"
+              icon={<HiDocumentText className="w-4 h-4" />}
+            />
           </div>
         </div>
 
