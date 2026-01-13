@@ -93,43 +93,43 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-login-bg">
-      <div className="w-full max-w-md px-8 py-16 rounded-3xl bg-login-card font-poppins">
-        <h2 className="text-5xl font-normal text-white text-center mb-12">Login</h2>
+    <div className="min-h-screen flex items-center justify-center bg-[#FAF8F3] animate-in fade-in duration-500">
+      <div className="w-full max-w-md px-8 py-16 rounded-[2rem] bg-white shadow-2xl shadow-gray-200/50 border border-gray-100 font-poppins">
+        <h2 className="text-3xl font-black text-gray-900 tracking-tight text-center mb-12">ログイン</h2>
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
-            <div className="text-white bg-red-500 bg-opacity-20 px-4 py-2 rounded-md text-sm text-center">
+            <div className="text-red-600 bg-red-50 border border-red-200 px-4 py-2 rounded-2xl text-sm text-center">
               {error}
             </div>
           )}
           <div>
-            <label className="block text-white text-sm mb-2">Email</label>
+            <label className="block text-sm font-black text-gray-600 mb-2">メールアドレス</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
               disabled={actionLoading}
-              className="w-full px-4 py-3 rounded-lg border-none focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full px-4 py-3 rounded-2xl border-2 border-gray-50 shadow-sm bg-white text-gray-900 focus:outline-none focus:border-green-500 focus:ring-0 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </div>
           <div>
-            <label className="block text-white text-sm mb-2">Password</label>
+            <label className="block text-sm font-black text-gray-600 mb-2">パスワード</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               disabled={actionLoading}
-              className="w-full px-4 py-3 rounded-lg border-none focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full px-4 py-3 rounded-2xl border-2 border-gray-50 shadow-sm bg-white text-gray-900 focus:outline-none focus:border-green-500 focus:ring-0 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             />
             <div className="text-right mt-2">
               <button
                 type="button"
-                className="text-white text-sm hover:underline"
+                className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
                 onClick={() => setShowResetModal(true)}
               >
-                Forgot Password?
+                パスワードをお忘れですか？
               </button>
             </div>
           </div>
@@ -137,9 +137,9 @@ export const Login: React.FC = () => {
             <button
               type="submit"
               disabled={actionLoading}
-              className="w-full py-4 rounded-lg text-white text-xl font-normal bg-login-button transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-4 rounded-2xl text-lg font-black text-white bg-[#68BE6B] shadow-md transition-all hover:bg-[#5AA85A] focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {actionLoading ? 'サインイン中...' : 'Sign in'}
+              {actionLoading ? 'ログイン中...' : 'ログイン'}
             </button>
           </div>
         </form>
@@ -147,12 +147,12 @@ export const Login: React.FC = () => {
 
       {/* パスワードリセットモーダル */}
       {showResetModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="w-full max-w-md px-8 py-16 rounded-3xl bg-login-card font-poppins mx-4">
-            <h3 className="text-3xl font-normal text-white text-center mb-6">パスワードリセット</h3>
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="w-full max-w-md px-8 py-16 rounded-[2rem] bg-white shadow-2xl shadow-gray-200/50 border border-gray-100 font-poppins mx-4">
+            <h3 className="text-2xl font-black text-gray-900 tracking-tight text-center mb-6">パスワードリセット</h3>
             {resetSuccess ? (
               <div className="space-y-4">
-                <p className="text-white text-center">
+                <p className="text-gray-600 text-center">
                   パスワードリセット用のメールを送信しました。
                   <br />
                   メール内のリンクからパスワードを再設定してください。
@@ -160,31 +160,31 @@ export const Login: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleCloseResetModal}
-                  className="w-full py-4 rounded-lg text-white text-xl font-normal bg-login-button transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50"
+                  className="w-full py-4 rounded-2xl text-lg font-black text-white bg-[#68BE6B] shadow-md transition-all hover:bg-[#5AA85A] focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50"
                 >
                   閉じる
                 </button>
               </div>
             ) : (
               <div className="space-y-6">
-                <p className="text-white text-sm text-center">
+                <p className="text-gray-600 text-sm text-center">
                   登録されているメールアドレスを入力してください。
                   <br />
                   パスワードリセット用のリンクを送信します。
                 </p>
                 {resetError && (
-                  <div className="text-white bg-red-500 bg-opacity-20 px-4 py-2 rounded-md text-sm text-center">
+                  <div className="text-red-600 bg-red-50 border border-red-200 px-4 py-2 rounded-2xl text-sm text-center">
                     {resetError}
                   </div>
                 )}
                 <div>
-                  <label className="block text-white text-sm mb-2">Email</label>
+                  <label className="block text-sm font-black text-gray-600 mb-2">Email</label>
                   <input
                     type="email"
                     value={resetEmail}
                     onChange={(e) => setResetEmail(e.target.value)}
                     disabled={resetLoading}
-                    className="w-full px-4 py-3 rounded-lg border-none focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-4 py-3 rounded-2xl border-2 border-gray-50 shadow-sm bg-white text-gray-900 focus:outline-none focus:border-green-500 focus:ring-0 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     placeholder="メールアドレスを入力"
                   />
                 </div>
@@ -193,7 +193,7 @@ export const Login: React.FC = () => {
                     type="button"
                     onClick={handleCloseResetModal}
                     disabled={resetLoading}
-                    className="flex-1 py-3 rounded-lg text-white text-lg font-normal bg-gray-500 transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 py-3 rounded-2xl text-lg font-black text-gray-700 bg-gray-200 shadow-sm transition-all hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     キャンセル
                   </button>
@@ -201,7 +201,7 @@ export const Login: React.FC = () => {
                     type="button"
                     onClick={handleResetPassword}
                     disabled={resetLoading}
-                    className="flex-1 py-3 rounded-lg text-white text-lg font-normal bg-login-button transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 py-3 rounded-2xl text-lg font-black text-white bg-[#68BE6B] shadow-md transition-all hover:bg-[#5AA85A] focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {resetLoading ? '送信中...' : '送信'}
                   </button>
