@@ -28,6 +28,7 @@ import { useAuth } from '../context/AuthContext';
 // メニュー項目の定義
 const trainerMenuItems = [
   { path: '/trainer/home', label: 'Home', icon: <HiHome className="w-5 h-5" /> },
+  { path: '/trainer/customers', label: '顧客一覧', icon: <HiUserGroup className="w-5 h-5" /> },
 ];
 
 const adminMenuItems = [
@@ -355,6 +356,7 @@ export const AppRouter = () => {
         <Route path="/trainer" element={<ProtectedRoute roles={['TRAINER']} />}>
           <Route index element={<Navigate to="/trainer/home" replace />} />
           <Route path="home" element={<MainLayout menuItems={trainerMenuItems}><TrainerDashboard /></MainLayout>} />
+          <Route path="customers" element={<MainLayout menuItems={trainerMenuItems}><CustomerManagement /></MainLayout>} />
           <Route path="newlessons/:customerId" element={<LessonCreateWithMenu />} />
         </Route>
 

@@ -32,6 +32,9 @@ export const CustomerManagement: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
+  // トレーナーの場合は編集・作成機能を無効化
+  const isTrainer = authUser?.role?.toUpperCase() === 'TRAINER';
+
   // --- API Selector ---
   const getCustomerService = useCallback(() => {
     if (!authUser) return null;
@@ -131,20 +134,24 @@ if (!service) return;
       {/* ヘッダー */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-black text-gray-900 tracking-tight">顧客管理</h1>
+          <h1 className="text-3xl font-black text-gray-900 tracking-tight">
+            {isTrainer ? '顧客一覧' : '顧客管理'}
+          </h1>
           <p className="text-sm text-gray-500 mt-1">
             <span className="font-bold text-green-600">{total}</span> 名の顧客が登録されています
           </p>
         </div>
-        <button 
-          onClick={handleCreateClick}
-          className="h-12 px-6 bg-[#7AB77A] text-white font-black rounded-2xl hover:bg-[rgba(122,183,122,0.9)] transition-all active:scale-95 flex items-center justify-center gap-2"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
-          </svg>
-          新規顧客登録
-        </button>
+        {!isTrainer && (
+          <button 
+            onClick={handleCreateClick}
+            className="h-12 px-6 bg-[#7AB77A] text-white font-black rounded-2xl hover:bg-[rgba(122,183,122,0.9)] transition-all active:scale-95 flex items-center justify-center gap-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
+            </svg>
+            新規顧客登録
+          </button>
+        )}
       </div>
 
       {/* 検索・フィルタ */}
@@ -183,14 +190,16 @@ if (!service) return;
               <th className="w-[30%] px-8 py-5 text-center text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">氏名</th>
               <th className="w-[20%] px-8 py-5 text-center text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">年齢</th>
               <th className="w-[25%] px-8 py-5 text-center text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">ステータス</th>
-              <th className="w-[25%] px-8 py-5 text-center text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">編集</th>
+              {!isTrainer && (
+                <th className="w-[25%] px-8 py-5 text-center text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">編集</th>
+              )}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {loading ? (
-                  <LoadingRow colSpan={5} /> 
+                  <LoadingRow colSpan={isTrainer ? 3 : 4} /> 
                 ) : customers.length === 0 ? (
-                  <EmptyRow colSpan={5} message="顧客データが登録されていません" />
+                  <EmptyRow colSpan={isTrainer ? 3 : 4} message="顧客データが登録されていません" />
                 ) : (
                 customers.map((customer) => (
                   <CustomerCard 
@@ -200,7 +209,7 @@ if (!service) return;
                       const age = new Date().getFullYear() - new Date(b).getFullYear();
                       return isNaN(age) ? 0 : age;
                     }}
-                    onEdit={(c) => handleEditClick(c as Customer)}
+                    onEdit={isTrainer ? undefined : (c) => handleEditClick(c as Customer)}
                     onHistoryClick={handleHistoryClick}
                   />
               )))}
@@ -216,15 +225,17 @@ if (!service) return;
         onPageChange={setCurrentPage}
       />
 
-      {/* モーダル */}
-      <CustomerFormModal 
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        initialData={selectedCustomer}
-        onSubmit={handleSubmit}
-        onDelete={handleDelete}
-        isSubmitting={isSubmitting}
-      />
+      {/* モーダル（トレーナーの場合は表示しない） */}
+      {!isTrainer && (
+        <CustomerFormModal 
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          initialData={selectedCustomer}
+          onSubmit={handleSubmit}
+          onDelete={handleDelete}
+          isSubmitting={isSubmitting}
+        />
+      )}
     </div>
   );
 };

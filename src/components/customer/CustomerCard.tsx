@@ -4,7 +4,7 @@ import { CustomerListItem } from '../../types/api/customer';
 interface CustomerCardProps {
   customer: CustomerListItem;
   calculateAge: (birthdate: string) => number;
-  onEdit: (customer: CustomerListItem) => void;
+  onEdit?: (customer: CustomerListItem) => void;
   onHistoryClick?: (customerId: string) => void;
 }
 
@@ -51,19 +51,21 @@ export const CustomerCard: React.FC<CustomerCardProps> = ({ customer, calculateA
       </td>
 
       {/* 編集ボタン */}
-      <td className="px-8 py-6">
-        <div className="flex justify-center">
-          <button 
-            onClick={() => onEdit(customer)} 
-            className="inline-flex items-center gap-2 px-5 py-2 text-green-600 hover:bg-green-600 hover:text-white rounded-xl transition-all font-bold text-sm border border-green-50 shadow-sm hover:shadow-green-100 active:scale-95"
-          >
-            <span>編集</span>
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
-            </svg>
-          </button>
-        </div>
-      </td>
+      {onEdit && (
+        <td className="px-8 py-6">
+          <div className="flex justify-center">
+            <button 
+              onClick={() => onEdit(customer)} 
+              className="inline-flex items-center gap-2 px-5 py-2 text-green-600 hover:bg-green-600 hover:text-white rounded-xl transition-all font-bold text-sm border border-green-50 shadow-sm hover:shadow-green-100 active:scale-95"
+            >
+              <span>編集</span>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+              </svg>
+            </button>
+          </div>
+        </td>
+      )}
     </tr>
   );
 };
