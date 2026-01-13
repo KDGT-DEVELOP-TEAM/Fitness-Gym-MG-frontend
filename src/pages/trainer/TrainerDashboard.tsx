@@ -4,7 +4,8 @@ import { useAuth } from '../../context/AuthContext';
 import { trainerHomeApi } from '../../api/trainer/homeApi';
 import { Lesson } from '../../types/lesson';
 import { ROUTES } from '../../constants/routes';
-import { FiChevronRight, FiSearch, FiCalendar, FiUser, FiMapPin } from 'react-icons/fi';
+import { Pagination } from '../../components/common/Pagination';
+import { FiChevronRight, FiSearch, FiUser, FiMapPin } from 'react-icons/fi';
 
 export const TrainerDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -14,7 +15,7 @@ export const TrainerDashboard: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [currentPage, setCurrentPage] = useState(0); // バックエンド側のページネーション用（0ベース）
+  const [currentPage, setCurrentPage] = useState(1); // フロントエンドは1ベース、バックエンドは0ベース
   const [pageSize] = useState(10); // 1ページあたりの件数
 
   // fetchNextLessonsをuseCallbackでメモ化
@@ -26,7 +27,7 @@ export const TrainerDashboard: React.FC = () => {
     try {
       // GET /api/trainers/home を使用（1週間後～1ヶ月後までのレッスン予定をページネーション付きで取得）
       const data = await trainerHomeApi.getHome({
-        page: currentPage,
+        page: currentPage - 1, // フロントエンドは1ベース、バックエンドは0ベース
         size: pageSize,
       });
       
@@ -59,15 +60,10 @@ export const TrainerDashboard: React.FC = () => {
     }
   }, [nextLessons, searchQuery]);
 
-  // 次のページを読み込む（バックエンド側のページネーション）
-  const handleLoadMore = () => {
-    setCurrentPage((prev) => prev + 1);
-  };
-
   // 検索クエリが変更されたときにページをリセット
   useEffect(() => {
     if (searchQuery.trim() !== '') {
-      setCurrentPage(0);
+      setCurrentPage(1);
     }
   }, [searchQuery]);
 
@@ -122,6 +118,9 @@ export const TrainerDashboard: React.FC = () => {
     );
   }
 
+  // エラー表示
+  if (error) return <div className="p-10 text-red-500 text-center font-bold">⚠️ {error}</div>;
+
   // 初期ローディング
   if (loading && nextLessons.length === 0) {
     return (
@@ -131,47 +130,45 @@ export const TrainerDashboard: React.FC = () => {
     );
   }
 
+  // 総ページ数の計算
+  const totalPages = Math.ceil(totalCount / pageSize) || 1;
+
   return (
-    <div className="p-8 font-poppins">
-      <div className="flex items-center gap-4 mb-6">
-        <h1 className="text-3xl font-semibold text-gray-800">レッスン日程</h1>
-        {/* 次回レッスン希望日程件数 */}
-        <div className="border border-[#DFDFDF] bg-white rounded-[10px] flex items-center px-6 h-[65px]">
-          <FiCalendar className="text-[#68BE6B] mr-3 w-[29px] h-[29px]" />
-          <p className="text-gray-700 text-[23px]">
-            次回レッスン希望日程: <span className="font-semibold text-[#68BE6B]">{upcomingCount}</span>件
+    <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
+      {/* ヘッダー */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="flex flex-wrap items-center gap-6">
+          <h1 className="text-3xl font-black text-gray-900 tracking-tight">レッスン日程</h1>
+          <p className="text-sm text-gray-500 px-3 py-1">
+            次回レッスン希望日程: <span className="font-bold text-green-600">{upcomingCount}</span> 件
           </p>
         </div>
       </div>
 
       {/* 検索バー */}
-      <div className="mb-6 flex justify-center">
-        <div className="relative border border-[#DFDFDF] rounded-[35px] h-[70px] max-w-[95%] w-full">
-          <FiSearch className="absolute left-6 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+      <div className="bg-white p-6 rounded-[2rem] shadow-sm border-2 border-gray-50">
+        <div className="relative">
+          <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
           <input
             type="text"
             placeholder="名前を入力"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-full pl-14 pr-6 rounded-[35px] border-none focus:outline-none focus:ring-2 focus:ring-[#68BE6B] text-base"
+            className="w-full h-12 pl-12 pr-4 rounded-2xl border-2 border-gray-50 focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-base"
           />
         </div>
       </div>
 
-      {error && (
-        <div className="mb-4 p-4 bg-red-50 text-red-600 rounded-lg">
-          {error}
-        </div>
-      )}
-
       {/* 次回レッスン希望日程一覧 */}
-      <div className="space-y-6">
-        {displayedLessons.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
+      {displayedLessons.length === 0 ? (
+        <div className="bg-white rounded-[2rem] shadow-sm border-2 border-gray-50 p-12 text-center">
+          <p className="text-gray-500 text-lg">
             {searchQuery ? '検索結果がありません' : '次回レッスン希望日程がありません'}
-          </div>
-        ) : (
-          Object.entries(groupedLessons).map(([date, lessonsForDate]) => (
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {Object.entries(groupedLessons).map(([date, lessonsForDate]) => (
             <div key={date} className="space-y-3">
               {/* 日付セパレーター */}
               <div className="flex items-center gap-3 mb-4">
@@ -186,11 +183,11 @@ export const TrainerDashboard: React.FC = () => {
                 <div
                   key={lesson.id}
                   onClick={() => handleLessonClick(lesson.customerId)}
-                  className="group bg-white border border-[#DFDFDF] rounded-[15px] p-5 hover:shadow-md transition-shadow cursor-pointer flex items-center justify-between relative"
+                  className="group bg-white rounded-[2rem] shadow-sm border-2 border-gray-50 p-5 hover:bg-green-50/30 transition-colors cursor-pointer flex items-center justify-between relative"
                 >
                   {/* 右側の緑のアクセントバーと矢印 */}
-                  <div className="absolute right-4 top-4 bottom-4 bg-[#68BE6B] rounded-full w-[30px] transition-transform group-hover:scale-105">
-                    <FiChevronRight className="text-white absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex-shrink-0 w-7 h-7" />
+                  <div className="absolute right-4 top-4 bottom-4 bg-[#68BE6B] rounded-full w-[30px] transition-transform group-hover:scale-105 flex items-center justify-center">
+                    <FiChevronRight className="text-white flex-shrink-0 w-7 h-7" />
                   </div>
 
                   <div className="flex-1">
@@ -252,20 +249,17 @@ export const TrainerDashboard: React.FC = () => {
                 </div>
               ))}
             </div>
-          ))
-        )}
-      </div>
-
-      {/* もっと見るボタン（バックエンド側のページネーション対応） */}
-      {!searchQuery && (currentPage + 1) * pageSize < totalCount && (
-        <div className="mt-6 text-center">
-          <button
-            onClick={handleLoadMore}
-            className="px-8 py-3 rounded-lg bg-[#68BE6B] text-white font-medium hover:bg-[#5AB05D] transition-colors"
-          >
-            もっと見る
-          </button>
+          ))}
         </div>
+      )}
+
+      {/* ページネーション */}
+      {!searchQuery && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
       )}
     </div>
   );
