@@ -5,7 +5,7 @@ import { AdminDashboard } from '../pages/admin/AdminDashboard';
 import { ManagerDashboard } from '../pages/manager/ManagerDashboard';
 import { CustomerManagement } from '../pages/CustomerManagement';
 import { UserManagement } from '../pages/UserManagement';
-import { CustomerSelect } from '../pages/CustomerSelect';
+import { TrainerDashboard } from '../pages/trainer/TrainerDashboard';
 import { LessonCreate } from '../pages/common/LessonCreate';
 import { LessonHistory } from '../pages/common/LessonHistory';
 import { LessonDetail } from '../pages/common/LessonDetail';
@@ -354,7 +354,7 @@ export const AppRouter = () => {
 
         <Route path="/trainer" element={<ProtectedRoute roles={['TRAINER']} />}>
           <Route index element={<Navigate to="/trainer/home" replace />} />
-          <Route path="home" element={<MainLayout menuItems={trainerMenuItems}><CustomerSelect /></MainLayout>} />
+          <Route path="home" element={<MainLayout menuItems={trainerMenuItems}><TrainerDashboard /></MainLayout>} />
           <Route path="newlessons/:customerId" element={<LessonCreateWithMenu />} />
         </Route>
 

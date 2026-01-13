@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { trainerHomeApi } from '../api/trainer/homeApi';
-import { Lesson } from '../types/lesson';
-import { ROUTES } from '../constants/routes';
+import { useAuth } from '../../context/AuthContext';
+import { trainerHomeApi } from '../../api/trainer/homeApi';
+import { Lesson } from '../../types/lesson';
+import { ROUTES } from '../../constants/routes';
 import { FiChevronRight, FiSearch, FiCalendar, FiUser, FiMapPin } from 'react-icons/fi';
 
-export const CustomerSelect: React.FC = () => {
+export const TrainerDashboard: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [nextLessons, setNextLessons] = useState<Lesson[]>([]);
@@ -73,11 +73,11 @@ export const CustomerSelect: React.FC = () => {
 
   const handleLessonClick = (customerId: string) => {
     if (!customerId) {
-      console.error('[CustomerSelect] customerId is missing');
+      console.error('[TrainerDashboard] customerId is missing');
       return;
     }
     const url = ROUTES.LESSON_FORM_WITH_CUSTOMER.replace(':customerId', customerId);
-    console.log('[CustomerSelect] Navigating to:', url);
+    console.log('[TrainerDashboard] Navigating to:', url);
     navigate(url);
   };
 
