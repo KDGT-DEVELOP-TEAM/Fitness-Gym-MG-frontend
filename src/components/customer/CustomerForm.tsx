@@ -145,7 +145,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
             <input name="name" value={formData.name} onChange={handleChange} required maxLength={100} className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium" />
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">ふりがな <RequiredBadge /></label>
+            <label className="block text-sm font-bold text-gray-700 mb-1">フリガナ <RequiredBadge /></label>
             <input name="kana" value={formData.kana || ''} onChange={handleChange} required maxLength={100} className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium" />
           </div>
           <div>
