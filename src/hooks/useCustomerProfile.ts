@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { customerApi } from '../api/customerApi';
 import { postureApi } from '../api/postureApi';
 import { Gender, CustomerRequest } from '../types/api/customer';
+import { logger } from '../utils/logger';
 
 export interface CustomerProfileData {
   id: string;
@@ -75,6 +76,12 @@ export const useCustomerProfile = (customerId: string) => {
         // APIから顧客データを取得（customerApi.getProfileを使用）
         const data = await customerApi.getProfile(customerId);
 
+        // デバッグログ: 顧客データを確認
+        logger.debug('[useCustomerProfile] Customer data:', {
+          customerId,
+          firstPostureGroupId: data.firstPostureGroupId
+        }, 'useCustomerProfile');
+
         // 初回姿勢画像を取得
         let postureImages = {
           front: undefined as string | undefined,
@@ -83,36 +90,100 @@ export const useCustomerProfile = (customerId: string) => {
           right: undefined as string | undefined,
         };
 
-        if (data.firstPostureGroupId) {
-          try {
-            // 姿勢グループ一覧を取得
-            const postureGroups = await postureApi.getPostureGroups(customerId);
-            
+        try {
+          // 姿勢グループ一覧を取得
+          const postureGroups = await postureApi.getPostureGroups(customerId);
+          
+          // デバッグログ: 姿勢グループ一覧を確認
+          logger.debug('[useCustomerProfile] Posture groups:', {
+            groupCount: postureGroups.length,
+            groupIds: postureGroups.map(g => g.id),
+            firstPostureGroupId: data.firstPostureGroupId
+          }, 'useCustomerProfile');
+          
+          let firstPostureGroup;
+          
+          if (data.firstPostureGroupId) {
             // firstPostureGroupIdに一致するグループを検索
-            const firstPostureGroup = postureGroups.find(
+            firstPostureGroup = postureGroups.find(
               (group) => group.id === data.firstPostureGroupId
             );
-
-            if (firstPostureGroup && firstPostureGroup.images) {
-              // 各位置の画像を抽出
-              firstPostureGroup.images.forEach((image) => {
-                if (image.signedUrl && image.position) {
-                  const position = image.position.toLowerCase();
-                  if (position === 'front' && !postureImages.front) {
-                    postureImages.front = image.signedUrl;
-                  } else if (position === 'back' && !postureImages.back) {
-                    postureImages.back = image.signedUrl;
-                  } else if (position === 'left' && !postureImages.left) {
-                    postureImages.left = image.signedUrl;
-                  } else if (position === 'right' && !postureImages.right) {
-                    postureImages.right = image.signedUrl;
-                  }
-                }
+          } else {
+            // firstPostureGroupIdがnullの場合、最も古いレッスンの姿勢グループを自動検出
+            logger.debug('[useCustomerProfile] firstPostureGroupId is null, auto-detecting first posture group', {
+              customerId,
+              groupCount: postureGroups.length
+            }, 'useCustomerProfile');
+            
+            if (postureGroups.length > 0) {
+              // lessonStartDateが最も古い姿勢グループを検出
+              firstPostureGroup = postureGroups.reduce((oldest, current) => {
+                const oldestDate = new Date(oldest.lessonStartDate);
+                const currentDate = new Date(current.lessonStartDate);
+                return currentDate < oldestDate ? current : oldest;
               });
+              
+              logger.debug('[useCustomerProfile] Auto-detected first posture group:', {
+                groupId: firstPostureGroup.id,
+                lessonStartDate: firstPostureGroup.lessonStartDate,
+                imageCount: firstPostureGroup.images?.length
+              }, 'useCustomerProfile');
             }
-          } catch (postureError) {
-            // 姿勢画像の取得に失敗してもプロフィールの表示は続行
-            console.error('Failed to load posture images:', postureError);
+          }
+
+          // デバッグログ: 初回姿勢グループを確認
+          logger.debug('[useCustomerProfile] First posture group:', {
+            found: !!firstPostureGroup,
+            groupId: firstPostureGroup?.id,
+            imageCount: firstPostureGroup?.images?.length,
+            images: firstPostureGroup?.images?.map(img => ({
+              id: img.id,
+              position: img.position,
+              hasSignedUrl: !!img.signedUrl,
+              signedUrlLength: img.signedUrl?.length || 0
+            }))
+          }, 'useCustomerProfile');
+
+          if (firstPostureGroup && firstPostureGroup.images) {
+            // 各位置の画像を抽出
+            firstPostureGroup.images.forEach((image) => {
+              if (image.signedUrl && image.position) {
+                const position = image.position.toLowerCase();
+                if (position === 'front' && !postureImages.front) {
+                  postureImages.front = image.signedUrl;
+                } else if (position === 'back' && !postureImages.back) {
+                  postureImages.back = image.signedUrl;
+                } else if (position === 'left' && !postureImages.left) {
+                  postureImages.left = image.signedUrl;
+                } else if (position === 'right' && !postureImages.right) {
+                  postureImages.right = image.signedUrl;
+                }
+              }
+            });
+          }
+
+          // デバッグログ: 抽出された姿勢画像を確認
+          logger.debug('[useCustomerProfile] Posture images:', {
+            front: !!postureImages.front,
+            back: !!postureImages.back,
+            left: !!postureImages.left,
+            right: !!postureImages.right,
+            frontUrlLength: postureImages.front?.length || 0,
+            backUrlLength: postureImages.back?.length || 0,
+            leftUrlLength: postureImages.left?.length || 0,
+            rightUrlLength: postureImages.right?.length || 0
+          }, 'useCustomerProfile');
+        } catch (postureError) {
+          // 姿勢画像の取得に失敗してもプロフィールの表示は続行
+          logger.error('[useCustomerProfile] Failed to load posture images:', postureError, 'useCustomerProfile');
+          // エラーの詳細をログに記録
+          if (postureError instanceof Error) {
+            logger.error('[useCustomerProfile] Posture image error details:', {
+              message: postureError.message,
+              stack: postureError.stack,
+              customerId,
+              firstPostureGroupId: data.firstPostureGroupId
+            }, 'useCustomerProfile');
           }
         }
 
