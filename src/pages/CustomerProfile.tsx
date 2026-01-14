@@ -18,10 +18,12 @@ import { EditableField } from '../components/profile/EditableField';
 import { useCustomerProfile } from '../hooks/useCustomerProfile';
 
 export const CustomerProfile: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id, customerId } = useParams<{ id?: string; customerId?: string }>();
+  // 新しいパス形式を優先、なければ旧パス形式
+  const profileId = customerId || id;
 
   // idが存在しない場合のエラーハンドリング
-  if (!id) {
+  if (!profileId) {
     return (
       <div className="p-8 text-center">
         <p className="text-red-600 text-lg">顧客IDが指定されていません</p>
@@ -39,7 +41,7 @@ export const CustomerProfile: React.FC = () => {
     handleChange,
     handleBlur,
     dismissError,
-  } = useCustomerProfile(id);
+  } = useCustomerProfile(profileId);
 
   if (loading) {
     return (

@@ -15,6 +15,11 @@ export const ROUTES = {
   POSTURE_LIST_MANAGER: '/manager/postures/:customerId',
   // 旧パス（互換性のため残す）
   POSTURE_LIST: '/trainer/postures/:customerId',
+  // 顧客プロフィール（ロールごと）
+  CUSTOMER_PROFILE_ADMIN: '/admin/profile/:customerId',
+  CUSTOMER_PROFILE_MANAGER: '/manager/profile/:customerId',
+  CUSTOMER_PROFILE_TRAINER: '/trainer/profile/:customerId',
+  // 旧パス（互換性のため残す）
   CUSTOMER_PROFILE: '/customers/:id',
   POSTURE_COMPARE: '/postures/compare',
   CUSTOMER_MANAGEMENT: '/customers',

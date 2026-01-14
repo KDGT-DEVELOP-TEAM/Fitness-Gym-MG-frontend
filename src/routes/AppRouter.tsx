@@ -70,6 +70,19 @@ const getPosturePath = (role: string, customerId: string): string => {
   }
 };
 
+// ロールに応じた顧客プロフィールパスを取得
+const getProfilePath = (role: string, customerId: string): string => {
+  switch (role.toUpperCase()) {
+    case 'ADMIN':
+      return ROUTES.CUSTOMER_PROFILE_ADMIN.replace(':customerId', customerId);
+    case 'MANAGER':
+      return ROUTES.CUSTOMER_PROFILE_MANAGER.replace(':customerId', customerId);
+    case 'TRAINER':
+    default:
+      return ROUTES.CUSTOMER_PROFILE_TRAINER.replace(':customerId', customerId);
+  }
+};
+
 // ロールに応じたHomeパスを取得
 const getHomePath = (role: string): string => {
   switch (role.toUpperCase()) {
@@ -115,7 +128,7 @@ const getCustomerRelatedMenuItems = (customerId: string, role: string, lessonId?
       icon: <HiPhotograph className="w-5 h-5" />,
     },
     {
-      path: ROUTES.CUSTOMER_PROFILE.replace(':id', customerId),
+      path: getProfilePath(role, customerId),
       label: '顧客プロフィール',
       icon: <HiUser className="w-5 h-5" />,
     },
@@ -227,7 +240,7 @@ const getLessonDetailMenuItems = (role: string, customerId: string, lessonId: st
     
     // 5. 顧客プロフィール
     {
-      path: ROUTES.CUSTOMER_PROFILE.replace(':id', customerId),
+      path: getProfilePath(role, customerId),
       label: '顧客プロフィール',
       icon: <HiUser className="w-5 h-5" />,
     },
@@ -286,13 +299,15 @@ const PostureImageListWithMenu: React.FC = () => {
 
 // 顧客プロフィール用のラッパーコンポーネント
 const CustomerProfileWithMenu: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id, customerId } = useParams<{ id?: string; customerId?: string }>();
   const { user } = useAuth();
-  if (!id) {
+  // 新しいパス形式を優先、なければ旧パス形式
+  const profileId = customerId || id;
+  if (!profileId) {
     return <CustomerProfile />;
   }
   const role = user?.role || 'TRAINER';
-  const menuItems = getCustomerRelatedMenuItems(id, role);
+  const menuItems = getCustomerRelatedMenuItems(profileId, role);
   return (
     <MainLayout menuItems={menuItems}>
       <CustomerProfile />
@@ -393,7 +408,17 @@ export const AppRouter = () => {
           <Route index element={<MainLayout menuItems={trainerMenuItems}><LessonCreate /></MainLayout>} />
         </Route>
 
-        {/* 顧客プロフィール（全ロール共通） */}
+        {/* 顧客プロフィール（ロールごと） */}
+        <Route path={ROUTES.CUSTOMER_PROFILE_ADMIN} element={<ProtectedRoute roles={['ADMIN']} />}>
+          <Route index element={<CustomerProfileWithMenu />} />
+        </Route>
+        <Route path={ROUTES.CUSTOMER_PROFILE_MANAGER} element={<ProtectedRoute roles={['MANAGER']} />}>
+          <Route index element={<CustomerProfileWithMenu />} />
+        </Route>
+        <Route path={ROUTES.CUSTOMER_PROFILE_TRAINER} element={<ProtectedRoute roles={['TRAINER']} />}>
+          <Route index element={<CustomerProfileWithMenu />} />
+        </Route>
+        {/* 旧パス（互換性のため残す） */}
         <Route path={ROUTES.CUSTOMER_PROFILE} element={<ProtectedRoute roles={['ADMIN', 'MANAGER', 'TRAINER']} />}>
           <Route index element={<CustomerProfileWithMenu />} />
         </Route>
