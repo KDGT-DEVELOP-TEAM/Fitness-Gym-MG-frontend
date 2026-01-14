@@ -16,8 +16,8 @@ export const managerCustomersApi = {
       .then(res => convertPageResponse(res.data));
   },
 
-  createCustomer: (storeId: string, customerData: CustomerRequest): Promise<void> =>
-    axiosInstance.post<void>(`/stores/${storeId}/manager/customers`, customerData).then(() => undefined),
+  createCustomer: (customerData: CustomerRequest): Promise<void> =>
+    axiosInstance.post<void>(`/manager/customers`, customerData).then(() => undefined),
 
   // 有効無効切り替えは編集モーダル内(update)でしか行わないため、コメントアウト
   // enableCustomer: (storeId: string, customerId: string): Promise<Customer> =>

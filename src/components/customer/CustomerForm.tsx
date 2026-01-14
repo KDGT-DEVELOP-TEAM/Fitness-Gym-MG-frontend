@@ -5,6 +5,8 @@ import { CustomerFormData } from '../../types/form/customer';
 import { validatePastDate } from '../../utils/validators';
 import { getAllErrorMessages } from '../../utils/errorMessages';
 import { isErrorResponse } from '../../types/api/error';
+import { useAuth } from '../../context/AuthContext';
+import { useStores } from '../../hooks/useStore';
 
 interface CustomerFormProps {
   initialData?: Customer;
@@ -18,8 +20,14 @@ interface ApiErrorResponse {
 }
 
 export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmit, onDelete, isSubmitting }) => {
+  const { user: authUser } = useAuth();
+  const { stores, loading: storesLoading } = useStores();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [errorMessages, setErrorMessages] = useState<string[]>([]);
+  
+  const isAdmin = authUser?.role?.toUpperCase() === 'ADMIN';
+  const isManager = authUser?.role?.toUpperCase() === 'MANAGER';
+  const showStoreSelection = isAdmin || isManager; // ADMINとMANAGERの両方で店舗選択UIを表示
   
   const [formData, setFormData] = useState<CustomerFormData & { active: boolean }>({
     name: initialData?.name || '',
@@ -33,6 +41,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
     medical: initialData?.medical || '',
     taboo: initialData?.taboo || '',
     memo: initialData?.memo || '',
+    storeId: undefined, // 新規作成時は未選択
     active: initialData?.active ?? true, // フォーム内で管理（バックエンドのCustomer.activeに対応）
   });
 
@@ -76,6 +85,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
         taboo: formData.taboo || undefined,
         memo: formData.memo || undefined,
         active: formData.active, // バックエンドのCustomerRequestは`active`フィールドを使用
+        storeId: formData.storeId || undefined, // ADMINの場合、選択した店舗IDを送信
       };
 
       await onSubmit(requestData);
@@ -160,6 +170,46 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
             </select>
           </div>
         </div>
+        
+        {/* 店舗選択（ADMINとMANAGERの場合に表示） */}
+        {showStoreSelection && !initialData && (
+          <section className="space-y-4">
+            <h3 className="text-lg font-medium border-b pb-2 flex items-center">
+              <svg className="w-5 h-5 mr-2 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+              担当店舗の設定
+              <RequiredBadge />
+            </h3>
+            {storesLoading ? (
+              <div className="text-sm text-gray-500">店舗情報を読み込み中...</div>
+            ) : stores.length === 0 ? (
+              <div className="text-sm text-red-600">店舗が見つかりません</div>
+            ) : (
+              <div className="grid grid-cols-2 gap-4">
+                {stores.map((store) => (
+                  <label
+                    key={store.id}
+                    className="flex items-center p-4 bg-white rounded-xl border-2 border-gray-200 cursor-pointer hover:bg-gray-50 hover:border-green-500 transition-colors"
+                  >
+                    <input
+                      type="radio"
+                      name="storeId"
+                      value={store.id}
+                      checked={formData.storeId === store.id}
+                      onChange={(e) => {
+                        setFormData(prev => ({ ...prev, storeId: e.target.value }));
+                      }}
+                      required={showStoreSelection && !initialData}
+                      className="w-5 h-5 text-green-600 border-gray-300 focus:ring-green-500 focus:ring-2"
+                    />
+                    <span className="ml-3 text-sm font-medium text-gray-700">{store.name}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
       </section>
 
       {/* 連絡先セクション */}

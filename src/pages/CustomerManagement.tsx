@@ -43,7 +43,7 @@ export const CustomerManagement: React.FC = () => {
 
     return {
       create: (data: CustomerRequest) => 
-        isAdmin ? adminCustomersApi.createCustomer(data) : managerCustomersApi.createCustomer(storeId!, data),
+        isAdmin ? adminCustomersApi.createCustomer(data) : managerCustomersApi.createCustomer(data),
       update: (id: string, data: CustomerRequest) => 
         customerApi.updateProfile(id, data),
       delete: (id: string) => 
