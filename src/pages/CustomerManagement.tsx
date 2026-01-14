@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCustomers } from '../hooks/useCustomer'; 
 import { CustomerCard } from '../components/customer/CustomerCard';
@@ -53,9 +53,23 @@ export const CustomerManagement: React.FC = () => {
 
   const totalPages = Math.ceil(total / ITEMS_PER_PAGE) || 1;
 
+  // トレーナーの場合、refetchの依存を最適化（storesLoadingの変更による再実行を防ぐ）
+  // useRefを使ってrefetchの最新バージョンを保持
+  const refetchRef = useRef(refetch);
   useEffect(() => {
-    refetch(currentPage - 1);
-  }, [currentPage, refetch]);
+    refetchRef.current = refetch;
+  }, [refetch]);
+
+  useEffect(() => {
+    // トレーナーの場合、refetchの変更を無視して、currentPageとsearchQueryの変更時のみ実行
+    // ADMIN/MANAGERの場合、refetchの変更も監視
+    if (isTrainer) {
+      refetchRef.current(currentPage - 1);
+    } else {
+      refetch(currentPage - 1);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, isTrainer ? undefined : refetch, isTrainer]); // トレーナーの場合、refetchを依存から除外
 
   useEffect(() => {
     setCurrentPage(1);

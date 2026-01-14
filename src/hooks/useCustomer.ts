@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import axios from 'axios';
 import { adminCustomersApi } from '../api/admin/customersApi';
 import { managerCustomersApi } from '../api/manager/customersApi';
@@ -21,6 +21,15 @@ export const useCustomers = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // MANAGERの場合のみ、storesとstoresLoadingをrefで保持（トレーナーの場合は不要）
+  const storesRef = useRef(stores);
+  const storesLoadingRef = useRef(storesLoading);
+  
+  useEffect(() => {
+    storesRef.current = stores;
+    storesLoadingRef.current = storesLoading;
+  }, [stores, storesLoading]);
 
   const fetchCustomers = useCallback(async (page: number = 0) => {
     if (!authUser) return;
@@ -28,9 +37,11 @@ export const useCustomers = () => {
     const role = authUser.role?.toUpperCase();
     const isAdmin = role === 'ADMIN';
     const isManager = role === 'MANAGER';
+    const isTrainer = role === 'TRAINER';
     
     // MANAGERロールの場合、storesの読み込みが完了するまで待つ
-    if (isManager && storesLoading) {
+    // トレーナーの場合はstoresLoadingをチェックしない
+    if (isManager && storesLoadingRef.current) {
       // storesLoading中はローディング状態を維持し、エラーメッセージは表示しない
       setLoading(true);
       setError(null);
@@ -40,7 +51,7 @@ export const useCustomers = () => {
     setLoading(true);
     setError(null);
     try {
-      if (role === 'TRAINER') {
+      if (isTrainer) {
         // トレーナーの場合: 全件取得してフロントエンドでページネーション
         const allCustomersData = await trainerCustomersApi.getCustomers();
         setAllCustomers(allCustomersData);
@@ -77,9 +88,10 @@ export const useCustomers = () => {
           response = await adminCustomersApi.getCustomers(params);
         } else {
           // MANAGERロールの場合、storeIdを取得
+          const currentStores = storesRef.current;
           const storeId = Array.isArray(authUser.storeIds) && authUser.storeIds.length > 0
             ? authUser.storeIds[0]
-            : (stores && stores.length > 0 ? stores[0].id : null);
+            : (currentStores && currentStores.length > 0 ? currentStores[0].id : null);
           
           if (!storeId) {
             // storesLoadingが完了し、かつstoreIdが取得できない場合のみエラーメッセージを表示
@@ -101,7 +113,7 @@ export const useCustomers = () => {
     } finally {
       setLoading(false);
     }
-  }, [searchQuery, authUser, stores, storesLoading]);
+  }, [searchQuery, authUser]); // storesとstoresLoadingを依存配列から削除
 
   // CustomerRequest 型を受け取るように修正
   const createCustomer = (data: CustomerRequest) => adminCustomersApi.createCustomer(data);
