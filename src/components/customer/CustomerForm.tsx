@@ -86,6 +86,10 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
         memo: formData.memo || undefined,
         active: formData.active, // バックエンドのCustomerRequestは`active`フィールドを使用
         storeId: formData.storeId || undefined, // ADMINの場合、選択した店舗IDを送信
+        // 更新時は既存のfirstPostureGroupIdを保持（nullの場合はフィールドを送信しない）
+        ...(initialData?.firstPostureGroupId !== undefined && initialData?.firstPostureGroupId !== null 
+          ? { firstPostureGroupId: initialData.firstPostureGroupId } 
+          : {}),
       };
 
       await onSubmit(requestData);
@@ -272,7 +276,26 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
         </button>
 
         {initialData && onDelete && (
-          <button type="button" onClick={() => onDelete(initialData.id)} disabled={isSubmitting} className="w-full py-3 text-red-500 font-bold hover:bg-red-50 rounded-2xl transition-all">
+          <button 
+            type="button" 
+            onClick={() => {
+              if (initialData) {
+                const confirmMessage = initialData.active 
+                  ? "この顧客は有効な状態です。削除するには先に無効化してください。"
+                  : "この顧客データを完全に削除してもよろしいですか？";
+                
+                if (window.confirm(confirmMessage)) {
+                  if (initialData.active) {
+                    alert("先に顧客を無効化してから削除してください。");
+                    return;
+                  }
+                  onDelete(initialData.id);
+                }
+              }
+            }} 
+            disabled={isSubmitting} 
+            className="w-full py-3 text-red-500 font-bold hover:bg-red-50 rounded-2xl transition-all"
+          >
             この顧客データを削除する
           </button>
         )}
