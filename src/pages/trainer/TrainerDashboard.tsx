@@ -6,6 +6,7 @@ import { Lesson } from '../../types/lesson';
 import { ROUTES } from '../../constants/routes';
 import { Pagination } from '../../components/common/Pagination';
 import { FiChevronRight, FiUser, FiMapPin } from 'react-icons/fi';
+import { LoadingSpinner } from '../../components/common/TableStatusRows';
 
 export const TrainerDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -124,8 +125,8 @@ export const TrainerDashboard: React.FC = () => {
   // 初期ローディング
   if (loading && nextLessons.length === 0) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#68BE6B]"></div>
+      <div className="p-8 max-w-7xl mx-auto">
+        <LoadingSpinner minHeight="min-h-[400px]" />
       </div>
     );
   }

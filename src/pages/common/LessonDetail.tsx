@@ -6,6 +6,7 @@ import { useLessonData } from '../../hooks/useLessonData';
 import { usePostureImagesForLesson } from '../../hooks/usePostureImagesForLesson';
 import { FORM_STYLES } from '../../styles/formStyles';
 import { logger } from '../../utils/logger';
+import { LoadingSpinner } from '../../components/common/TableStatusRows';
 
 export const LessonDetail: React.FC = () => {
   const { lessonId } = useParams<{ lessonId: string }>();
@@ -40,7 +41,7 @@ export const LessonDetail: React.FC = () => {
   if (loading) {
     return (
       <div className="p-6">
-        <p>読み込み中...</p>
+        <LoadingSpinner minHeight="min-h-[300px]" />
       </div>
     );
   }

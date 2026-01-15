@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react';
 import { useStores } from '../../hooks/useStore';
 import { LessonCard } from '../../components/lesson/LessonCard2';
-import { LoadingRow, EmptyRow } from '../../components/common/TableStatusRows';
+import { LoadingRow, EmptyRow, LoadingSpinner } from '../../components/common/TableStatusRows';
 import { Pagination } from '../../components/common/Pagination';
 import { adminHomeApi } from '../../api/admin/homeApi'; 
 import { AdminHomeResponse } from '../../types/admin/home'
@@ -129,9 +129,7 @@ export const AdminDashboard: React.FC = () => {
 
         <div ref={scrollContainerRef} className="relative h-64 w-full overflow-x-auto scroll-smooth custom-scrollbar">
           {loading ? (
-            <div className="flex items-center justify-center h-full">
-              <p className="text-gray-400 text-sm">データを読み込み中...</p>
-            </div>
+            <LoadingSpinner minHeight="h-full" className="py-0" />
           ) : chartData?.series && chartData.series.length > 0 ? (
           <div className="flex items-end space-x-12 px-4 pb-5 min-w-max h-full">
               {chartData.series.map((d, i) => (

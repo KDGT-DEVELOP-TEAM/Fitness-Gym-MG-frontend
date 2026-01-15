@@ -22,10 +22,16 @@ export const useCustomers = (selectedStoreId?: string) => {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   
+  // searchQueryをrefで保持（fetchCustomersの依存配列から除外するため）
+  const searchQueryRef = useRef(searchQuery);
+  
   // MANAGERの場合のみ、storesとstoresLoadingをrefで保持（トレーナーの場合は不要）
   const storesRef = useRef(stores);
   const storesLoadingRef = useRef(storesLoading);
-  const fetchCustomersRef = useRef<((page: number) => Promise<void>) | null>(null);
+  
+  useEffect(() => {
+    searchQueryRef.current = searchQuery;
+  }, [searchQuery]);
   
   useEffect(() => {
     storesRef.current = stores;
@@ -40,15 +46,6 @@ export const useCustomers = (selectedStoreId?: string) => {
     const isManager = role === 'MANAGER';
     const isTrainer = role === 'TRAINER';
     
-    // MANAGERロールの場合、storesの読み込みが完了するまで待つ
-    // トレーナーの場合はstoresLoadingをチェックしない
-    if (isManager && storesLoadingRef.current) {
-      // storesLoading中はローディング状態を維持し、エラーメッセージは表示しない
-      setLoading(true);
-      setError(null);
-      return;
-    }
-    
     setLoading(true);
     setError(null);
     try {
@@ -59,8 +56,8 @@ export const useCustomers = (selectedStoreId?: string) => {
         
         // 検索フィルタリング
         let filteredCustomers = allCustomersData;
-        if (searchQuery.trim()) {
-          const normalizedQuery = searchQuery.toLowerCase();
+        if (searchQueryRef.current.trim()) {
+          const normalizedQuery = searchQueryRef.current.toLowerCase();
           filteredCustomers = allCustomersData.filter(customer =>
             customer.name.toLowerCase().includes(normalizedQuery) ||
             (customer.kana && customer.kana.toLowerCase().includes(normalizedQuery))
@@ -78,7 +75,7 @@ export const useCustomers = (selectedStoreId?: string) => {
       } else {
         // ADMIN/MANAGERの場合: バックエンドでページネーション
         const params: CustomerListParams = {
-          name: searchQuery || undefined,
+          name: searchQueryRef.current || undefined,
           page,
           size: 10
         };
@@ -106,13 +103,7 @@ export const useCustomers = (selectedStoreId?: string) => {
           }
           
           if (!storeId) {
-            // 店舗情報がまだ読み込み中の場合は、エラーを設定せずに早期リターン
-            if (storesLoadingRef.current) {
-              setLoading(true);
-              setError(null);
-              return;
-            }
-            // storesLoadingが完了し、かつstoreIdが取得できない場合のみエラーメッセージを表示
+            // storeIdが取得できない場合はエラーをスロー
             throw new Error('店舗IDが取得できませんでした');
           }
           
@@ -131,41 +122,8 @@ export const useCustomers = (selectedStoreId?: string) => {
     } finally {
       setLoading(false);
     }
-  }, [searchQuery, authUser, selectedStoreId]); // storesとstoresLoadingを依存配列から削除、selectedStoreIdを追加
+  }, [authUser, selectedStoreId]); // searchQueryを依存配列から除外（searchQueryRef.currentを使用するため）
 
-  // fetchCustomersの最新バージョンをrefで保持
-  useEffect(() => {
-    fetchCustomersRef.current = fetchCustomers;
-  }, [fetchCustomers]);
-
-  // MANAGERロールの場合、店舗情報の読み込み完了後に自動的に顧客データを取得
-  // selectedStoreIdが指定されている場合は、その店舗のデータを取得
-  const fetchedKeyRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (!authUser) return;
-    const role = authUser.role?.toUpperCase();
-    const isManager = role === 'MANAGER';
-    
-    // 実行キーを生成（selectedStoreId + authUser.idの組み合わせ）
-    const currentStoreId = selectedStoreId || 
-      (Array.isArray(authUser.storeIds) && authUser.storeIds.length > 0 ? authUser.storeIds[0] : null) ||
-      (stores.length > 0 ? stores[0].id : null);
-    const fetchKey = `${authUser.id}-${currentStoreId || 'all'}`;
-    
-    // 既に取得済みの場合は実行しないガード
-    if (fetchedKeyRef.current === fetchKey) {
-      return;
-    }
-    
-    // 店舗情報が読み込み完了し、かつ店舗が存在する場合に顧客データを取得
-    if (isManager && !storesLoading && stores.length > 0 && fetchCustomersRef.current) {
-      // selectedStoreIdが指定されている場合、または初期値が設定されている場合のみ実行
-      if (selectedStoreId || (Array.isArray(authUser.storeIds) && authUser.storeIds.length > 0) || stores.length > 0) {
-        fetchedKeyRef.current = fetchKey;
-        fetchCustomersRef.current(0);
-      }
-    }
-  }, [authUser, storesLoading, stores, selectedStoreId]); // fetchCustomersは依存配列に含めない（ref経由でアクセス）、selectedStoreIdを追加
 
   // CustomerRequest 型を受け取るように修正
   const createCustomer = (data: CustomerRequest) => adminCustomersApi.createCustomer(data);

@@ -1,10 +1,20 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useCustomers } from '../hooks/useCustomer';
+import { LoadingSpinner } from '../components/common/TableStatusRows';
 
 export const CustomerList: React.FC = () => {
-  const { customers, loading, error } = useCustomers();
+  const { customers, loading, error, refetch } = useCustomers();
+  
+  // 初期レンダリング時にデータを取得
+  useEffect(() => {
+    refetch(0);
+  }, [refetch]);
 
-  if (loading) return <div className="p-8 text-center text-gray-500">読み込み中...</div>;
+  if (loading) return (
+    <div className="p-8">
+      <LoadingSpinner minHeight="min-h-[300px]" />
+    </div>
+  );
   
   if (error) return <div className="p-8 text-center text-red-500">エラーが発生しました: {typeof error === 'string' ? error : '不明なエラー'}</div>;
 

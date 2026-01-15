@@ -16,6 +16,7 @@ import {
 } from 'react-icons/hi';
 import { EditableField } from '../components/profile/EditableField';
 import { useCustomerProfile } from '../hooks/useCustomerProfile';
+import { LoadingSpinner } from '../components/common/TableStatusRows';
 
 export const CustomerProfile: React.FC = () => {
   const { id, customerId } = useParams<{ id?: string; customerId?: string }>();
@@ -45,8 +46,8 @@ export const CustomerProfile: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#68BE6B]"></div>
+      <div className="p-8 max-w-7xl mx-auto">
+        <LoadingSpinner minHeight="min-h-[400px]" />
       </div>
     );
   }

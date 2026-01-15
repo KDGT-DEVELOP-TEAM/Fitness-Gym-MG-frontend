@@ -80,6 +80,18 @@ export const CustomerManagement: React.FC = () => {
     refetch,
   } = useCustomers(storeIdForApi);
   
+  // refetchとsearchQueryをrefで保持（useEffectの依存配列から除外するため）
+  const refetchRef = useRef(refetch);
+  const searchQueryRef = useRef(searchQuery);
+  
+  useEffect(() => {
+    refetchRef.current = refetch;
+  }, [refetch]);
+  
+  useEffect(() => {
+    searchQueryRef.current = searchQuery;
+  }, [searchQuery]);
+  
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | undefined>(undefined);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -103,26 +115,34 @@ export const CustomerManagement: React.FC = () => {
 
   const totalPages = Math.ceil(total / ITEMS_PER_PAGE) || 1;
 
-  // トレーナーの場合、refetchの依存を最適化（storesLoadingの変更による再実行を防ぐ）
-  // useRefを使ってrefetchの最新バージョンを保持
-  const refetchRef = useRef(refetch);
-  useEffect(() => {
-    refetchRef.current = refetch;
-  }, [refetch]);
-
-  useEffect(() => {
-    // useCustomer.tsのuseEffectで自動的にデータを取得するため、ここでは初期フェッチを行わない
-    // ページ変更時のみrefetchを実行
-    if (isTrainer) {
-      refetchRef.current(currentPage - 1);
-    } else {
-      refetchRef.current(currentPage - 1);
-    }
-  }, [currentPage]); // currentPageの変更時のみ実行
-
+  // フィルタ変更時にページをリセット
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery, selectedStoreId]);
+
+  // ページ変更時またはフィルタ変更時にデータを再取得（統合版）
+  const lastFetchKeyRef = useRef<string>('');
+  useEffect(() => {
+    // storesの読み込みが完了するまで待つ（MANAGERの場合）
+    if (isManager && storesLoading) {
+      return;
+    }
+    
+    // selectedStoreIdが設定されていない場合は待つ（MANAGERの場合）
+    if (isManager && !selectedStoreId) {
+      return;
+    }
+    
+    const fetchKey = `${currentPage}-${searchQueryRef.current}-${selectedStoreId || 'all'}`;
+    
+    // 既に同じ条件で取得済みの場合は実行しないガード
+    if (lastFetchKeyRef.current === fetchKey) {
+      return;
+    }
+    
+    lastFetchKeyRef.current = fetchKey;
+    refetchRef.current(currentPage - 1);
+  }, [currentPage, searchQuery, selectedStoreId, isManager, storesLoading]); // refetchを依存配列から除外
 
   // --- Handlers ---
   const handleSubmit = async (formData: CustomerRequest) => {

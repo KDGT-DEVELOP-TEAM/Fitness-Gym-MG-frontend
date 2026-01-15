@@ -6,6 +6,7 @@ import { lessonApi } from '../../api/lessonApi';
 import { Lesson } from '../../types/lesson';
 import { getErrorMessage } from '../../utils/errorMessages';
 import axios from 'axios';
+import { LoadingSpinner } from '../../components/common/TableStatusRows';
 
 // 型定義
 interface BMIHistoryItem {
@@ -241,12 +242,7 @@ export const LessonHistory: React.FC = () => {
   if (loading) {
     return (
       <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#68BE6B] mb-4"></div>
-            <p className="text-gray-600">データを読み込んでいます...</p>
-          </div>
-        </div>
+        <LoadingSpinner />
       </div>
     );
   }

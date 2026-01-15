@@ -2,6 +2,7 @@ import React from 'react';
 import axiosInstance from '../api/axiosConfig';
 import { User } from '../types/api/user';
 import { useState, useEffect } from 'react';
+import { LoadingSpinner } from '../components/common/TableStatusRows';
 
 export const UserList: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -30,7 +31,11 @@ export const UserList: React.FC = () => {
     fetchUsers();
   }, []);
 
-  if (loading) return <div>読み込み中...</div>;
+  if (loading) return (
+    <div className="p-8">
+      <LoadingSpinner minHeight="min-h-[300px]" />
+    </div>
+  );
   if (error) return <div>エラー: {error.message}</div>;
 
   return (

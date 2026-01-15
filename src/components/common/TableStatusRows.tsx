@@ -5,7 +5,27 @@ interface StatusRowProps {
   message?: string;
 }
 
-// ロード中の表示
+interface LoadingSpinnerProps {
+  message?: string;
+  className?: string;
+  minHeight?: string;
+}
+
+// 汎用的なローディングスピナーコンポーネント（ページ全体で使用可能）
+export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ 
+  message = "Loading Data...", 
+  className = "",
+  minHeight = "min-h-[400px]"
+}) => (
+  <div className={`flex items-center justify-center ${minHeight} ${className}`}>
+    <div className="text-center">
+      <div className="animate-spin h-10 w-10 border-4 border-green-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+      <p className="text-gray-400 font-black uppercase tracking-widest text-xs">{message}</p>
+    </div>
+  </div>
+);
+
+// ロード中の表示（テーブル行用）
 export const LoadingRow: React.FC<StatusRowProps> = ({ colSpan, message = "Loading Data..." }) => (
   <tr>
     <td colSpan={colSpan} className="py-24 text-center">
