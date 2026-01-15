@@ -19,37 +19,56 @@ export const CustomerManagement: React.FC = () => {
   const { user: authUser } = useAuth();
   const navigate = useNavigate();
   const { stores, loading: storesLoading } = useStores();
-  const [selectedStoreId, setSelectedStoreId] = useState<string>('');
+  // ADMINの場合は'all'も選択可能、MANAGERの場合は店舗IDのみ
+  const [selectedStoreId, setSelectedStoreId] = useState<'all' | string>('');
   
   // トレーナーの場合は編集・作成機能を無効化
   const isTrainer = authUser?.role?.toUpperCase() === 'TRAINER';
   const isManager = authUser?.role?.toUpperCase() === 'MANAGER';
+  const isAdmin = authUser?.role?.toUpperCase() === 'ADMIN';
   
-  // マネージャーがアクセス可能な店舗のリスト
+  // ADMIN/MANAGERがアクセス可能な店舗のリスト
   const accessibleStores = React.useMemo(() => {
     if (!stores || stores.length === 0) return [];
-    // MANAGERの場合は全店舗を表示（ADMINと同じ）
-    if (isManager) {
+    // ADMINとMANAGERの場合は全店舗を表示
+    if (isAdmin || isManager) {
       return stores;
     }
     // その他のロールは従来通り
     if (!authUser?.storeIds) return stores;
     const userStoreIds = Array.isArray(authUser.storeIds) ? authUser.storeIds : [authUser.storeIds];
     return stores.filter(store => userStoreIds.includes(store.id));
-  }, [authUser?.storeIds, stores, isManager]);
+  }, [authUser?.storeIds, stores, isAdmin, isManager]);
 
   // 初期値の設定
   useEffect(() => {
     if (storesLoading) return; // storesの読み込みが完了するまで待つ
     
-    if (accessibleStores.length > 0 && !selectedStoreId) {
-      // accessibleStoresが利用可能で、selectedStoreIdが未設定の場合のみ設定
-      setSelectedStoreId(accessibleStores[0].id);
-    } else if (authUser?.storeIds && authUser.storeIds.length > 0 && !selectedStoreId) {
-      const initialStoreId = Array.isArray(authUser.storeIds) ? authUser.storeIds[0] : authUser.storeIds;
-      setSelectedStoreId(initialStoreId);
+    if (!selectedStoreId) {
+      if (isAdmin) {
+        // ADMINの場合は初期値を'all'（全店舗）に設定
+        setSelectedStoreId('all');
+      } else if (isManager) {
+        // MANAGERの場合は所属店舗の最初の店舗を設定
+        if (accessibleStores.length > 0) {
+          setSelectedStoreId(accessibleStores[0].id);
+        } else if (authUser?.storeIds && authUser.storeIds.length > 0) {
+          const initialStoreId = Array.isArray(authUser.storeIds) ? authUser.storeIds[0] : authUser.storeIds;
+          setSelectedStoreId(initialStoreId);
+        }
+      }
     }
-  }, [authUser?.storeIds, stores, storesLoading, accessibleStores, selectedStoreId]);
+  }, [authUser?.storeIds, stores, storesLoading, accessibleStores, selectedStoreId, isAdmin, isManager]);
+
+  // useCustomersに渡すstoreId: ADMINの場合は'all'の時はundefined、MANAGERの場合はselectedStoreId
+  const storeIdForApi = React.useMemo(() => {
+    if (isAdmin) {
+      return selectedStoreId === 'all' ? undefined : selectedStoreId;
+    } else if (isManager) {
+      return selectedStoreId || undefined;
+    }
+    return undefined;
+  }, [isAdmin, isManager, selectedStoreId]);
 
   const { 
     customers,
@@ -59,7 +78,7 @@ export const CustomerManagement: React.FC = () => {
     searchQuery, 
     setSearchQuery,
     refetch,
-  } = useCustomers(isManager ? selectedStoreId : undefined);
+  } = useCustomers(storeIdForApi);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | undefined>(undefined);
@@ -215,8 +234,8 @@ if (!service) return;
             maxLength={100}
           />
         </div>
-        {/* 店舗選択ドロップダウン（MANAGERロールの場合のみ表示） */}
-        {isManager && (
+        {/* 店舗選択ドロップダウン（ADMIN/MANAGERロールの場合のみ表示） */}
+        {(isAdmin || isManager) && (
           <div className="relative group">
             <select 
               className="h-14 pl-6 pr-10 bg-white border-2 border-gray-50 rounded-2xl text-sm font-black text-gray-600 focus:border-green-500 focus:ring-0 outline-none cursor-pointer shadow-sm transition-all hover:border-gray-200 appearance-none disabled:opacity-50 disabled:cursor-not-allowed"
@@ -227,12 +246,17 @@ if (!service) return;
               }}
               disabled={storesLoading || accessibleStores.length === 0}
             >
-              {accessibleStores.length === 0 ? (
+              {storesLoading ? (
                 <option value="">店舗を読み込み中...</option>
+              ) : accessibleStores.length === 0 ? (
+                <option value="">店舗がありません</option>
               ) : (
-                accessibleStores.map(s => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
-                ))
+                <>
+                  {isAdmin && <option value="all">全店舗</option>}
+                  {accessibleStores.map(s => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </>
               )}
             </select>
             {/* カスタム矢印アイコン */}

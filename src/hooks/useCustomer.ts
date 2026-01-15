@@ -86,6 +86,10 @@ export const useCustomers = (selectedStoreId?: string) => {
         let response;
         
         if (isAdmin) {
+          // ADMINの場合: selectedStoreIdが指定されている場合はそれを使用（nullの場合は全店舗）
+          if (selectedStoreId) {
+            params.storeId = selectedStoreId;
+          }
           response = await adminCustomersApi.getCustomers(params);
         } else {
           // MANAGERロールの場合、storeIdを取得

@@ -78,6 +78,12 @@ export interface CustomerListItem {
      * デフォルト値: "created"（バックエンドのCustomerApiControllerのdefaultValueに合わせる）
      */
     sort?: 'KANA' | 'CREATED';
+    /**
+     * 店舗ID
+     * ADMINの場合: 店舗で絞り込む場合に指定（nullの場合は全店舗）
+     * MANAGERの場合: パス変数として使用されるため、このパラメータは使用しない
+     */
+    storeId?: string;
     // バックエンドが受け取らないパラメータを削除:
     // kana: バックエンドのCustomerApiControllerでは受け取らない
     // isActive: バックエンドのCustomerApiControllerでは受け取らない

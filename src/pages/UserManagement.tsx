@@ -97,6 +97,12 @@ export const UserManagement: React.FC = () => {
     setCurrentPage(1);
   }, [filters.nameOrKana, filters.role, selectedStoreId]);
 
+  // フィルタ変更時にもデータを再取得（currentPageが1のままの場合でも実行されるように）
+  useEffect(() => {
+    // フィルタが変更された場合、1ページ目を表示してデータを再取得
+    refetchUsersRef.current(0);
+  }, [filters.nameOrKana, filters.role, selectedStoreId, refetchUsers]);
+
   // --- ハンドラー ---
   const handleEditClick = async (userItem: UserListItem) => {
     if (!authUser) return;
