@@ -105,8 +105,8 @@ const getCustomerRelatedMenuItems = (customerId: string, role: string, lessonId?
       icon: <HiArrowLeft className="w-5 h-5" />,
       isBackButton: true,
     },
-    // 新規レッスン入力をHomeの直後に配置（ADMIN以外）
-    ...(role.toUpperCase() !== 'ADMIN' ? [{
+    // 新規レッスン入力をHomeの直後に配置（TRAINERのみ）
+    ...(role.toUpperCase() === 'TRAINER' ? [{
       path: `/trainer/newlessons/${customerId}`, 
       label: '新規レッスン入力', 
       icon: <HiDocumentAdd className="w-5 h-5" /> 
@@ -192,8 +192,8 @@ const getLessonDetailMenuItems = (role: string, customerId: string, lessonId: st
       icon: <HiHome className="w-5 h-5" />,
     },
     
-    // 2. 新規レッスン入力（ADMIN以外、Homeの直後に配置）
-    ...(role.toUpperCase() !== 'ADMIN' ? [{
+    // 2. 新規レッスン入力（TRAINERのみ、Homeの直後に配置）
+    ...(role.toUpperCase() === 'TRAINER' ? [{
       path: `/trainer/newlessons/${customerId}`, 
       label: '新規レッスン入力', 
       icon: <HiDocumentAdd className="w-5 h-5" /> 

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react';
 import { useStores } from '../../hooks/useStore';
-import { LessonCard } from '../../components/lesson/LessonCard2';
+import { DashboardLessonCard } from '../../components/lesson/DashboardLessonCard';
 import { LoadingRow, EmptyRow, LoadingSpinner } from '../../components/common/TableStatusRows';
 import { Pagination } from '../../components/common/Pagination';
 import { adminHomeApi } from '../../api/admin/homeApi'; 
@@ -171,7 +171,7 @@ export const AdminDashboard: React.FC = () => {
             {loading ? (
                 <LoadingRow colSpan={4} />
               ) : recentLessons.length > 0 ? (
-                recentLessons.map(lesson => <LessonCard key={lesson.id} lesson={lesson} from="home" />)
+                recentLessons.map(lesson => <DashboardLessonCard key={lesson.id} lesson={lesson} from="home" />)
               ) : (
                 <EmptyRow colSpan={4} message="実施済みのレッスン履歴が見つかりませんでした。" />
               )}

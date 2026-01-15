@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LessonHistoryItem } from '../../types/lesson';
 
-interface LessonCardProps {
+interface DashboardLessonCardProps {
   lesson: LessonHistoryItem;
   from?: 'home' | 'history';
 }
@@ -20,7 +20,7 @@ const formatDateTime = (dateString: string | undefined | null) => {
   };
 }
 
-export const LessonCard: React.FC<LessonCardProps> = ({ lesson, from }) => {
+export const DashboardLessonCard: React.FC<DashboardLessonCardProps> = ({ lesson, from }) => {
   const navigate = useNavigate();
   
   // 日付・時刻のパース
@@ -29,7 +29,7 @@ export const LessonCard: React.FC<LessonCardProps> = ({ lesson, from }) => {
 
   const handleClick = () => {
     if (!lesson.customerId) {
-      console.error('[LessonCard] customerId is missing');
+      console.error('[DashboardLessonCard] customerId is missing');
       return;
     }
     
