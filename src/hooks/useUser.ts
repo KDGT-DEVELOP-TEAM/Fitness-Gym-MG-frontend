@@ -45,7 +45,8 @@ export const useUser = (selectedStoreId?: string) => {
         page,
         size: 10,
         name: filters.nameOrKana || undefined,
-        role: filters.role !== 'all' ? filters.role : undefined,
+        // Managerの場合は権限フィルタを無効化（roleパラメータを送信しない）
+        role: isAdmin && filters.role !== 'all' ? filters.role : undefined,
       };
       
       // ロールに応じて適切なAPIを呼び出す

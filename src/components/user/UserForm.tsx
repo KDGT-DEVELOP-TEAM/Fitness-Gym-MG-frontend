@@ -73,6 +73,13 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
       return;
     }
 
+    // トレーナーと店長の場合、店舗が1つ以上選択されていることを確認
+    if ((formData.role === 'MANAGER' || formData.role === 'TRAINER') && 
+        (!formData.storeIds || formData.storeIds.length === 0)) {
+      setErrorMsg('店舗を1つ以上選択してください');
+      return;
+    }
+
     try {
       // 2. 🔑 UserFormData から UserRequest へのマッピング（変換）
       const requestData: UserRequest = {
@@ -81,8 +88,8 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
         kana: formData.kana,
         role: formData.role,
         active: formData.active,
-        // 仕様: MANAGER以外は店舗IDを送らない
-        storeIds: formData.role === 'MANAGER' ? formData.storeIds : [],
+        // 仕様: MANAGERとTRAINERは店舗IDを送る
+        storeIds: (formData.role === 'MANAGER' || formData.role === 'TRAINER') ? formData.storeIds : [],
       };
 
       // パスワード: 入力がある場合のみリクエストに含める
@@ -201,14 +208,14 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
                 </div>
             </section>
             
-            {/* 🔑 manager（店長）の時のみ表示 */}
-            {formData.role === 'MANAGER' && (
-                <div className="space-y-3 p-4 bg-green-50/50 rounded-2xl border-2 border-green-100 shadow-sm animate-in fade-in slide-in-from-top-2 duration-300">
-                    <label className="block text-sm font-bold text-green-900 flex items-center gap-2">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {/* 🔑 manager（店長）とtrainer（トレーナー）の時のみ表示 */}
+            {(formData.role === 'MANAGER' || formData.role === 'TRAINER') && (
+                <div className="space-y-3 p-4 bg-white rounded-2xl border-2 border-gray-50 shadow-sm animate-in fade-in slide-in-from-top-2 duration-300">
+                    <label className="block text-sm font-bold text-gray-700 mb-1 flex items-center gap-2">
+                        <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-7h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                         </svg>
-                        担当店舗の設定 (店長権限) <RequiredBadge />
+                        担当店舗の設定 {formData.role === 'MANAGER' ? '(店長権限)' : '(トレーナー権限)'} <RequiredBadge />
                     </label>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto p-1">

@@ -173,24 +173,28 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
         
         {/* 店舗選択（ADMINとMANAGERの場合に表示） */}
         {showStoreSelection && !initialData && (
-          <section className="space-y-4">
-            <h3 className="text-lg font-medium border-b pb-2 flex items-center">
-              <svg className="w-5 h-5 mr-2 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+          <div className="space-y-3 p-4 bg-white rounded-2xl border-2 border-gray-50 shadow-sm">
+            <label className="block text-sm font-bold text-gray-700 mb-1 flex items-center gap-2">
+              <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-7h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
-              担当店舗の設定
-              <RequiredBadge />
-            </h3>
+              担当店舗の設定 <RequiredBadge />
+            </label>
             {storesLoading ? (
               <div className="text-sm text-gray-500">店舗情報を読み込み中...</div>
             ) : stores.length === 0 ? (
               <div className="text-sm text-red-600">店舗が見つかりません</div>
             ) : (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto p-1">
                 {stores.map((store) => (
                   <label
                     key={store.id}
-                    className="flex items-center p-4 bg-white rounded-xl border-2 border-gray-200 cursor-pointer hover:bg-gray-50 hover:border-green-500 transition-colors"
+                    className={`
+                      flex items-center p-2.5 rounded-2xl border-2 cursor-pointer transition-all shadow-sm
+                      ${formData.storeId === store.id
+                        ? 'bg-white border-green-500 text-green-700 ring-1 ring-green-500'
+                        : 'bg-white/50 border-gray-50 text-gray-500 hover:bg-white'}
+                    `}
                   >
                     <input
                       type="radio"
@@ -201,14 +205,17 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
                         setFormData(prev => ({ ...prev, storeId: e.target.value }));
                       }}
                       required={showStoreSelection && !initialData}
-                      className="w-5 h-5 text-green-600 border-gray-300 focus:ring-green-500 focus:ring-2"
+                      className="hidden"
                     />
-                    <span className="ml-3 text-sm font-medium text-gray-700">{store.name}</span>
+                    <div className={`w-5 h-5 mr-3 rounded-md border flex items-center justify-center transition-colors ${formData.storeId === store.id ? 'bg-green-600 border-green-600' : 'bg-white border-gray-300'}`}>
+                      {formData.storeId === store.id && <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/></svg>}
+                    </div>
+                    <span className="text-sm font-bold">{store.name}</span>
                   </label>
                 ))}
               </div>
             )}
-          </section>
+          </div>
         )}
       </section>
 

@@ -203,16 +203,19 @@ export const UserManagement: React.FC = () => {
           />
         </div>
         
-        <select
-          value={filters.role}
-          onChange={(e) => handleFilterChange({ role: e.target.value as UserRole | "all" })}
-          className="h-14 px-6 bg-white border-2 border-gray-50 rounded-2xl text-sm font-black text-gray-600 focus:border-green-500 focus:ring-0 outline-none cursor-pointer shadow-sm transition-all"
-        >
-          <option value="all">全権限</option>
-          <option value="ADMIN">管理者</option>
-          <option value="MANAGER">店長</option>
-          <option value="TRAINER">トレーナー</option>
-        </select>
+        {/* 権限フィルタ（ADMINのみ表示） */}
+        {!isManager && (
+          <select
+            value={filters.role}
+            onChange={(e) => handleFilterChange({ role: e.target.value as UserRole | "all" })}
+            className="h-14 px-6 bg-white border-2 border-gray-50 rounded-2xl text-sm font-black text-gray-600 focus:border-green-500 focus:ring-0 outline-none cursor-pointer shadow-sm transition-all"
+          >
+            <option value="all">全権限</option>
+            <option value="ADMIN">管理者</option>
+            <option value="MANAGER">店長</option>
+            <option value="TRAINER">トレーナー</option>
+          </select>
+        )}
         {/* 店舗選択ドロップダウン（MANAGERロールの場合のみ表示） */}
         {isManager && (
           <div className="relative group">
