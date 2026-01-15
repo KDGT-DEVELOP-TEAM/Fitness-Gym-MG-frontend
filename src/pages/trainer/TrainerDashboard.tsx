@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { trainerHomeApi } from '../../api/trainer/homeApi';
@@ -19,8 +19,8 @@ export const TrainerDashboard: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1); // フロントエンドは1ベース、バックエンドは0ベース
   const [pageSize] = useState(10); // 1ページあたりの件数
 
-  // fetchNextLessonsをuseCallbackでメモ化
-  const fetchNextLessons = useCallback(async () => {
+  // fetchNextLessonsをuseCallbackでメモ化（引数としてpageを受け取る）
+  const fetchNextLessons = useCallback(async (page: number = 0) => {
     if (!user?.id) return;
 
     setLoading(true);
@@ -28,7 +28,7 @@ export const TrainerDashboard: React.FC = () => {
     try {
       // GET /api/trainers/home を使用（1週間後～1ヶ月後までのレッスン予定をページネーション付きで取得）
       const data = await trainerHomeApi.getHome({
-        page: currentPage - 1, // フロントエンドは1ベース、バックエンドは0ベース
+        page: page, // 引数として受け取る
         size: pageSize,
       });
       
@@ -41,13 +41,30 @@ export const TrainerDashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [user?.id, currentPage, pageSize]);
+  }, [user?.id, pageSize]); // currentPageを依存配列から除外
+
+  // fetchNextLessonsをrefで保持（useEffectの依存配列から除外するため）
+  const fetchNextLessonsRef = useRef(fetchNextLessons);
 
   useEffect(() => {
-    if (user?.id) {
-      fetchNextLessons();
+    fetchNextLessonsRef.current = fetchNextLessons;
+  }, [fetchNextLessons]);
+
+  // データ取得useEffectの修正（重複実行を防止）
+  const lastFetchKeyRef = useRef<string>('');
+  useEffect(() => {
+    if (!user?.id) return;
+    
+    const fetchKey = `${user.id}-${currentPage}`;
+    
+    // 既に同じ条件で取得済みの場合は実行しないガード
+    if (lastFetchKeyRef.current === fetchKey) {
+      return;
     }
-  }, [user?.id, fetchNextLessons]);
+    
+    lastFetchKeyRef.current = fetchKey;
+    fetchNextLessonsRef.current(currentPage - 1); // currentPageを引数として渡す
+  }, [user?.id, currentPage]); // fetchNextLessonsを依存配列から除外
 
   // useMemoで検索フィルタリングを最適化
   const displayedLessons = useMemo(() => {
