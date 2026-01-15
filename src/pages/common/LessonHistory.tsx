@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FiChevronRight, FiUser, FiClock } from 'react-icons/fi';
-import { useAuth } from '../../context/AuthContext';
-import { ROUTES } from '../../constants/routes';
 import { customerApi } from '../../api/customerApi';
 import { lessonApi } from '../../api/lessonApi';
 import { Lesson } from '../../types/lesson';
@@ -24,7 +22,6 @@ const ITEMS_PER_PAGE = 10;
 export const LessonHistory: React.FC = () => {
   const { customerId } = useParams<{ customerId: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
   
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [lessonsLoading, setLessonsLoading] = useState(false);
@@ -146,32 +143,11 @@ export const LessonHistory: React.FC = () => {
   }, []);
 
   const handleLessonClick = (lessonId: string) => {
-    // レッスン詳細画面へ遷移（新しいパス形式とstateを使用）
+    // レッスン詳細画面へ遷移（stateで遷移元を渡す）
     try {
-      if (!customerId) {
-        console.error('[LessonHistory] customerId is missing');
-        return;
-      }
-      
-      const role = user?.role?.toUpperCase() || 'TRAINER';
-      
-      // ロールに応じたレッスン詳細のパスを生成（履歴一覧からなので/history/lesson/...）
-      let lessonDetailPath: string;
-      switch (role) {
-        case 'ADMIN':
-          lessonDetailPath = ROUTES.LESSON_DETAIL_FROM_HISTORY_ADMIN.replace(':customerId', customerId).replace(':lessonId', lessonId);
-          break;
-        case 'MANAGER':
-          lessonDetailPath = ROUTES.LESSON_DETAIL_FROM_HISTORY_MANAGER.replace(':customerId', customerId).replace(':lessonId', lessonId);
-          break;
-        case 'TRAINER':
-        default:
-          lessonDetailPath = ROUTES.LESSON_DETAIL_FROM_HISTORY_TRAINER.replace(':customerId', customerId).replace(':lessonId', lessonId);
-          break;
-      }
-      
-      // パスで遷移元を管理するため、stateは不要
-      navigate(lessonDetailPath);
+      navigate(`/lesson/${lessonId}`, {
+        state: { from: 'history' }
+      });
     } catch (err) {
       console.log('Lesson clicked:', lessonId, 'Route may not be implemented yet');
     }

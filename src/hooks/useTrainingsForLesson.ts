@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { logger } from '../utils/logger';
 import { lessonApi } from '../api/lessonApi';
 import { handleApiError } from '../utils/errorHandler';
@@ -16,11 +16,19 @@ import { TrainingResponse } from '../types/lesson';
 export const useTrainingsForLesson = (lessonId: string | undefined) => {
   const [trainings, setTrainings] = useState<TrainingResponse[]>([]);
   const [loading, setLoading] = useState(false);
+  const fetchedLessonIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!lessonId) {
       return;
     }
+
+    // 既に取得済みの場合は loadTrainings を実行しないガード
+    if (fetchedLessonIdRef.current === lessonId) {
+      return;
+    }
+
+    fetchedLessonIdRef.current = lessonId;
 
     const loadTrainings = async () => {
       setLoading(true);

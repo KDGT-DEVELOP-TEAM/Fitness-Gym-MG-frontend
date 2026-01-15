@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { storeApi } from '../api/storeApi';
 import { Store } from '../types/store';
@@ -7,8 +7,16 @@ export const useStores = () => {
   const [stores, setStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const hasFetchedRef = useRef(false);
 
   useEffect(() => {
+    // 既に取得を開始している場合は実行しないガード
+    if (hasFetchedRef.current) {
+      return;
+    }
+
+    hasFetchedRef.current = true;
+
     const fetchStores = async () => {
       setLoading(true);
       setError(null);

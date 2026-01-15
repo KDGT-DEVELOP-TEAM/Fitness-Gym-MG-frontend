@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useErrorHandler } from './useErrorHandler';
 
 /**
@@ -24,7 +24,14 @@ export const useResource = <T>({ fetchFn, id, context }: UseResourceOptions<T>) 
   const [resource, setResource] = useState<T | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const fetchedIdRef = useRef<string | null>(null);
   const { handleError } = useErrorHandler();
+  const handleErrorRef = useRef(handleError);
+
+  // handleErrorが変更された場合にのみ更新
+  useEffect(() => {
+    handleErrorRef.current = handleError;
+  }, [handleError]);
 
   const fetchResource = useCallback(
     async (resourceId: string) => {
@@ -34,19 +41,27 @@ export const useResource = <T>({ fetchFn, id, context }: UseResourceOptions<T>) 
         const data = await fetchFn(resourceId);
         setResource(data);
       } catch (err) {
-        const errorMessage = handleError(err, context);
+        const errorMessage = handleErrorRef.current(err, context);
         setError(new Error(errorMessage));
       } finally {
         setLoading(false);
       }
     },
-    [fetchFn, handleError, context]
+    [fetchFn, context]
   );
 
   useEffect(() => {
-    if (id) {
-      fetchResource(id);
+    if (!id) {
+      return;
     }
+
+    // 既に取得済みの場合は fetchResource を実行しないガード
+    if (fetchedIdRef.current === id) {
+      return;
+    }
+
+    fetchedIdRef.current = id;
+    fetchResource(id);
   }, [id, fetchResource]);
 
   return { resource, loading, error, refetch: () => id && fetchResource(id) };

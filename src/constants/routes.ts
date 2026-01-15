@@ -28,18 +28,18 @@ export const ROUTES = {
   USER_LIST: '/users/list',
   // 監査ログ
   AUDIT_LOG_ADMIN: '/admin/logs',
-  // レッスン詳細（Homeから - ロールごと）
-  LESSON_DETAIL_FROM_HOME_ADMIN: '/admin/home/lesson/:customerId/:lessonId',
-  LESSON_DETAIL_FROM_HOME_MANAGER: '/manager/home/lesson/:customerId/:lessonId',
-  LESSON_DETAIL_FROM_HOME_TRAINER: '/trainer/home/lesson/:customerId/:lessonId',
-  // レッスン詳細（履歴一覧から - ロールごと）
-  LESSON_DETAIL_FROM_HISTORY_ADMIN: '/admin/history/lesson/:customerId/:lessonId',
-  LESSON_DETAIL_FROM_HISTORY_MANAGER: '/manager/history/lesson/:customerId/:lessonId',
-  LESSON_DETAIL_FROM_HISTORY_TRAINER: '/trainer/history/lesson/:customerId/:lessonId',
-  // 旧パス（互換性のため残す）
-  LESSON_DETAIL_ADMIN: '/admin/lesson/:customerId/:lessonId',
-  LESSON_DETAIL_MANAGER: '/manager/lesson/:customerId/:lessonId',
-  LESSON_DETAIL_TRAINER: '/trainer/lesson/:customerId/:lessonId',
+  // レッスン詳細（統一ルート）
   LESSON_DETAIL: '/lesson/:lessonId',
+  // 以下は非推奨（使用しないこと）
+  // @deprecated レッスン詳細は LESSON_DETAIL を使用してください
+  // LESSON_DETAIL_FROM_HOME_ADMIN: '/admin/home/lesson/:customerId/:lessonId',
+  // LESSON_DETAIL_FROM_HOME_MANAGER: '/manager/home/lesson/:customerId/:lessonId',
+  // LESSON_DETAIL_FROM_HOME_TRAINER: '/trainer/home/lesson/:customerId/:lessonId',
+  // LESSON_DETAIL_FROM_HISTORY_ADMIN: '/admin/history/lesson/:customerId/:lessonId',
+  // LESSON_DETAIL_FROM_HISTORY_MANAGER: '/manager/history/lesson/:customerId/:lessonId',
+  // LESSON_DETAIL_FROM_HISTORY_TRAINER: '/trainer/history/lesson/:customerId/:lessonId',
+  // LESSON_DETAIL_ADMIN: '/admin/lesson/:customerId/:lessonId',
+  // LESSON_DETAIL_MANAGER: '/manager/lesson/:customerId/:lessonId',
+  // LESSON_DETAIL_TRAINER: '/trainer/lesson/:customerId/:lessonId',
 } as const;
 

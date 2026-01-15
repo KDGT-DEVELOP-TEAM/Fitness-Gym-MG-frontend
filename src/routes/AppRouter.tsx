@@ -142,27 +142,8 @@ const getLessonDetailMenuItems = (role: string, customerId: string, lessonId: st
   const homePath = getHomePath(role);
   const historyPath = getHistoryPath(role, customerId);
   
-  // レッスン詳細のパスを生成（ロールと遷移元に応じて）
-  const getLessonDetailPath = (r: string, cId: string, lId: string, f: 'home' | 'history'): string => {
-    const isFromHome = f === 'home';
-    switch (r.toUpperCase()) {
-      case 'ADMIN':
-        return isFromHome 
-          ? ROUTES.LESSON_DETAIL_FROM_HOME_ADMIN.replace(':customerId', cId).replace(':lessonId', lId)
-          : ROUTES.LESSON_DETAIL_FROM_HISTORY_ADMIN.replace(':customerId', cId).replace(':lessonId', lId);
-      case 'MANAGER':
-        return isFromHome
-          ? ROUTES.LESSON_DETAIL_FROM_HOME_MANAGER.replace(':customerId', cId).replace(':lessonId', lId)
-          : ROUTES.LESSON_DETAIL_FROM_HISTORY_MANAGER.replace(':customerId', cId).replace(':lessonId', lId);
-      case 'TRAINER':
-      default:
-        return isFromHome
-          ? ROUTES.LESSON_DETAIL_FROM_HOME_TRAINER.replace(':customerId', cId).replace(':lessonId', lId)
-          : ROUTES.LESSON_DETAIL_FROM_HISTORY_TRAINER.replace(':customerId', cId).replace(':lessonId', lId);
-    }
-  };
-  
-  const lessonDetailPath = getLessonDetailPath(role, customerId, lessonId, from);
+  // レッスン詳細のパスを統一
+  const lessonDetailPath = `/lesson/${lessonId}`;
   
   // from === 'home'の場合は、通常のHome画面と同じメニュー構造にする
   if (from === 'home') {
@@ -317,7 +298,7 @@ const CustomerProfileWithMenu: React.FC = () => {
 
 // レッスン詳細用のラッパーコンポーネント
 const LessonDetailWithMenu: React.FC = () => {
-  const { customerId, lessonId } = useParams<{ customerId: string; lessonId: string }>();
+  const { lessonId } = useParams<{ lessonId: string }>();
   const location = useLocation();
   const { user } = useAuth();
   const { lesson, loading } = useLessonData(lessonId);
@@ -328,20 +309,11 @@ const LessonDetailWithMenu: React.FC = () => {
   
   const role = user?.role || 'TRAINER';
   
-  // パスから遷移元情報を判断
-  // /admin/home/lesson/... なら from='home'
-  // /admin/history/lesson/... なら from='history'
-  let from: 'home' | 'history' = 'history'; // デフォルトは'history'
-  const pathname = location.pathname;
+  // location.stateから遷移元を取得
+  const from = location.state?.from ?? 'history';
   
-  if (pathname.includes('/home/lesson/')) {
-    from = 'home';
-  } else if (pathname.includes('/history/lesson/')) {
-    from = 'history';
-  }
-  
-  // customerIdはパスパラメータを優先し、なければlesson.customerIdを使用
-  const targetCustomerId = customerId || lesson?.customerId || '';
+  // lesson.customerIdから取得（パスパラメータではなく）
+  const targetCustomerId = lesson?.customerId || '';
   
   if (!targetCustomerId) {
     // customerIdが取得できない場合はデフォルトメニュー
@@ -462,37 +434,8 @@ export const AppRouter = () => {
           <Route path="posture/compare" element={<PostureComparePage />} /> */}
         </Route>
 
-        {/* レッスン詳細（Homeから - ロールごと） */}
-        <Route path={ROUTES.LESSON_DETAIL_FROM_HOME_ADMIN} element={<ProtectedRoute roles={['ADMIN']} />}>
-          <Route index element={<LessonDetailWithMenu />} />
-        </Route>
-        <Route path={ROUTES.LESSON_DETAIL_FROM_HOME_MANAGER} element={<ProtectedRoute roles={['MANAGER']} />}>
-          <Route index element={<LessonDetailWithMenu />} />
-        </Route>
-        <Route path={ROUTES.LESSON_DETAIL_FROM_HOME_TRAINER} element={<ProtectedRoute roles={['TRAINER']} />}>
-          <Route index element={<LessonDetailWithMenu />} />
-        </Route>
-        {/* レッスン詳細（履歴一覧から - ロールごと） */}
-        <Route path={ROUTES.LESSON_DETAIL_FROM_HISTORY_ADMIN} element={<ProtectedRoute roles={['ADMIN']} />}>
-          <Route index element={<LessonDetailWithMenu />} />
-        </Route>
-        <Route path={ROUTES.LESSON_DETAIL_FROM_HISTORY_MANAGER} element={<ProtectedRoute roles={['MANAGER']} />}>
-          <Route index element={<LessonDetailWithMenu />} />
-        </Route>
-        <Route path={ROUTES.LESSON_DETAIL_FROM_HISTORY_TRAINER} element={<ProtectedRoute roles={['TRAINER']} />}>
-          <Route index element={<LessonDetailWithMenu />} />
-        </Route>
-        {/* 旧パス（互換性のため残す） */}
-        <Route path={ROUTES.LESSON_DETAIL_ADMIN} element={<ProtectedRoute roles={['ADMIN']} />}>
-          <Route index element={<LessonDetailWithMenu />} />
-        </Route>
-        <Route path={ROUTES.LESSON_DETAIL_MANAGER} element={<ProtectedRoute roles={['MANAGER']} />}>
-          <Route index element={<LessonDetailWithMenu />} />
-        </Route>
-        <Route path={ROUTES.LESSON_DETAIL_TRAINER} element={<ProtectedRoute roles={['TRAINER']} />}>
-          <Route index element={<LessonDetailWithMenu />} />
-        </Route>
-        <Route path={ROUTES.LESSON_DETAIL} element={<ProtectedRoute roles={['ADMIN', 'MANAGER', 'TRAINER']} />}>
+        {/* レッスン詳細（統一ルート） */}
+        <Route path="/lesson/:lessonId" element={<ProtectedRoute roles={['ADMIN', 'MANAGER', 'TRAINER']} />}>
           <Route index element={<LessonDetailWithMenu />} />
         </Route>
 

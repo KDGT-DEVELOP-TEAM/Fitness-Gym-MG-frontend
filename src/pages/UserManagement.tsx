@@ -54,6 +54,18 @@ export const UserManagement: React.FC = () => {
     refetchUsers,
   } = useUsers(isManager ? selectedStoreId : undefined);
   
+  // refetchUsersとfiltersをrefで保持（useEffectの依存配列から除外するため）
+  const refetchUsersRef = useRef(refetchUsers);
+  const filtersRef = useRef(filters);
+  
+  useEffect(() => {
+    refetchUsersRef.current = refetchUsers;
+  }, [refetchUsers]);
+  
+  useEffect(() => {
+    filtersRef.current = filters;
+  }, [filters]);
+  
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | undefined>(undefined);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -81,27 +93,34 @@ export const UserManagement: React.FC = () => {
   // --- ページネーション・フィルタ制御 ---
   const totalPages = Math.ceil(total / ITEMS_PER_PAGE) || 1;
 
-  // refetchUsersの最新バージョンをrefで保持
-  const refetchUsersRef = useRef(refetchUsers);
-  useEffect(() => {
-    refetchUsersRef.current = refetchUsers;
-  }, [refetchUsers]);
-
-  useEffect(() => {
-    // useUser.tsのuseEffectで自動的にデータを取得するため、ここでは初期フェッチを行わない
-    // ページ変更時のみrefetchを実行
-    refetchUsersRef.current(currentPage - 1);
-  }, [currentPage]); // currentPageの変更時のみ実行
-
+  // フィルタ変更時にページをリセット
   useEffect(() => {
     setCurrentPage(1);
   }, [filters.nameOrKana, filters.role, selectedStoreId]);
 
-  // フィルタ変更時にもデータを再取得（currentPageが1のままの場合でも実行されるように）
+  // ページ変更時またはフィルタ変更時にデータを再取得（統合版）
+  const lastFetchKeyRef = useRef<string>('');
   useEffect(() => {
-    // フィルタが変更された場合、1ページ目を表示してデータを再取得
-    refetchUsersRef.current(0);
-  }, [filters.nameOrKana, filters.role, selectedStoreId, refetchUsers]);
+    // storesの読み込みが完了するまで待つ（MANAGERの場合）
+    if (isManager && storesLoading) {
+      return;
+    }
+    
+    // selectedStoreIdが設定されていない場合は待つ（MANAGERの場合）
+    if (isManager && !selectedStoreId) {
+      return;
+    }
+    
+    const fetchKey = `${currentPage}-${filtersRef.current.nameOrKana}-${filtersRef.current.role}-${selectedStoreId || 'all'}`;
+    
+    // 既に同じ条件で取得済みの場合は実行しないガード
+    if (lastFetchKeyRef.current === fetchKey) {
+      return;
+    }
+    
+    lastFetchKeyRef.current = fetchKey;
+    refetchUsersRef.current(currentPage - 1);
+  }, [currentPage, filters.nameOrKana, filters.role, selectedStoreId, isManager, storesLoading]); // refetchUsersを依存配列から除外、filtersの個別プロパティを追加
 
   // --- ハンドラー ---
   const handleEditClick = async (userItem: UserListItem) => {

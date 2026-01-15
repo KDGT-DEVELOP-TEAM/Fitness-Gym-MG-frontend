@@ -18,10 +18,16 @@ export const useUser = (selectedStoreId?: string) => {
     role: 'all',
   });
   
+  // filtersをrefで保持（refetchUsersの依存配列から除外するため）
+  const filtersRef = useRef(filters);
+  
   // storesとstoresLoadingをrefで保持
   const storesRef = useRef(stores);
   const storesLoadingRef = useRef(storesLoading);
-  const refetchUsersRef = useRef<((page: number) => Promise<void>) | null>(null);
+  
+  useEffect(() => {
+    filtersRef.current = filters;
+  }, [filters]);
   
   useEffect(() => {
     storesRef.current = stores;
@@ -29,14 +35,7 @@ export const useUser = (selectedStoreId?: string) => {
   }, [stores, storesLoading]);
 
   const refetchUsers = useCallback(async (page = 0) => {
-    // MANAGERロールの場合、storesの読み込みが完了するまで待つ
     const isAdmin = authUser?.role?.toUpperCase() === 'ADMIN';
-    if (!isAdmin && storesLoadingRef.current) {
-      // storesLoading中はローディング状態を維持し、エラーメッセージは表示しない
-      setLoading(true);
-      setError(null);
-      return;
-    }
 
     setLoading(true);
     setError(null);
@@ -44,9 +43,9 @@ export const useUser = (selectedStoreId?: string) => {
       const params: UserListParams = {
         page,
         size: 10,
-        name: filters.nameOrKana || undefined,
+        name: filtersRef.current.nameOrKana || undefined,
         // Managerの場合は権限フィルタを無効化（roleパラメータを送信しない）
-        role: isAdmin && filters.role !== 'all' ? filters.role : undefined,
+        role: isAdmin && filtersRef.current.role !== 'all' ? filtersRef.current.role : undefined,
       };
       
       // ロールに応じて適切なAPIを呼び出す
@@ -69,13 +68,7 @@ export const useUser = (selectedStoreId?: string) => {
         }
         
         if (!storeId) {
-          // 店舗情報がまだ読み込み中の場合は、エラーを設定せずに早期リターン
-          if (storesLoadingRef.current) {
-            setLoading(true);
-            setError(null);
-            return;
-          }
-          // storesLoadingが完了し、かつstoreIdが取得できない場合のみエラーメッセージを表示
+          // storeIdが取得できない場合はエラーをスロー
           throw new Error('店舗IDが取得できませんでした');
         }
         
@@ -89,46 +82,7 @@ export const useUser = (selectedStoreId?: string) => {
     } finally {
       setLoading(false);
     }
-  }, [filters, authUser, selectedStoreId]); // storesとstoresLoadingを依存配列から削除、selectedStoreIdを追加
-
-  // refetchUsersの最新バージョンをrefで保持
-  useEffect(() => {
-    refetchUsersRef.current = refetchUsers;
-  }, [refetchUsers]);
-
-  // MANAGERロールの場合、店舗情報の読み込み完了後に自動的にデータを取得
-  // selectedStoreIdが指定されている場合は、その店舗のデータを取得
-  const hasInitialFetchedRef = useRef(false);
-  const previousSelectedStoreIdRef = useRef<string | undefined>(selectedStoreId);
-  useEffect(() => {
-    if (!authUser) return;
-    const isAdmin = authUser.role?.toUpperCase() === 'ADMIN';
-    const isManager = !isAdmin;
-    
-    // selectedStoreIdが変更された場合は、フラグをリセットして再取得
-    if (selectedStoreId !== previousSelectedStoreIdRef.current) {
-      hasInitialFetchedRef.current = false;
-      previousSelectedStoreIdRef.current = selectedStoreId;
-    }
-    
-    // 店舗情報が読み込み完了し、かつ店舗が存在する場合にユーザーデータを取得
-    // 初回のみ実行する（重複実行を防ぐ）
-    if (isManager && !storesLoading && stores.length > 0 && refetchUsersRef.current && !hasInitialFetchedRef.current) {
-      // selectedStoreIdが指定されている場合、または初期値が設定されている場合のみ実行
-      if (selectedStoreId || (Array.isArray(authUser.storeIds) && authUser.storeIds.length > 0) || stores.length > 0) {
-        hasInitialFetchedRef.current = true;
-        refetchUsersRef.current(0);
-      }
-    }
-    
-    // authUserが変わった場合は、フラグをリセット
-    if (authUser) {
-      const currentIsManager = authUser.role?.toUpperCase() !== 'ADMIN';
-      if (!currentIsManager) {
-        hasInitialFetchedRef.current = false;
-      }
-    }
-  }, [authUser, storesLoading, stores, selectedStoreId]); // refetchUsersは依存配列に含めない（ref経由でアクセス）、selectedStoreIdを追加
+  }, [authUser, selectedStoreId]); // filtersを依存配列から除外（filtersRef.currentを使用するため）
 
   const handleFilterChange = (newFilters: Partial<typeof filters>) => {
     setFilters(prev => ({ ...prev, ...newFilters }));

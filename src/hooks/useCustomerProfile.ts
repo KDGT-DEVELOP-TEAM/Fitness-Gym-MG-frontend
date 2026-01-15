@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { customerApi } from '../api/customerApi';
 import { postureApi } from '../api/postureApi';
 import { Gender, CustomerRequest } from '../types/api/customer';
@@ -44,6 +44,7 @@ export const useCustomerProfile = (customerId: string) => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editingField, setEditingField] = useState<keyof CustomerProfileData | null>(null);
+  const fetchedCustomerIdRef = useRef<string | null>(null);
   const [profileData, setProfileData] = useState<CustomerProfileData>({
     id: customerId || '',
     kana: '',
@@ -68,6 +69,18 @@ export const useCustomerProfile = (customerId: string) => {
 
   // プロフィールデータ取得
   useEffect(() => {
+    if (!customerId) {
+      setLoading(false);
+      return;
+    }
+
+    // 既に取得済みの場合は fetchData を実行しないガード
+    if (fetchedCustomerIdRef.current === customerId) {
+      return;
+    }
+
+    fetchedCustomerIdRef.current = customerId;
+
     const fetchData = async () => {
       try {
         setLoading(true);

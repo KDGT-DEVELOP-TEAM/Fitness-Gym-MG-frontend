@@ -140,34 +140,29 @@ export const useCustomers = (selectedStoreId?: string) => {
 
   // MANAGERロールの場合、店舗情報の読み込み完了後に自動的に顧客データを取得
   // selectedStoreIdが指定されている場合は、その店舗のデータを取得
-  const hasInitialFetchedRef = useRef(false);
-  const previousSelectedStoreIdRef = useRef<string | undefined>(selectedStoreId);
+  const fetchedKeyRef = useRef<string | null>(null);
   useEffect(() => {
     if (!authUser) return;
     const role = authUser.role?.toUpperCase();
     const isManager = role === 'MANAGER';
     
-    // selectedStoreIdが変更された場合は、フラグをリセットして再取得
-    if (selectedStoreId !== previousSelectedStoreIdRef.current) {
-      hasInitialFetchedRef.current = false;
-      previousSelectedStoreIdRef.current = selectedStoreId;
+    // 実行キーを生成（selectedStoreId + authUser.idの組み合わせ）
+    const currentStoreId = selectedStoreId || 
+      (Array.isArray(authUser.storeIds) && authUser.storeIds.length > 0 ? authUser.storeIds[0] : null) ||
+      (stores.length > 0 ? stores[0].id : null);
+    const fetchKey = `${authUser.id}-${currentStoreId || 'all'}`;
+    
+    // 既に取得済みの場合は実行しないガード
+    if (fetchedKeyRef.current === fetchKey) {
+      return;
     }
     
     // 店舗情報が読み込み完了し、かつ店舗が存在する場合に顧客データを取得
-    // 初回のみ実行する（重複実行を防ぐ）
-    if (isManager && !storesLoading && stores.length > 0 && fetchCustomersRef.current && !hasInitialFetchedRef.current) {
+    if (isManager && !storesLoading && stores.length > 0 && fetchCustomersRef.current) {
       // selectedStoreIdが指定されている場合、または初期値が設定されている場合のみ実行
       if (selectedStoreId || (Array.isArray(authUser.storeIds) && authUser.storeIds.length > 0) || stores.length > 0) {
-        hasInitialFetchedRef.current = true;
+        fetchedKeyRef.current = fetchKey;
         fetchCustomersRef.current(0);
-      }
-    }
-    
-    // authUserが変わった場合は、フラグをリセット
-    if (authUser) {
-      const currentIsManager = authUser.role?.toUpperCase() === 'MANAGER';
-      if (!currentIsManager) {
-        hasInitialFetchedRef.current = false;
       }
     }
   }, [authUser, storesLoading, stores, selectedStoreId]); // fetchCustomersは依存配列に含めない（ref経由でアクセス）、selectedStoreIdを追加

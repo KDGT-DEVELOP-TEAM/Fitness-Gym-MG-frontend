@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { Lesson, LessonHistoryItem } from '../types/lesson';
 import { lessonApi } from '../api/lessonApi';
@@ -11,6 +11,7 @@ export const useLesson = (id?: string) => {
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const fetchedIdRef = useRef<string | null>(null);
 
   const fetchLesson = useCallback(async (lessonId: string) => {
     setLoading(true);
@@ -32,9 +33,17 @@ export const useLesson = (id?: string) => {
   }, []);
 
   useEffect(() => {
-    if (id) {
-      fetchLesson(id);
+    if (!id) {
+      return;
     }
+
+    // 既に取得済みの場合は fetchLesson を実行しないガード
+    if (fetchedIdRef.current === id) {
+      return;
+    }
+
+    fetchedIdRef.current = id;
+    fetchLesson(id);
   }, [id, fetchLesson]);
 
   return {
@@ -98,6 +107,7 @@ export const useLessonsByCustomer = (customerId?: string) => {
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const fetchedCustomerIdRef = useRef<string | null>(null);
 
   const fetchLessons = useCallback(async () => {
     if (!customerId) return;
@@ -122,8 +132,18 @@ export const useLessonsByCustomer = (customerId?: string) => {
   }, [customerId]);
 
   useEffect(() => {
+    if (!customerId) {
+      return;
+    }
+
+    // 既に取得済みの場合は fetchLessons を実行しないガード
+    if (fetchedCustomerIdRef.current === customerId) {
+      return;
+    }
+
+    fetchedCustomerIdRef.current = customerId;
     fetchLessons();
-  }, [fetchLessons]);
+  }, [customerId, fetchLessons]);
 
   return {
     lessons,
