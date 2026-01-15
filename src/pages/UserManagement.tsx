@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import useUsers from '../hooks/useUser'; 
 import { useStores } from '../hooks/useStore'; 
 import { UserCard } from '../components/user/UserCard'; 
@@ -14,6 +14,36 @@ const ITEMS_PER_PAGE = 10;
 
 export const UserManagement: React.FC = () => {
   const { user: authUser } = useAuth();
+  const { stores, loading: storesLoading } = useStores(); // UserFormModalで使用するため保持
+  const isManager = authUser?.role?.toUpperCase() === 'MANAGER';
+  const [selectedStoreId, setSelectedStoreId] = useState<string>('');
+  
+  // マネージャーがアクセス可能な店舗のリスト
+  const accessibleStores = React.useMemo(() => {
+    if (!stores || stores.length === 0) return [];
+    // MANAGERの場合は全店舗を表示（ADMINと同じ）
+    if (isManager) {
+      return stores;
+    }
+    // その他のロールは従来通り
+    if (!authUser?.storeIds) return [];
+    const userStoreIds = Array.isArray(authUser.storeIds) ? authUser.storeIds : [authUser.storeIds];
+    return stores.filter(store => userStoreIds.includes(store.id));
+  }, [authUser?.storeIds, stores, isManager]);
+
+  // 初期値の設定
+  useEffect(() => {
+    if (storesLoading) return; // storesの読み込みが完了するまで待つ
+    
+    if (accessibleStores.length > 0 && !selectedStoreId) {
+      // accessibleStoresが利用可能で、selectedStoreIdが未設定の場合のみ設定
+      setSelectedStoreId(accessibleStores[0].id);
+    } else if (authUser?.storeIds && authUser.storeIds.length > 0 && !selectedStoreId) {
+      const initialStoreId = Array.isArray(authUser.storeIds) ? authUser.storeIds[0] : authUser.storeIds;
+      setSelectedStoreId(initialStoreId);
+    }
+  }, [authUser?.storeIds, stores, storesLoading, accessibleStores, selectedStoreId]);
+
   const { 
     users,
     total,
@@ -22,9 +52,8 @@ export const UserManagement: React.FC = () => {
     filters, 
     handleFilterChange, 
     refetchUsers,
-  } = useUsers();
+  } = useUsers(isManager ? selectedStoreId : undefined);
   
-  const { stores } = useStores();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | undefined>(undefined);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -52,13 +81,21 @@ export const UserManagement: React.FC = () => {
   // --- ページネーション・フィルタ制御 ---
   const totalPages = Math.ceil(total / ITEMS_PER_PAGE) || 1;
 
+  // refetchUsersの最新バージョンをrefで保持
+  const refetchUsersRef = useRef(refetchUsers);
   useEffect(() => {
-    refetchUsers(currentPage - 1);
-  }, [currentPage, refetchUsers]);
+    refetchUsersRef.current = refetchUsers;
+  }, [refetchUsers]);
+
+  useEffect(() => {
+    // useUser.tsのuseEffectで自動的にデータを取得するため、ここでは初期フェッチを行わない
+    // ページ変更時のみrefetchを実行
+    refetchUsersRef.current(currentPage - 1);
+  }, [currentPage]); // currentPageの変更時のみ実行
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [filters.nameOrKana, filters.role]);
+  }, [filters.nameOrKana, filters.role, selectedStoreId]);
 
   // --- ハンドラー ---
   const handleEditClick = async (userItem: UserListItem) => {
@@ -170,6 +207,34 @@ export const UserManagement: React.FC = () => {
           <option value="MANAGER">店長</option>
           <option value="TRAINER">トレーナー</option>
         </select>
+        {/* 店舗選択ドロップダウン（MANAGERロールの場合のみ表示） */}
+        {isManager && (
+          <div className="relative group">
+            <select 
+              className="h-14 pl-6 pr-10 bg-white border-2 border-gray-50 rounded-2xl text-sm font-black text-gray-600 focus:border-green-500 focus:ring-0 outline-none cursor-pointer shadow-sm transition-all hover:border-gray-200 appearance-none disabled:opacity-50 disabled:cursor-not-allowed"
+              value={selectedStoreId}
+              onChange={(e) => {
+                setSelectedStoreId(e.target.value);
+                setCurrentPage(1);
+              }}
+              disabled={storesLoading || accessibleStores.length === 0}
+            >
+              {accessibleStores.length === 0 ? (
+                <option value="">店舗を読み込み中...</option>
+              ) : (
+                accessibleStores.map(s => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))
+              )}
+            </select>
+            {/* カスタム矢印アイコン */}
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* エラー表示 */}

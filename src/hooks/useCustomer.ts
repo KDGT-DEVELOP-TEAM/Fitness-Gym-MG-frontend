@@ -12,7 +12,7 @@ interface ApiError {
   message: string;
 }
 
-export const useCustomers = () => {
+export const useCustomers = (selectedStoreId?: string) => {
   const { user: authUser } = useAuth();
   const { stores, loading: storesLoading } = useStores();
   const [allCustomers, setAllCustomers] = useState<Customer[]>([]); // トレーナー用: 全件保持
@@ -25,6 +25,7 @@ export const useCustomers = () => {
   // MANAGERの場合のみ、storesとstoresLoadingをrefで保持（トレーナーの場合は不要）
   const storesRef = useRef(stores);
   const storesLoadingRef = useRef(storesLoading);
+  const fetchCustomersRef = useRef<((page: number) => Promise<void>) | null>(null);
   
   useEffect(() => {
     storesRef.current = stores;
@@ -88,12 +89,25 @@ export const useCustomers = () => {
           response = await adminCustomersApi.getCustomers(params);
         } else {
           // MANAGERロールの場合、storeIdを取得
-          const currentStores = storesRef.current;
-          const storeId = Array.isArray(authUser.storeIds) && authUser.storeIds.length > 0
-            ? authUser.storeIds[0]
-            : (currentStores && currentStores.length > 0 ? currentStores[0].id : null);
+          // selectedStoreIdが指定されている場合はそれを使用、否则は従来のロジック
+          let storeId: string | null = null;
+          
+          if (selectedStoreId) {
+            storeId = selectedStoreId;
+          } else {
+            const currentStores = storesRef.current;
+            storeId = Array.isArray(authUser.storeIds) && authUser.storeIds.length > 0
+              ? authUser.storeIds[0]
+              : (currentStores && currentStores.length > 0 ? currentStores[0].id : null);
+          }
           
           if (!storeId) {
+            // 店舗情報がまだ読み込み中の場合は、エラーを設定せずに早期リターン
+            if (storesLoadingRef.current) {
+              setLoading(true);
+              setError(null);
+              return;
+            }
             // storesLoadingが完了し、かつstoreIdが取得できない場合のみエラーメッセージを表示
             throw new Error('店舗IDが取得できませんでした');
           }
@@ -113,7 +127,46 @@ export const useCustomers = () => {
     } finally {
       setLoading(false);
     }
-  }, [searchQuery, authUser]); // storesとstoresLoadingを依存配列から削除
+  }, [searchQuery, authUser, selectedStoreId]); // storesとstoresLoadingを依存配列から削除、selectedStoreIdを追加
+
+  // fetchCustomersの最新バージョンをrefで保持
+  useEffect(() => {
+    fetchCustomersRef.current = fetchCustomers;
+  }, [fetchCustomers]);
+
+  // MANAGERロールの場合、店舗情報の読み込み完了後に自動的に顧客データを取得
+  // selectedStoreIdが指定されている場合は、その店舗のデータを取得
+  const hasInitialFetchedRef = useRef(false);
+  const previousSelectedStoreIdRef = useRef<string | undefined>(selectedStoreId);
+  useEffect(() => {
+    if (!authUser) return;
+    const role = authUser.role?.toUpperCase();
+    const isManager = role === 'MANAGER';
+    
+    // selectedStoreIdが変更された場合は、フラグをリセットして再取得
+    if (selectedStoreId !== previousSelectedStoreIdRef.current) {
+      hasInitialFetchedRef.current = false;
+      previousSelectedStoreIdRef.current = selectedStoreId;
+    }
+    
+    // 店舗情報が読み込み完了し、かつ店舗が存在する場合に顧客データを取得
+    // 初回のみ実行する（重複実行を防ぐ）
+    if (isManager && !storesLoading && stores.length > 0 && fetchCustomersRef.current && !hasInitialFetchedRef.current) {
+      // selectedStoreIdが指定されている場合、または初期値が設定されている場合のみ実行
+      if (selectedStoreId || (Array.isArray(authUser.storeIds) && authUser.storeIds.length > 0) || stores.length > 0) {
+        hasInitialFetchedRef.current = true;
+        fetchCustomersRef.current(0);
+      }
+    }
+    
+    // authUserが変わった場合は、フラグをリセット
+    if (authUser) {
+      const currentIsManager = authUser.role?.toUpperCase() === 'MANAGER';
+      if (!currentIsManager) {
+        hasInitialFetchedRef.current = false;
+      }
+    }
+  }, [authUser, storesLoading, stores, selectedStoreId]); // fetchCustomersは依存配列に含めない（ref経由でアクセス）、selectedStoreIdを追加
 
   // CustomerRequest 型を受け取るように修正
   const createCustomer = (data: CustomerRequest) => adminCustomersApi.createCustomer(data);

@@ -18,18 +18,27 @@ export const ManagerDashboard: React.FC = () => {
   const [homeData, setHomeData] = useState<ManagerHomeResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [selectedStoreId, setSelectedStoreId] = useState<string>('');
 
-  const storeId = useMemo(() => {
-    // まず、user.storeIdsから取得を試みる
-    if (user?.storeIds && user.storeIds.length > 0) {
-      return Array.isArray(user.storeIds) ? user.storeIds[0] : user.storeIds;
+  // マネージャーがアクセス可能な店舗のリスト
+  const accessibleStores = useMemo(() => {
+    if (!stores || stores.length === 0) return [];
+    // MANAGERの場合は全店舗を表示（ADMINと同じ）
+    return stores;
+  }, [stores]);
+
+  // 初期値の設定
+  useEffect(() => {
+    if (storesLoading) return; // storesの読み込みが完了するまで待つ
+    
+    if (accessibleStores.length > 0 && !selectedStoreId) {
+      // accessibleStoresが利用可能で、selectedStoreIdが未設定の場合のみ設定
+      setSelectedStoreId(accessibleStores[0].id);
+    } else if (user?.storeIds && user.storeIds.length > 0 && !selectedStoreId) {
+      const initialStoreId = Array.isArray(user.storeIds) ? user.storeIds[0] : user.storeIds;
+      setSelectedStoreId(initialStoreId);
     }
-    // user.storeIdsが空の場合は、storesから最初の店舗IDを取得
-    if (stores && stores.length > 0) {
-      return stores[0].id;
-    }
-    return '';
-  }, [user?.storeIds, stores]);
+  }, [user?.storeIds, stores, storesLoading, accessibleStores, selectedStoreId]);
 
   // --- Home API 呼び出し ---
   useEffect(() => {
@@ -41,8 +50,8 @@ export const ManagerDashboard: React.FC = () => {
       return;
     }
 
-    if (!storeId) {
-      // storesLoadingが完了し、かつstoreIdが取得できない場合のみエラーメッセージを表示
+    if (!selectedStoreId) {
+      // storesLoadingが完了し、かつselectedStoreIdが取得できない場合のみエラーメッセージを表示
       setLoading(false);
       setApiError('店舗IDが取得できませんでした。ログイン情報を確認してください。');
       return;
@@ -51,7 +60,7 @@ export const ManagerDashboard: React.FC = () => {
     setLoading(true);
     setApiError(null);
 
-    managerHomeApi.getHome(storeId, {
+    managerHomeApi.getHome(selectedStoreId, {
       chartType: viewMode,
       page: currentPage - 1, // フロントエンドは1ベース、バックエンドは0ベース
       size: ITEMS_PER_PAGE,
@@ -65,16 +74,16 @@ export const ManagerDashboard: React.FC = () => {
         setApiError("ダッシュボードデータの取得に失敗しました。");
         setLoading(false);
       });
-  }, [storeId, viewMode, currentPage, storesLoading]);
+  }, [selectedStoreId, viewMode, currentPage, storesLoading]);
 
   const currentStoreName = useMemo(() => {
-    return stores.find(s => s.id === storeId)?.name || '所属店舗';
-  }, [stores, storeId]);
+    return stores.find(s => s.id === selectedStoreId)?.name || '所属店舗';
+  }, [stores, selectedStoreId]);
 
-  // storeId や viewMode 変更時にページリセット
+  // selectedStoreId や viewMode 変更時にページリセット
   useEffect(() => {
     setCurrentPage(1);
-  }, [storeId, viewMode]);
+  }, [selectedStoreId, viewMode]);
 
   // homeDataからデータを取得
   const chartData = homeData?.chartData || null;
@@ -113,23 +122,37 @@ export const ManagerDashboard: React.FC = () => {
     <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
       
       {/* ヘッダー */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div className="space-y-3">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="flex flex-wrap items-center gap-6">
           <h1 className="text-3xl font-black text-gray-900 tracking-tight">統計情報</h1>
-          <div className="flex flex-wrap items-center gap-3">
-            {/* ロールに応じた店舗表示エリア */}
-            <div className="flex items-center">
-                <div className="h-10 px-6 bg-white border-2 border-gray-50 rounded-2xl text-sm font-black text-gray-600 flex items-center outline-none shadow-sm">
-                  <svg className="w-3.5 h-3.5 mr-2 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-                  </svg>
-                  {currentStoreName}
-                </div>
+          <div className="relative group">
+            <select 
+              className="h-10 pl-6 pr-10 bg-white border-2 border-gray-50 rounded-2xl text-sm font-black text-gray-600 focus:border-green-500 focus:ring-0 outline-none cursor-pointer shadow-sm transition-all hover:border-gray-200 appearance-none"
+              value={selectedStoreId}
+              onChange={(e) => {
+                setSelectedStoreId(e.target.value);
+                setCurrentPage(1);
+              }}
+              disabled={storesLoading || accessibleStores.length === 0}
+            >
+              {accessibleStores.length === 0 ? (
+                <option value="">店舗を読み込み中...</option>
+              ) : (
+                accessibleStores.map(s => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))
+              )}
+            </select>
+            {/* カスタム矢印アイコン */}
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7"/>
+              </svg>
             </div>
-            <p className="text-sm text-gray-500 px-3 py-1">
-              <span className="font-bold text-green-600">{totalLessonCount}</span> 件の実施済みレッスン履歴
-            </p>
           </div>
+          <p className="text-sm text-gray-500 px-3 py-1">
+            <span className="font-bold text-green-600">{totalLessonCount}</span> 件の実施済みレッスン履歴
+          </p>
         </div>
       </div>
 

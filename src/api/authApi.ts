@@ -71,7 +71,7 @@ export const authApi = {
    */
   getCurrentUser: async (): Promise<User> => {
     const response = await axiosInstance.get<LoginResponse>('/auth/login');
-    const { userId, email, name, role } = response.data;
+    const { userId, email, name, role, storeIds } = response.data;
     
     // LoginResponseをUser型に変換
     // バックエンドのLoginResponseには一部のフィールドがないため、最小限の情報のみ
@@ -81,7 +81,7 @@ export const authApi = {
       name,
       kana: '', // LoginResponseにはkanaが含まれていないため空文字
       role,
-      storeIds: [], // LoginResponseにはstoreIdsが含まれていないため空配列
+      storeIds: storeIds || [], // LoginResponseからstoreIdsを取得、ない場合は空配列
       active: true, // LoginResponseにはactiveが含まれていないためtrueと仮定
       createdAt: '',
     };

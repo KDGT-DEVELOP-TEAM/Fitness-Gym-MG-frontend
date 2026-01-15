@@ -16,6 +16,7 @@ export interface LoginResponse {
   email: string;
   name: string;
   role: UserRole;
+  storeIds?: string[]; // 店舗IDリスト（MANAGER/TRAINERの場合）
   token: string;
 }
 

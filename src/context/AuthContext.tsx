@@ -66,7 +66,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         name: loginResponse.name,
         kana: '', // LoginResponseにはkanaが含まれていないため空文字
         role: loginResponse.role,
-        storeIds: [], // LoginResponseにはstoreIdsが含まれていないため空配列
+        storeIds: loginResponse.storeIds || [], // LoginResponseからstoreIdsを取得、ない場合は空配列
         active: true, // LoginResponseにはactiveが含まれていないためtrueと仮定
         createdAt: '',
       };
