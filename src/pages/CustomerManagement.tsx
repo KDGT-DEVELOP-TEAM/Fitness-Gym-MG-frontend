@@ -49,12 +49,26 @@ export const CustomerManagement: React.FC = () => {
         // ADMINの場合は初期値を'all'（全店舗）に設定
         setSelectedStoreId('all');
       } else if (isManager) {
-        // MANAGERの場合は所属店舗の最初の店舗を設定
+        // 優先順位1: マネージャーの所属店舗を優先
+        if (authUser?.storeIds && authUser.storeIds.length > 0) {
+          const userStoreId = Array.isArray(authUser.storeIds) ? authUser.storeIds[0] : authUser.storeIds;
+          // 所属店舗がaccessibleStoresに含まれているか確認
+          if (accessibleStores.length > 0) {
+            const isValidStore = accessibleStores.some(s => s.id === userStoreId);
+            if (isValidStore) {
+              setSelectedStoreId(userStoreId);
+              return;
+            }
+          } else {
+            // storesがまだ読み込まれていない場合でも、authUser.storeIdsを信頼して設定
+            setSelectedStoreId(userStoreId);
+            return;
+          }
+        }
+        
+        // 優先順位2: フォールバック（所属店舗が取得できない場合）
         if (accessibleStores.length > 0) {
           setSelectedStoreId(accessibleStores[0].id);
-        } else if (authUser?.storeIds && authUser.storeIds.length > 0) {
-          const initialStoreId = Array.isArray(authUser.storeIds) ? authUser.storeIds[0] : authUser.storeIds;
-          setSelectedStoreId(initialStoreId);
         }
       }
     }

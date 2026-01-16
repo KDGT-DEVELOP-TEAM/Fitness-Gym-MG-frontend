@@ -31,12 +31,28 @@ export const ManagerDashboard: React.FC = () => {
   useEffect(() => {
     if (storesLoading) return; // storesの読み込みが完了するまで待つ
     
-    if (accessibleStores.length > 0 && !selectedStoreId) {
-      // accessibleStoresが利用可能で、selectedStoreIdが未設定の場合のみ設定
-      setSelectedStoreId(accessibleStores[0].id);
-    } else if (user?.storeIds && user.storeIds.length > 0 && !selectedStoreId) {
-      const initialStoreId = Array.isArray(user.storeIds) ? user.storeIds[0] : user.storeIds;
-      setSelectedStoreId(initialStoreId);
+    if (!selectedStoreId) {
+      // 優先順位1: マネージャーの所属店舗を優先
+      if (user?.storeIds && user.storeIds.length > 0) {
+        const userStoreId = Array.isArray(user.storeIds) ? user.storeIds[0] : user.storeIds;
+        // 所属店舗がaccessibleStoresに含まれているか確認
+        if (accessibleStores.length > 0) {
+          const isValidStore = accessibleStores.some(s => s.id === userStoreId);
+          if (isValidStore) {
+            setSelectedStoreId(userStoreId);
+            return;
+          }
+        } else {
+          // storesがまだ読み込まれていない場合でも、user.storeIdsを信頼して設定
+          setSelectedStoreId(userStoreId);
+          return;
+        }
+      }
+      
+      // 優先順位2: フォールバック（所属店舗が取得できない場合）
+      if (accessibleStores.length > 0) {
+        setSelectedStoreId(accessibleStores[0].id);
+      }
     }
   }, [user?.storeIds, stores, storesLoading, accessibleStores, selectedStoreId]);
 
