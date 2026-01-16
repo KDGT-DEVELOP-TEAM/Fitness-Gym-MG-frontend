@@ -54,9 +54,8 @@ function maskSensitiveData(data: unknown, seen = new WeakSet()): unknown {
   } catch (e) {
     // オブジェクトの処理中にエラーが発生した場合（例: getterが例外をスロー）
     return `[Error masking data: ${e instanceof Error ? e.message : String(e)}]`;
-  } finally {
-    seen.delete(data as object);
   }
+  // WeakSetは自動的にガベージコレクションされるため、明示的な削除は不要
 }
 
 /**
