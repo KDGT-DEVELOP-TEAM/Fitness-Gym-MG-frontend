@@ -1,17 +1,18 @@
 import axiosInstance from './axiosConfig';
 import { LoginCredentials, LoginResponse } from '../types/auth';
 import { User } from '../types/api/user';
-import { storage } from '../utils/storage';
 import { API_ENDPOINTS } from '../constants/apiEndpoints';
 import { logger } from '../utils/logger';
 import { AxiosError } from 'axios';
 import { ErrorResponse } from '../types/api/error';
+import { transformLoginResponseToUser } from '../utils/authTransformers';
 
 export const authApi = {
   /**
    * ログイン
    * POST /api/auth/login
    * バックエンドのLoginResponseに対応
+   * 注意: ストレージ操作は呼び出し側（AuthContext）で行う
    */
   login: async (credentials: LoginCredentials): Promise<LoginResponse> => {
     logger.debug('ログインAPI呼び出し開始', undefined, 'authApi');
@@ -20,24 +21,6 @@ export const authApi = {
       logger.debug('ログインAPIレスポンス成功', {
         status: response.status,
       }, 'authApi');
-      const { token, userId, email, name, role } = response.data;
-
-      // JWTトークンを保存
-      // 注意: API層でのストレージ操作は責務の分離の観点から将来的に改善の余地あり
-      logger.debug('トークン保存開始', undefined, 'authApi');
-      storage.setToken(token);
-      logger.debug('トークン保存完了', undefined, 'authApi');
-
-      // ユーザー情報を保存
-      // 注意: API層でのストレージ操作は責務の分離の観点から将来的に改善の余地あり
-      logger.debug('ユーザー情報保存開始', undefined, 'authApi');
-      storage.setUser({
-        userId,
-        email,
-        name,
-        role,
-      });
-      logger.debug('ユーザー情報保存完了', undefined, 'authApi');
 
       return response.data;
     } catch (error: unknown) {
@@ -58,13 +41,10 @@ export const authApi = {
   /**
    * ログアウト
    * POST /api/auth/logout
+   * 注意: ストレージ操作は呼び出し側（AuthContext）で行う
    */
   logout: async (): Promise<void> => {
-    try {
-      await axiosInstance.post(API_ENDPOINTS.AUTH.LOGOUT);
-    } finally {
-      storage.clear();
-    }
+    await axiosInstance.post(API_ENDPOINTS.AUTH.LOGOUT);
   },
 
   /**
@@ -74,20 +54,7 @@ export const authApi = {
    */
   getCurrentUser: async (): Promise<User> => {
     const response = await axiosInstance.get<LoginResponse>(API_ENDPOINTS.AUTH.ME);
-    const { userId, email, name, role, storeIds } = response.data;
-    
-    // LoginResponseをUser型に変換
-    // バックエンドのLoginResponseには一部のフィールドがないため、最小限の情報のみ
-    return {
-      id: userId,
-      email,
-      name,
-      kana: '', // LoginResponseにはkanaが含まれていないため空文字
-      role,
-      storeIds: storeIds || [], // LoginResponseからstoreIdsを取得、ない場合は空配列
-      active: true, // LoginResponseにはactiveが含まれていないためtrueと仮定
-      createdAt: '',
-    };
+    return transformLoginResponseToUser(response.data);
   },
 
   /**
