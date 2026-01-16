@@ -47,6 +47,11 @@ export const LessonHistory: React.FC = () => {
 
       const fetchKey = customerId;
       
+      // customerIdが変更された場合、前回の取得処理をリセット
+      if (lastFetchKeyRef.current !== fetchKey) {
+        isFetchingRef.current = false;
+      }
+      
       // 既に同じ条件で取得済み、または取得中の場合は実行しないガード
       if (lastFetchKeyRef.current === fetchKey || isFetchingRef.current) {
         return;
