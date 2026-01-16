@@ -5,6 +5,7 @@
 
 import axiosInstance from './axiosConfig';
 import { logger } from '../utils/logger';
+import { API_ENDPOINTS } from '../constants/apiEndpoints';
 
 export type Option = { id: string; name: string; role?: string };
 
@@ -30,7 +31,7 @@ interface CustomerResponse {
  */
 export const fetchStoreOptions = async (): Promise<Option[]> => {
   try {
-    const response = await axiosInstance.get<StoreResponse[]>('/stores');
+    const response = await axiosInstance.get<StoreResponse[]>(API_ENDPOINTS.STORES.BASE);
     const data = response.data;
     
     if (!data || !Array.isArray(data)) {
@@ -39,7 +40,7 @@ export const fetchStoreOptions = async (): Promise<Option[]> => {
     }
     
     return data.map((d) => ({ id: d.id, name: d.name }));
-  } catch (error) {
+  } catch (error: unknown) {
     logger.error('Failed to fetch stores', error, 'optionsApi');
     // バックエンドに実装がない場合は空配列を返す
     return [];
@@ -51,7 +52,7 @@ export const fetchStoreOptions = async (): Promise<Option[]> => {
  */
 export const fetchUserOptions = async (): Promise<Option[]> => {
   try {
-    const response = await axiosInstance.get<UserResponse[]>('/users');
+    const response = await axiosInstance.get<UserResponse[]>(API_ENDPOINTS.USERS.BASE);
     const data = response.data;
     
     if (!data || !Array.isArray(data)) {
@@ -60,7 +61,7 @@ export const fetchUserOptions = async (): Promise<Option[]> => {
     }
     
     return data.map((d) => ({ id: d.id, name: d.name, role: d.role }));
-  } catch (error) {
+  } catch (error: unknown) {
     logger.error('Failed to fetch users', error, 'optionsApi');
     return [];
   }
@@ -71,7 +72,7 @@ export const fetchUserOptions = async (): Promise<Option[]> => {
  */
 export const fetchCustomerOptions = async (): Promise<Option[]> => {
   try {
-    const response = await axiosInstance.get<CustomerResponse[]>('/customers');
+    const response = await axiosInstance.get<CustomerResponse[]>(API_ENDPOINTS.CUSTOMERS.BASE);
     const data = response.data;
     
     if (!data || !Array.isArray(data)) {
@@ -80,7 +81,7 @@ export const fetchCustomerOptions = async (): Promise<Option[]> => {
     }
     
     return data.map((d) => ({ id: d.id, name: d.name }));
-  } catch (error) {
+  } catch (error: unknown) {
     logger.error('Failed to fetch customers', error, 'optionsApi');
     return [];
   }

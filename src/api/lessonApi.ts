@@ -40,7 +40,7 @@ export const lessonApi = {
    */
   create: async (customerId: string, data: LessonRequest): Promise<Lesson> => {
     const response = await axiosInstance.post<Lesson>(
-      `/customers/${customerId}/lessons`,
+      API_ENDPOINTS.LESSONS.BY_CUSTOMER_CREATE(customerId),
       data
     );
     return response.data;
@@ -90,7 +90,7 @@ export const lessonApi = {
    */
   getNextLessonsByTrainer: async (trainerId: string): Promise<Lesson[]> => {
     const response = await axiosInstance.get<Lesson[]>(
-      `/lessons/next-by-trainer/${trainerId}`
+      API_ENDPOINTS.LESSONS.NEXT_BY_TRAINER(trainerId)
     );
     return response.data;
   },

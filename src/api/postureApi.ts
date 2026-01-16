@@ -9,7 +9,7 @@ export const postureApi = {
    * レスポンス: PostureGroupResponse[]
    */
   getPostureGroups: (customerId: string): Promise<PostureGroupResponse[]> =>
-    axiosInstance.get<PostureGroupResponse[]>(`/customers/${customerId}/posture_groups`).then(res => res.data),
+    axiosInstance.get<PostureGroupResponse[]>(API_ENDPOINTS.POSTURE_GROUPS.BY_CUSTOMER(customerId)).then(res => res.data),
 
   /**
    * レッスンに紐づく姿勢グループを作成
@@ -18,7 +18,7 @@ export const postureApi = {
    * レスポンス: PostureGroupResponse
    */
   createPostureGroup: (lessonId: string): Promise<PostureGroupResponse> =>
-    axiosInstance.post<PostureGroupResponse>(`/lessons/${lessonId}/posture_groups`).then(res => res.data),
+    axiosInstance.post<PostureGroupResponse>(API_ENDPOINTS.POSTURE_GROUPS.BY_LESSON_CREATE(lessonId)).then(res => res.data),
 
   /**
    * 姿勢画像をアップロード
@@ -47,7 +47,7 @@ export const postureApi = {
       formData.append('takenAt', takenAt);
     }
 
-    const response = await axiosInstance.post<PostureImageUploadResponse>('/posture_images/upload', formData, {
+    const response = await axiosInstance.post<PostureImageUploadResponse>(API_ENDPOINTS.POSTURE_IMAGES.UPLOAD, formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
     return response.data;
@@ -65,9 +65,8 @@ export const postureApi = {
       queryParams.append('expiresIn', String(expiresIn));
     }
     const queryString = queryParams.toString();
-    const url = queryString 
-      ? `/posture_images/${imageId}/signed-url?${queryString}` 
-      : `/posture_images/${imageId}/signed-url`;
+    const baseUrl = API_ENDPOINTS.POSTURE_IMAGES.SIGNED_URL(imageId);
+    const url = queryString ? `${baseUrl}?${queryString}` : baseUrl;
     return axiosInstance.get<SignedUrlResponse>(url).then(res => res.data);
   },
 
@@ -78,7 +77,7 @@ export const postureApi = {
    * レスポンス: BatchSignedUrlResponse
    */
   getBatchSignedUrls: (imageIds: string[], expiresIn: number = 3600): Promise<BatchSignedUrlResponse> =>
-    axiosInstance.post<BatchSignedUrlResponse>('/posture_images/signed-urls', { imageIds, expiresIn }).then(res => res.data),
+    axiosInstance.post<BatchSignedUrlResponse>(API_ENDPOINTS.POSTURE_IMAGES.BATCH_SIGNED_URLS, { imageIds, expiresIn }).then(res => res.data),
 
   /**
    * 画像削除
@@ -86,5 +85,5 @@ export const postureApi = {
    * レスポンス: 204 No Content (void)
    */
   deleteImage: (imageId: string): Promise<void> =>
-    axiosInstance.delete(`/posture_images/${imageId}`).then(() => undefined),
+    axiosInstance.delete(API_ENDPOINTS.POSTURE_IMAGES.BY_ID(imageId)).then(() => undefined),
 };
