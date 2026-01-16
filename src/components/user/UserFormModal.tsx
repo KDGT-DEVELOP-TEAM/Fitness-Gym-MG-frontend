@@ -2,7 +2,8 @@ import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import UserForm from './UserForm';
 import { User, UserRequest } from '../../types/api/user'; 
-import { Store } from '../../types/store'; 
+import { Store } from '../../types/store';
+import { useAuth } from '../../context/AuthContext'; 
 
 interface UserFormModalProps {
   isOpen: boolean;
@@ -17,6 +18,8 @@ interface UserFormModalProps {
 const UserFormModal: React.FC<UserFormModalProps> = ({ 
   isOpen, onClose, initialData, stores, onSubmit, onDelete, isSubmitting 
 }) => {
+  const { user: authUser } = useAuth();
+  
   // モーダルが開いている時、背景のスクロールを無効化
   useEffect(() => {
     if (isOpen) {
@@ -66,7 +69,8 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                 await onDelete(id);
                 onClose();
             }}
-            isSubmitting={isSubmitting} 
+            isSubmitting={isSubmitting}
+            currentUserRole={authUser?.role}
           />
         </div>
       </div>

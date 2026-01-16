@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { User, UserRequest } from '../../types/api/user';
+import { User, UserRequest, UserRole } from '../../types/api/user';
 import { UserFormData } from '../../types/form/user';
 import { Store } from '../../types/store';
 import { validatePasswordPattern } from '../../utils/validators';
@@ -14,16 +14,20 @@ interface UserFormProps {
   onSubmit: (data: UserRequest) => Promise<void>;
   onDelete?: (id: string) => Promise<void>;
   isSubmitting: boolean;
+  currentUserRole?: UserRole;
 }
 
 interface ApiErrorResponse {
   message: string;
 }
 
-const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDelete, isSubmitting }) => {
+const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDelete, isSubmitting, currentUserRole }) => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [errorMessages, setErrorMessages] = useState<string[]>([]);
   const isEditMode = !!initialData;
+  
+  // マネージャーの場合はトレーナーのみ選択可能
+  const isManager = currentUserRole === 'MANAGER';
 
   // 1. フォームの状態管理 (UIの都合に合わせた型)
   // ステータス(active)も管理しやすいように統合しています
@@ -180,8 +184,8 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
                     <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1">権限 <RequiredBadge /></label>
                         <select name="role" value={formData.role} onChange={handleChange} required className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium cursor-pointer appearance-none bg-white">
-                            <option value="ADMIN">管理者</option>
-                            <option value="MANAGER">店長</option>
+                            {!isManager && <option value="ADMIN">管理者</option>}
+                            {!isManager && <option value="MANAGER">店長</option>}
                             <option value="TRAINER">トレーナー</option>
                         </select>
                     </div>
