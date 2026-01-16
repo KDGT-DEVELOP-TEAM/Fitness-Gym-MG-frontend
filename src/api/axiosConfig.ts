@@ -40,10 +40,12 @@ axiosInstance.interceptors.response.use(
   (error) => {
     // ログインエンドポイントの401エラーは除外（ログイン失敗は正常な動作）
     const isLoginEndpoint = error.config?.url?.includes('/auth/login') && error.config?.method === 'post';
+    // 認証状態確認エンドポイントの401エラーは除外（AuthContextで処理される）
+    const isAuthMeEndpoint = error.config?.url?.includes('/auth/me') && error.config?.method === 'get';
     
     if (error.response?.status === 401) {
-      // ログインエンドポイント以外の401エラーのみ自動ログアウト
-      if (!isLoginEndpoint) {
+      // ログインエンドポイントと認証状態確認エンドポイント以外の401エラーのみ自動ログアウト
+      if (!isLoginEndpoint && !isAuthMeEndpoint) {
         logger.info('401エラー検知、ログアウト処理を実行', undefined, 'axiosConfig');
         storage.clear();
         window.location.href = '/login';
