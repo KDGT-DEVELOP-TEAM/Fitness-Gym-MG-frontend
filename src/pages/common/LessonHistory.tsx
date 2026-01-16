@@ -34,7 +34,9 @@ export const LessonHistory: React.FC = () => {
   const [customerError, setCustomerError] = useState<string | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // レッスン一覧と顧客情報を並列取得
+  // レッスン一覧と顧客情報を並列取得（重複実行を防止）
+  const lastFetchKeyRef = useRef<string>('');
+  const isFetchingRef = useRef<boolean>(false);
   useEffect(() => {
     const fetchData = async () => {
       if (!customerId) {
@@ -43,10 +45,21 @@ export const LessonHistory: React.FC = () => {
         return;
       }
 
+      const fetchKey = customerId;
+      
+      // 既に同じ条件で取得済み、または取得中の場合は実行しないガード
+      if (lastFetchKeyRef.current === fetchKey || isFetchingRef.current) {
+        return;
+      }
+      
+      // 実行フラグを設定（非同期処理開始前に設定）
+      lastFetchKeyRef.current = fetchKey;
+      isFetchingRef.current = true;
+
       setLessonsLoading(true);
-        setCustomerLoading(true);
+      setCustomerLoading(true);
       setLessonsError(null);
-        setCustomerError(null);
+      setCustomerError(null);
 
       try {
         // レッスン一覧と顧客情報を並列取得
@@ -73,6 +86,7 @@ export const LessonHistory: React.FC = () => {
       } finally {
         setLessonsLoading(false);
         setCustomerLoading(false);
+        isFetchingRef.current = false;
       }
     };
 
