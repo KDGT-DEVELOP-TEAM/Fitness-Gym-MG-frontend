@@ -1,3 +1,18 @@
+/**
+ * Posture position type
+ * Valid values: 'front', 'right', 'back', 'left'
+ */
+export type PosturePosition = 'front' | 'right' | 'back' | 'left';
+
+/**
+ * 姿勢画像プレビュー（フロントエンド専用）
+ */
+export interface PosturePreview {
+  position: PosturePosition;
+  url: string;
+  storageKey: string;
+}
+
 export interface Posture {
   id: string;
   customerId: string;
@@ -28,7 +43,7 @@ export interface PostureComparison {
 export interface PostureImage {
   id: string;
   storageKey: string; // バックエンド: storageKey (camelCase)
-  position: 'front' | 'right' | 'back' | 'left'; // バックエンド: position (String)
+  position: PosturePosition; // バックエンド: position (String)
   takenAt: string; // バックエンド: takenAt (OffsetDateTime)
   consentPublication: boolean; // バックエンド: consentPublication
   signedUrl?: string; // バックエンド: signedUrl (レッスン詳細取得時に生成される)

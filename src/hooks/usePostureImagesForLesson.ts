@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { PosturePreview, PosturePosition } from '../constants/posture';
+import { PosturePreview, PosturePosition, PostureImage } from '../types/posture';
 import { logger } from '../utils/logger';
-import { isPosturePosition } from '../constants/posture';
-import { PostureImage } from '../types/posture';
+import { isPosturePosition } from '../utils/posture';
 
 /**
  * Custom hook to generate signed URLs for posture images

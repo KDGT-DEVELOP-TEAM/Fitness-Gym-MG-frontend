@@ -1,7 +1,8 @@
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import { formatDateTime } from '../../utils/dateFormatter';
-import { getPosturePositionLabel, ALL_POSTURE_POSITIONS } from '../../constants/posture';
+import { ALL_POSTURE_POSITIONS } from '../../constants/posture';
+import { getPosturePositionLabel } from '../../utils/posture';
 import { useLessonData } from '../../hooks/useLessonData';
 import { usePostureImagesForLesson } from '../../hooks/usePostureImagesForLesson';
 import { FORM_STYLES } from '../../styles/formStyles';

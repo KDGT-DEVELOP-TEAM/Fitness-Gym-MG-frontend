@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { PostureImage } from '../../types/posture';
 import { groupByDate, formatDateForDisplay } from '../../utils/dateFormatter';
 import { COLOR_CLASSES } from '../../constants/colors';
-import { PosturePosition } from '../../constants/posture';
+import { PosturePosition } from '../../types/posture';
 import { logger } from '../../utils/logger';
 
 const positionLabels: Record<PosturePosition, string> = {

@@ -1,18 +1,13 @@
 /**
  * Storage-related constants
- * Centralized definitions for storage bucket names and MIME types
+ * Centralized definitions for storage bucket names
  */
-
-export const STORAGE_CONSTANTS = {
-  POSTURES_BUCKET: 'postures',
-} as const;
-
-export const IMAGE_CONSTANTS = {
-  JPEG_MIME_TYPE: 'image/jpeg',
-} as const;
 
 /**
- * Maximum file size for uploads (10MB)
- * Matches backend ApplicationConstants.MAX_FILE_SIZE_BYTES
+ * ストレージバケット名
+ * 環境変数VITE_STORAGE_BUCKET_NAMEから取得、未設定の場合はデフォルト値'postures'を使用
+ * バックエンドのSupabaseStorageProperties.bucketと一致させること
  */
-export const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
+export const STORAGE_CONSTANTS = {
+  POSTURES_BUCKET: import.meta.env.VITE_STORAGE_BUCKET_NAME || 'postures',
+} as const;

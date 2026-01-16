@@ -5,20 +5,17 @@ import { lessonApi } from '../../api/lessonApi';
 import { postureApi } from '../../api/postureApi';
 import { LessonFormData, TrainingInput, TrainingRequest, LessonRequest } from '../../types/lesson';
 import { logger } from '../../utils/logger';
-import { PosturePosition, getPosturePositionLabel, ALL_POSTURE_POSITIONS } from '../../constants/posture';
+import { PosturePosition, PosturePreview } from '../../types/posture';
+import { ALL_POSTURE_POSITIONS } from '../../constants/posture';
+import { getPosturePositionLabel } from '../../utils/posture';
 import { useOptions } from '../../hooks/useOptions';
 import { IMAGE_QUALITY, CANVAS_DIMENSIONS } from '../../constants/image';
-import { IMAGE_CONSTANTS, MAX_FILE_SIZE_BYTES } from '../../constants/storage';
+import { IMAGE_CONSTANTS, MAX_FILE_SIZE_BYTES } from '../../constants/image';
 import { FORM_STYLES } from '../../styles/formStyles';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import { validateRequired, validateDateRange, validateNumericRange, validateNextLesson } from '../../utils/validators';
 import { ERROR_MESSAGES } from '../../constants/errorMessages';
 import { useAuth } from '../../context/AuthContext';
-type PosturePreview = {
-  position: PosturePosition;
-  url: string;
-  storageKey: string;
-};
 
 export const LessonCreate: React.FC = () => {
   const navigate = useNavigate();

@@ -1,5 +1,7 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
-
+/**
+ * APIエンドポイント定数
+ * 相対パスのみを定義（axiosConfig.tsのbaseURLと組み合わせて使用）
+ */
 export const API_ENDPOINTS = {
   AUTH: {
     LOGIN: '/auth/login',
@@ -30,5 +32,3 @@ export const API_ENDPOINTS = {
     BY_ID: (id: string) => `/stores/${id}`,
   },
 } as const;
-
-export type ApiEndpoints = typeof API_ENDPOINTS;

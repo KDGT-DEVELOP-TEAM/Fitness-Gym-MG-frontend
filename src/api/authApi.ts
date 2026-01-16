@@ -2,6 +2,7 @@ import axiosInstance from './axiosConfig';
 import { LoginCredentials, LoginResponse } from '../types/auth';
 import { User } from '../types/api/user';
 import { storage } from '../utils/storage';
+import { API_ENDPOINTS } from '../constants/apiEndpoints';
 
 export const authApi = {
   /**
@@ -12,7 +13,7 @@ export const authApi = {
   login: async (credentials: LoginCredentials): Promise<LoginResponse> => {
     console.log('[authApi] ログインAPI呼び出し開始');
     try {
-      const response = await axiosInstance.post<LoginResponse>('/auth/login', credentials);
+      const response = await axiosInstance.post<LoginResponse>(API_ENDPOINTS.AUTH.LOGIN, credentials);
       console.log('[authApi] ログインAPIレスポンス成功:', {
         status: response.status,
         data: response.data,
@@ -58,7 +59,7 @@ export const authApi = {
    */
   logout: async (): Promise<void> => {
     try {
-      await axiosInstance.post('/auth/logout');
+      await axiosInstance.post(API_ENDPOINTS.AUTH.LOGOUT);
     } finally {
       storage.clear();
     }

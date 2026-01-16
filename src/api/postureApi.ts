@@ -1,5 +1,6 @@
 import axiosInstance from './axiosConfig';
 import { Posture, PostureComparison, PostureGroupResponse, PostureImageUploadResponse, SignedUrlResponse, BatchSignedUrlResponse } from '../types/posture';
+import { API_ENDPOINTS } from '../constants/apiEndpoints';
 
 export const postureApi = {
   /**

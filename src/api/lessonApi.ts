@@ -10,6 +10,7 @@ import {
   PaginatedResponse,
   SpringPage,
 } from '../utils/pagination';
+import { API_ENDPOINTS } from '../constants/apiEndpoints';
 
 /**
  * ============================
@@ -53,7 +54,7 @@ export const lessonApi = {
     data: Partial<LessonRequest>
   ): Promise<Lesson> => {
     const response = await axiosInstance.patch<Lesson>(
-      `/lessons/${lessonId}`,
+      API_ENDPOINTS.LESSONS.BY_ID(lessonId),
       data
     );
     return response.data;
@@ -64,7 +65,7 @@ export const lessonApi = {
    */
   getById: async (lessonId: string): Promise<Lesson> => {
     const response = await axiosInstance.get<Lesson>(
-      `/lessons/${lessonId}`
+      API_ENDPOINTS.LESSONS.BY_ID(lessonId)
     );
     return response.data;
   },
@@ -77,7 +78,7 @@ export const lessonApi = {
     params?: { page?: number; size?: number }
   ): Promise<PaginatedResponse<Lesson>> => {
     const response = await axiosInstance.get<SpringPage<Lesson>>(
-      `/customers/${customerId}/lessons`,
+      API_ENDPOINTS.LESSONS.BY_CUSTOMER(customerId),
       { params }
     );
     return convertPageResponse(response.data);
