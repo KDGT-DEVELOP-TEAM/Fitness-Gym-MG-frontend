@@ -643,11 +643,17 @@ export const LessonCreate: React.FC = () => {
               onChange={(e) => setFormData({ ...formData, nextUserId: e.target.value })}
             >
               <option value="">未定</option>
-              {users.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.name}
-                </option>
-              ))}
+              {users
+                .filter((u) => {
+                  // 管理者（ADMIN）を除外し、店長（MANAGER）とトレーナー（TRAINER）のみ選択可能
+                  // バックエンドで既にフィルタリングされているが、念のためフロントエンドでも除外
+                  return !u.role || (u.role !== 'ADMIN');
+                })
+                .map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.name}
+                  </option>
+                ))}
             </select>
           </div>
         </div>

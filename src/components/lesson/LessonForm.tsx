@@ -203,11 +203,16 @@ export const LessonForm: React.FC<LessonFormProps> = ({
           className="mt-1 block w-full px-3 py-2 border rounded-md"
         >
           <option value="">未定</option>
-          {users.map((u) => (
-            <option key={u.id} value={u.id}>
-              {u.name}
-            </option>
-          ))}
+          {users
+            .filter((u) => {
+              // 管理者（ADMIN）を除外し、店長（MANAGER）とトレーナー（TRAINER）のみ選択可能
+              return !u.role || (u.role !== 'ADMIN');
+            })
+            .map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.name}
+              </option>
+            ))}
         </select>
       </div>
       

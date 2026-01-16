@@ -4,6 +4,7 @@ import { Posture, PostureComparison, PostureAnalysis } from '../types/posture';
 
 /**
  * Type guard to check if a value is a User
+ * UserRole型（'ADMIN' | 'MANAGER' | 'TRAINER'）と一致するように大文字でチェック
  */
 export const isUser = (user: unknown): user is User => {
   if (!user || typeof user !== 'object') {
@@ -16,7 +17,7 @@ export const isUser = (user: unknown): user is User => {
     typeof u.email === 'string' &&
     typeof u.name === 'string' &&
     typeof u.role === 'string' &&
-    ['admin', 'manager', 'trainer'].includes(u.role as string)
+    ['ADMIN', 'MANAGER', 'TRAINER'].includes(u.role as string)
   );
 };
 

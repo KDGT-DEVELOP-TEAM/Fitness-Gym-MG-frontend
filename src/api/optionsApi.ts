@@ -6,7 +6,7 @@
 import axiosInstance from './axiosConfig';
 import { logger } from '../utils/logger';
 
-export type Option = { id: string; name: string };
+export type Option = { id: string; name: string; role?: string };
 
 interface StoreResponse {
   id: string;
@@ -16,6 +16,7 @@ interface StoreResponse {
 interface UserResponse {
   id: string;
   name: string;
+  role?: string; // オプション: フィルタリング用
 }
 
 interface CustomerResponse {
@@ -58,7 +59,7 @@ export const fetchUserOptions = async (): Promise<Option[]> => {
       return [];
     }
     
-    return data.map((d) => ({ id: d.id, name: d.name }));
+    return data.map((d) => ({ id: d.id, name: d.name, role: d.role }));
   } catch (error) {
     logger.error('Failed to fetch users', error, 'optionsApi');
     return [];
