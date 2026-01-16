@@ -99,3 +99,24 @@ export const formatDateForDisplay = (date: string | Date): string => {
   return `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}`;
 };
 
+/**
+ * Format date and time separately for display
+ * Returns an object with dateStr and timeStr
+ * Used in DashboardLessonCard component
+ * 
+ * @param dateString - Date string or Date object or null/undefined
+ * @returns Object with dateStr and timeStr properties
+ */
+export const formatDateTimeSplit = (dateString: string | Date | null | undefined): { dateStr: string; timeStr: string } => {
+  if (!dateString) return { dateStr: '-', timeStr: '--:--' };
+  
+  const dateObj = typeof dateString === 'string' ? new Date(dateString) : dateString;
+  // Invalid Dateチェック
+  if (isNaN(dateObj.getTime())) return { dateStr: '不正な日付', timeStr: '--:--' };
+  
+  return {
+    dateStr: dateObj.toLocaleDateString('ja-JP'),
+    timeStr: dateObj.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })
+  };
+};
+

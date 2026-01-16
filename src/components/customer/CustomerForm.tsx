@@ -7,6 +7,8 @@ import { getAllErrorMessages } from '../../utils/errorMessages';
 import { isErrorResponse } from '../../types/api/error';
 import { useAuth } from '../../context/AuthContext';
 import { useStores } from '../../hooks/useStore';
+import { ConfirmModal } from '../common/ConfirmModal';
+import { isAdmin, isManager } from '../../utils/roleUtils';
 
 interface CustomerFormProps {
   initialData?: Customer;
@@ -24,10 +26,10 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
   const { stores, loading: storesLoading } = useStores();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [errorMessages, setErrorMessages] = useState<string[]>([]);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showActiveWarning, setShowActiveWarning] = useState(false);
   
-  const isAdmin = authUser?.role?.toUpperCase() === 'ADMIN';
-  const isManager = authUser?.role?.toUpperCase() === 'MANAGER';
-  const showStoreSelection = isAdmin || isManager; // ADMINとMANAGERの両方で店舗選択UIを表示
+  const showStoreSelection = isAdmin(authUser) || isManager(authUser); // ADMINとMANAGERの両方で店舗選択UIを表示
   
   const [formData, setFormData] = useState<CustomerFormData & { active: boolean }>({
     name: initialData?.name || '',
@@ -280,16 +282,10 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
             type="button" 
             onClick={() => {
               if (initialData) {
-                const confirmMessage = initialData.active 
-                  ? "この顧客は有効な状態です。削除するには先に無効化してください。"
-                  : "この顧客データを完全に削除してもよろしいですか？";
-                
-                if (window.confirm(confirmMessage)) {
-                  if (initialData.active) {
-                    alert("先に顧客を無効化してから削除してください。");
-                    return;
-                  }
-                  onDelete(initialData.id);
+                if (initialData.active) {
+                  setShowActiveWarning(true);
+                } else {
+                  setShowDeleteConfirm(true);
                 }
               }
             }} 
@@ -300,6 +296,35 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
           </button>
         )}
       </div>
+
+      {/* 削除確認モーダル */}
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        title="顧客データの削除"
+        message="この顧客データを完全に削除してもよろしいですか？"
+        confirmText="削除"
+        cancelText="キャンセル"
+        onConfirm={() => {
+          if (initialData && onDelete) {
+            onDelete(initialData.id);
+          }
+          setShowDeleteConfirm(false);
+        }}
+        onCancel={() => setShowDeleteConfirm(false)}
+        isLoading={isSubmitting}
+      />
+
+      {/* 有効状態の警告モーダル */}
+      <ConfirmModal
+        isOpen={showActiveWarning}
+        title="削除できません"
+        message="この顧客は有効な状態です。削除するには先に無効化してください。"
+        confirmText="了解"
+        cancelText=""
+        onConfirm={() => setShowActiveWarning(false)}
+        onCancel={() => setShowActiveWarning(false)}
+        isLoading={false}
+      />
     </form>
   );
 };

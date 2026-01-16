@@ -6,6 +6,7 @@ import { Store } from '../../types/store';
 import { validatePasswordPattern } from '../../utils/validators';
 import { getAllErrorMessages } from '../../utils/errorMessages';
 import { isErrorResponse } from '../../types/api/error';
+import { ConfirmModal } from '../common/ConfirmModal';
 
 interface UserFormProps {
   initialData?: User;
@@ -24,9 +25,12 @@ interface ApiErrorResponse {
 const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDelete, isSubmitting, currentUserRole }) => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [errorMessages, setErrorMessages] = useState<string[]>([]);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const isEditMode = !!initialData;
   
   // マネージャーの場合はトレーナーのみ選択可能
+  // 注意: currentUserRoleはUserRole型なので、直接比較が型安全で明確
+  // roleUtils.tsのisManager関数はUser | nullを引数に取るため、ここでは直接比較を使用
   const isManager = currentUserRole === 'MANAGER';
 
   // 1. フォームの状態管理 (UIの都合に合わせた型)
@@ -289,7 +293,11 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
                 {isEditMode && onDelete && (
                     <button
                         type="button"
-                        onClick={() => initialData && window.confirm('本当に削除しますか？') && onDelete(initialData.id)}
+                        onClick={() => {
+                            if (initialData) {
+                                setShowDeleteConfirm(true);
+                            }
+                        }}
                         className="w-full py-3 text-red-500 font-bold hover:bg-red-50 rounded-2xl transition-all"
                         disabled={isSubmitting}
                     >
@@ -297,6 +305,23 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
                     </button>
                 )}
             </div>
+
+            {/* 削除確認モーダル */}
+            <ConfirmModal
+                isOpen={showDeleteConfirm}
+                title="ユーザーの削除"
+                message="本当に削除しますか？"
+                confirmText="削除"
+                cancelText="キャンセル"
+                onConfirm={() => {
+                    if (initialData && onDelete) {
+                        onDelete(initialData.id);
+                    }
+                    setShowDeleteConfirm(false);
+                }}
+                onCancel={() => setShowDeleteConfirm(false)}
+                isLoading={isSubmitting}
+            />
         </form>
     );
 };

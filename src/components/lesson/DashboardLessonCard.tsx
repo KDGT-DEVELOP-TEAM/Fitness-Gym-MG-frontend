@@ -1,31 +1,19 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LessonHistoryItem } from '../../types/lesson';
+import { formatDateTimeSplit } from '../../utils/dateFormatter';
 
 interface DashboardLessonCardProps {
   lesson: LessonHistoryItem;
   from?: 'home' | 'history';
 }
-  
-const formatDateTime = (dateString: string | undefined | null) => {
-  if (!dateString) return { dateStr: '-', timeStr: '--:--' };
-
-  const dateObj = new Date(dateString);
-  // 不正な日付文字列の場合は fallback
-  if (isNaN(dateObj.getTime())) return { dateStr: '不正な日付', timeStr: '--:--' };
-
-  return {
-    dateStr: dateObj.toLocaleDateString('ja-JP'),
-    timeStr: dateObj.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })
-  };
-}
 
 export const DashboardLessonCard: React.FC<DashboardLessonCardProps> = ({ lesson, from }) => {
   const navigate = useNavigate();
   
-  // 日付・時刻のパース
-  const start = formatDateTime(lesson.startDate);
-  const end = formatDateTime(lesson.endDate);
+  // 日付・時刻のパース（メモ化）
+  const start = useMemo(() => formatDateTimeSplit(lesson.startDate), [lesson.startDate]);
+  const end = useMemo(() => formatDateTimeSplit(lesson.endDate), [lesson.endDate]);
 
   const handleClick = () => {
     if (!lesson.customerId) {
