@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { PostureImage } from '../../types/posture';
 import { formatDateForGrouping, formatDateTimeForCompare } from '../../utils/dateFormatter';
@@ -132,13 +132,26 @@ export const usePostureImageList = () => {
     setShowDeleteConfirm,
   } = usePostureImageListHeader();
 
-  // 姿勢画像を取得
+  // 姿勢画像を取得（重複実行を防止）
+  const lastFetchKeyRef = useRef<string>('');
+  const isFetchingRef = useRef<boolean>(false);
   useEffect(() => {
     const fetchImages = async () => {
       if (!customerId) {
         setLoading(false);
         return;
       }
+
+      const fetchKey = customerId;
+      
+      // 既に同じ条件で取得済み、または取得中の場合は実行しないガード
+      if (lastFetchKeyRef.current === fetchKey || isFetchingRef.current) {
+        return;
+      }
+      
+      // 実行フラグを設定（非同期処理開始前に設定）
+      lastFetchKeyRef.current = fetchKey;
+      isFetchingRef.current = true;
 
       setLoading(true);
       setError(null);
@@ -291,6 +304,7 @@ export const usePostureImageList = () => {
         setError(errorMessage);
       } finally {
         setLoading(false);
+        isFetchingRef.current = false;
       }
     };
 
