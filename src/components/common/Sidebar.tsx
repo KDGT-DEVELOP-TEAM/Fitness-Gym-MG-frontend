@@ -23,7 +23,7 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ menuItems }) => {
   const location = useLocation();
   const [searchParams] = useSearchParams();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const handleLogoutClick = () => {
@@ -194,6 +194,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ menuItems }) => {
           })}
         </ul>
       </nav>
+
+      {user && (
+        <div className="px-4 py-4 border-t border-white/20">
+          <div className="bg-[rgba(255,255,255,0.1)] rounded-lg p-4">
+            <div className="text-white">
+              <div className="text-lg font-medium mb-1">{user.name}</div>
+              <div className="text-sm text-white/80">{user.email}</div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="p-4 pb-8 flex justify-center">
         <button
