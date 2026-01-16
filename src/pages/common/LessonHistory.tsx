@@ -7,6 +7,8 @@ import { Lesson } from '../../types/lesson';
 import { getErrorMessage } from '../../utils/errorMessages';
 import axios from 'axios';
 import { LoadingSpinner } from '../../components/common/TableStatusRows';
+import { formatTimeOnly, formatDateWithWeekday } from '../../utils/dateFormatter';
+import { logger } from '../../utils/logger';
 
 // 型定義
 interface BMIHistoryItem {
@@ -146,20 +148,11 @@ export const LessonHistory: React.FC = () => {
   }, [currentLessons]);
 
   const formatDate = useCallback((dateStr: string) => {
-    const date = new Date(dateStr);
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-    const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
-    const weekday = weekdays[date.getDay()];
-    return `${month}月${day}日 (${weekday})`;
+    return formatDateWithWeekday(dateStr);
   }, []);
 
   const formatTime = useCallback((dateTimeStr: string) => {
-    if (!dateTimeStr) return '';
-    const date = new Date(dateTimeStr);
-    const hours = date.getHours().toString().padStart(2, '0');
-    const minutes = date.getMinutes().toString().padStart(2, '0');
-    return `${hours}:${minutes}`;
+    return formatTimeOnly(dateTimeStr, false); // withTilde = false
   }, []);
 
   const handleLessonClick = (lessonId: string) => {
@@ -169,7 +162,7 @@ export const LessonHistory: React.FC = () => {
         state: { from: 'history' }
       });
     } catch (err) {
-      console.log('Lesson clicked:', lessonId, 'Route may not be implemented yet');
+      logger.debug('Lesson clicked', { lessonId }, 'LessonHistory');
     }
   };
 

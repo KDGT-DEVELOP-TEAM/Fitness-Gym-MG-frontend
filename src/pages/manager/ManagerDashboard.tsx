@@ -5,6 +5,9 @@ import { DashboardLessonCard } from '../../components/lesson/DashboardLessonCard
 import { managerHomeApi } from '../../api/manager/homeApi';
 import { LoadingRow, EmptyRow, LoadingSpinner } from '../../components/common/TableStatusRows';
 import { ManagerHomeResponse } from '../../types/manager/home';
+import { getAccessibleStores, getInitialStoreId } from '../../utils/storeUtils';
+import { isManager } from '../../utils/roleUtils';
+import { logger } from '../../utils/logger';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -22,39 +25,20 @@ export const ManagerDashboard: React.FC = () => {
 
   // マネージャーがアクセス可能な店舗のリスト
   const accessibleStores = useMemo(() => {
-    if (!stores || stores.length === 0) return [];
-    // MANAGERの場合は全店舗を表示（ADMINと同じ）
-    return stores;
-  }, [stores]);
+    return getAccessibleStores(user, stores);
+  }, [user, stores]);
 
   // 初期値の設定
   useEffect(() => {
     if (storesLoading) return; // storesの読み込みが完了するまで待つ
     
     if (!selectedStoreId) {
-      // 優先順位1: マネージャーの所属店舗を優先
-      if (user?.storeIds && user.storeIds.length > 0) {
-        const userStoreId = Array.isArray(user.storeIds) ? user.storeIds[0] : user.storeIds;
-        // 所属店舗がaccessibleStoresに含まれているか確認
-        if (accessibleStores.length > 0) {
-          const isValidStore = accessibleStores.some(s => s.id === userStoreId);
-          if (isValidStore) {
-            setSelectedStoreId(userStoreId);
-            return;
-          }
-        } else {
-          // storesがまだ読み込まれていない場合でも、user.storeIdsを信頼して設定
-          setSelectedStoreId(userStoreId);
-          return;
-        }
-      }
-      
-      // 優先順位2: フォールバック（所属店舗が取得できない場合）
-      if (accessibleStores.length > 0) {
-        setSelectedStoreId(accessibleStores[0].id);
+      const initialStoreId = getInitialStoreId(user, accessibleStores, false);
+      if (initialStoreId && initialStoreId !== 'all') {
+        setSelectedStoreId(initialStoreId);
       }
     }
-  }, [user?.storeIds, stores, storesLoading, accessibleStores, selectedStoreId]);
+  }, [user, stores, storesLoading, accessibleStores, selectedStoreId]);
 
   // --- Home API 呼び出し ---
   useEffect(() => {
@@ -86,7 +70,7 @@ export const ManagerDashboard: React.FC = () => {
         setLoading(false);
       })
       .catch(err => {
-        console.error("Manager Home API Fetch Error:", err);
+        logger.error('Manager Home API fetch error', err, 'ManagerDashboard');
         setApiError("ダッシュボードデータの取得に失敗しました。");
         setLoading(false);
       });

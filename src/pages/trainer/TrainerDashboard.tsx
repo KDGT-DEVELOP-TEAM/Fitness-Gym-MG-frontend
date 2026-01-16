@@ -7,6 +7,8 @@ import { ROUTES } from '../../constants/routes';
 import { Pagination } from '../../components/common/Pagination';
 import { FiChevronRight, FiUser, FiMapPin } from 'react-icons/fi';
 import { LoadingSpinner } from '../../components/common/TableStatusRows';
+import { formatTimeOnly, formatDateWithWeekday } from '../../utils/dateFormatter';
+import { logger } from '../../utils/logger';
 
 export const TrainerDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -37,7 +39,7 @@ export const TrainerDashboard: React.FC = () => {
       setTotalCount(data.totalLessonCount || 0);
     } catch (err) {
       setError('次回レッスン希望日程の取得に失敗しました');
-      console.error(err);
+      logger.error('Failed to fetch next lessons', err, 'TrainerDashboard');
     } finally {
       setLoading(false);
     }
@@ -87,31 +89,21 @@ export const TrainerDashboard: React.FC = () => {
 
   const handleLessonClick = (customerId: string) => {
     if (!customerId) {
-      console.error('[TrainerDashboard] customerId is missing');
+      logger.error('CustomerId is missing', {}, 'TrainerDashboard');
       return;
     }
     const url = ROUTES.LESSON_FORM_WITH_CUSTOMER.replace(':customerId', customerId);
-    console.log('[TrainerDashboard] Navigating to:', url);
+    logger.debug('Navigating to lesson form', { url }, 'TrainerDashboard');
     navigate(url);
   };
 
-  const formatTime = (dateTimeStr: string | null) => {
-    if (!dateTimeStr) return '';
-    const date = new Date(dateTimeStr);
-    const hours = date.getHours().toString().padStart(2, '0');
-    const minutes = date.getMinutes().toString().padStart(2, '0');
-    return `${hours}:${minutes} 〜`;
-  };
+  const formatTime = useCallback((dateTimeStr: string | null) => {
+    return formatTimeOnly(dateTimeStr, true); // withTilde = true
+  }, []);
 
-  const formatDate = (dateTimeStr: string | null) => {
-    if (!dateTimeStr) return '';
-    const date = new Date(dateTimeStr);
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-    const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
-    const weekday = weekdays[date.getDay()];
-    return `${month}月${day}日 (${weekday})`;
-  };
+  const formatDate = useCallback((dateTimeStr: string | null) => {
+    return formatDateWithWeekday(dateTimeStr);
+  }, []);
 
   // 日付ごとにグループ化
   const groupedLessons = displayedLessons.reduce((acc, lesson) => {

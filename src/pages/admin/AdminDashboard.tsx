@@ -4,7 +4,8 @@ import { DashboardLessonCard } from '../../components/lesson/DashboardLessonCard
 import { LoadingRow, EmptyRow, LoadingSpinner } from '../../components/common/TableStatusRows';
 import { Pagination } from '../../components/common/Pagination';
 import { adminHomeApi } from '../../api/admin/homeApi'; 
-import { AdminHomeResponse } from '../../types/admin/home'
+import { AdminHomeResponse } from '../../types/admin/home';
+import { logger } from '../../utils/logger';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -33,7 +34,7 @@ export const AdminDashboard: React.FC = () => {
         setLoading(false);
       })
       .catch(err => {
-        console.error("Admin Home API Fetch Error:", err);
+        logger.error('Admin Home API fetch error', err, 'AdminDashboard');
         setApiError("ダッシュボードデータの取得に失敗しました。");
         setLoading(false);
       });

@@ -21,7 +21,6 @@ export const Login: React.FC = () => {
 
   // ログイン成功後の遷移をuseEffectで処理
   useEffect(() => {
-    console.log('[Login] useEffect発火、user:', user);
     if (user) {
       const redirectPath = (() => {
         switch (user.role) {
@@ -36,7 +35,6 @@ export const Login: React.FC = () => {
         }
       })();
       
-      console.log('[Login] ユーザー状態更新を検知、リダイレクト:', redirectPath);
       navigate(redirectPath, { replace: true });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -47,12 +45,9 @@ export const Login: React.FC = () => {
     setError('');
 
     try {
-      console.log('[Login] ログイン試行開始');
       await login(email, password);
-      console.log('[Login] ログイン成功、ユーザーデータの設定を待機中');
       // navigate()の呼び出しを削除 - useEffectで処理
     } catch (err) {
-      console.error('[Login] ログインエラー:', err);
       logger.error('Login failed', err, 'Login');
       // バリデーションエラーの場合は詳細メッセージを表示
       const errorMessages = getAllErrorMessages(err);

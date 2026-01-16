@@ -7,11 +7,13 @@ import { LoadingRow, EmptyRow } from '../components/common/TableStatusRows';
 import { Pagination } from '../components/common/Pagination';
 import { Customer, CustomerRequest } from '../types/api/customer';
 import { useAuth } from '../context/AuthContext';
-import { adminCustomersApi } from '../api/admin/customersApi';
-import { managerCustomersApi } from '../api/manager/customersApi';
-import { customerApi } from '../api/customerApi';
 import { ROUTES } from '../constants/routes';
 import { useStores } from '../hooks/useStore';
+import { ConfirmModal } from '../components/common/ConfirmModal';
+import { isAdmin, isManager, isTrainer } from '../utils/roleUtils';
+import { getAccessibleStores, getInitialStoreId } from '../utils/storeUtils';
+import { calculateAge } from '../utils/dateFormatter';
+import { getCustomerService } from '../utils/apiSelector';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -23,66 +25,36 @@ export const CustomerManagement: React.FC = () => {
   const [selectedStoreId, setSelectedStoreId] = useState<'all' | string>('');
   
   // トレーナーの場合は編集・作成機能を無効化
-  const isTrainer = authUser?.role?.toUpperCase() === 'TRAINER';
-  const isManager = authUser?.role?.toUpperCase() === 'MANAGER';
-  const isAdmin = authUser?.role?.toUpperCase() === 'ADMIN';
+  const userIsTrainer = isTrainer(authUser);
+  const userIsManager = isManager(authUser);
+  const userIsAdmin = isAdmin(authUser);
   
   // ADMIN/MANAGERがアクセス可能な店舗のリスト
   const accessibleStores = React.useMemo(() => {
-    if (!stores || stores.length === 0) return [];
-    // ADMINとMANAGERの場合は全店舗を表示
-    if (isAdmin || isManager) {
-      return stores;
-    }
-    // その他のロールは従来通り
-    if (!authUser?.storeIds) return stores;
-    const userStoreIds = Array.isArray(authUser.storeIds) ? authUser.storeIds : [authUser.storeIds];
-    return stores.filter(store => userStoreIds.includes(store.id));
-  }, [authUser?.storeIds, stores, isAdmin, isManager]);
+    return getAccessibleStores(authUser, stores);
+  }, [authUser, stores]);
 
   // 初期値の設定
   useEffect(() => {
     if (storesLoading) return; // storesの読み込みが完了するまで待つ
     
     if (!selectedStoreId) {
-      if (isAdmin) {
-        // ADMINの場合は初期値を'all'（全店舗）に設定
-        setSelectedStoreId('all');
-      } else if (isManager) {
-        // 優先順位1: マネージャーの所属店舗を優先
-        if (authUser?.storeIds && authUser.storeIds.length > 0) {
-          const userStoreId = Array.isArray(authUser.storeIds) ? authUser.storeIds[0] : authUser.storeIds;
-          // 所属店舗がaccessibleStoresに含まれているか確認
-          if (accessibleStores.length > 0) {
-            const isValidStore = accessibleStores.some(s => s.id === userStoreId);
-            if (isValidStore) {
-              setSelectedStoreId(userStoreId);
-              return;
-            }
-          } else {
-            // storesがまだ読み込まれていない場合でも、authUser.storeIdsを信頼して設定
-            setSelectedStoreId(userStoreId);
-            return;
-          }
-        }
-        
-        // 優先順位2: フォールバック（所属店舗が取得できない場合）
-        if (accessibleStores.length > 0) {
-          setSelectedStoreId(accessibleStores[0].id);
-        }
+      const initialStoreId = getInitialStoreId(authUser, accessibleStores, userIsAdmin);
+      if (initialStoreId) {
+        setSelectedStoreId(initialStoreId);
       }
     }
-  }, [authUser?.storeIds, stores, storesLoading, accessibleStores, selectedStoreId, isAdmin, isManager]);
+  }, [authUser, stores, storesLoading, accessibleStores, selectedStoreId, userIsAdmin]);
 
   // useCustomersに渡すstoreId: ADMINの場合は'all'の時はundefined、MANAGERの場合はselectedStoreId
   const storeIdForApi = React.useMemo(() => {
-    if (isAdmin) {
+    if (userIsAdmin) {
       return selectedStoreId === 'all' ? undefined : selectedStoreId;
-    } else if (isManager) {
+    } else if (userIsManager) {
       return selectedStoreId || undefined;
     }
     return undefined;
-  }, [isAdmin, isManager, selectedStoreId]);
+  }, [userIsAdmin, userIsManager, selectedStoreId]);
 
   const { 
     customers,
@@ -110,22 +82,10 @@ export const CustomerManagement: React.FC = () => {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | undefined>(undefined);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-
-  // --- API Selector ---
-  const getCustomerService = useCallback(() => {
-    if (!authUser) return null;
-    const isAdmin = authUser?.role?.toUpperCase() === 'ADMIN';
-    const storeId = Array.isArray(authUser?.storeIds) ? authUser.storeIds[0] : authUser?.storeIds;
-
-    return {
-      create: (data: CustomerRequest) => 
-        isAdmin ? adminCustomersApi.createCustomer(data) : managerCustomersApi.createCustomer(data),
-      update: (id: string, data: CustomerRequest) => 
-        customerApi.updateProfile(id, data),
-      delete: (id: string) => 
-        isAdmin ? adminCustomersApi.deleteCustomer(id) : managerCustomersApi.deleteCustomer(storeId!, id),
-    };
-  }, [authUser]);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string>('');
+  const [pendingDeleteCustomerId, setPendingDeleteCustomerId] = useState<string | null>(null);
 
   const totalPages = Math.ceil(total / ITEMS_PER_PAGE) || 1;
 
@@ -138,12 +98,12 @@ export const CustomerManagement: React.FC = () => {
   const lastFetchKeyRef = useRef<string>('');
   useEffect(() => {
     // storesの読み込みが完了するまで待つ（MANAGERの場合）
-    if (isManager && storesLoading) {
+    if (userIsManager && storesLoading) {
       return;
     }
     
     // selectedStoreIdが設定されていない場合は待つ（MANAGERの場合）
-    if (isManager && !selectedStoreId) {
+    if (userIsManager && !selectedStoreId) {
       return;
     }
     
@@ -156,13 +116,13 @@ export const CustomerManagement: React.FC = () => {
     
     lastFetchKeyRef.current = fetchKey;
     refetchRef.current(currentPage - 1);
-  }, [currentPage, searchQuery, selectedStoreId, isManager, storesLoading]); // refetchを依存配列から除外
+  }, [currentPage, searchQuery, selectedStoreId, userIsManager, storesLoading]); // refetchを依存配列から除外
 
   // --- Handlers ---
   const handleSubmit = async (formData: CustomerRequest) => {
     setIsSubmitting(true);
-    const service = getCustomerService();
-if (!service) return;
+    const service = getCustomerService(authUser);
+    if (!service) return;
     try {
       if (selectedCustomer) {
         await service.update(selectedCustomer.id, formData);
@@ -179,22 +139,44 @@ if (!service) return;
     }
   };
 
-  const handleDelete = async (customerId: string) => {
-    if (!window.confirm("この顧客データを完全に削除してもよろしいですか？\n※レッスン履歴がある場合は削除できません。")) return;
+  const handleDeleteClick = async (customerId: string): Promise<void> => {
+    setPendingDeleteCustomerId(customerId);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!pendingDeleteCustomerId) return;
     
     setIsSubmitting(true);
-    const service = getCustomerService();
-    if (!service) return;
+    setShowDeleteConfirm(false);
+    const service = getCustomerService(authUser);
+    if (!service) {
+      setIsSubmitting(false);
+      return;
+    }
     try {
-      await service.delete(customerId);
+      await service.delete(pendingDeleteCustomerId);
       await refetch(currentPage - 1);
       setIsModalOpen(false);
+      setPendingDeleteCustomerId(null);
     } catch (err: any) {
       const msg = err.response?.data?.message || "削除に失敗しました。ステータスを無効にするか、関連データを確認してください。";
-      alert(msg);
+      setErrorMessage(msg);
+      setShowErrorModal(true);
+      setPendingDeleteCustomerId(null);
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteConfirm(false);
+    setPendingDeleteCustomerId(null);
+  };
+
+  const handleErrorModalClose = () => {
+    setShowErrorModal(false);
+    setErrorMessage('');
   };
 
   const handleEditClick = (customer: Customer) => {
@@ -232,13 +214,13 @@ if (!service) return;
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
           <h1 className="text-3xl font-black text-gray-900 tracking-tight">
-            {isTrainer ? '顧客一覧' : '顧客管理'}
+            {userIsTrainer ? '顧客一覧' : '顧客管理'}
           </h1>
           <p className="text-sm text-gray-500 mt-1">
             <span className="font-bold text-green-600">{total}</span> 名の顧客が登録されています
           </p>
         </div>
-        {!isTrainer && (
+        {!userIsTrainer && (
           <button 
             onClick={handleCreateClick}
             className="h-12 px-6 bg-[#7AB77A] text-white font-black rounded-2xl hover:bg-[rgba(122,183,122,0.9)] transition-all active:scale-95 flex items-center justify-center gap-2"
@@ -269,7 +251,7 @@ if (!service) return;
           />
         </div>
         {/* 店舗選択ドロップダウン（ADMIN/MANAGERロールの場合のみ表示） */}
-        {(isAdmin || isManager) && (
+        {(userIsAdmin || userIsManager) && (
           <div className="relative group">
             <select 
               className="h-14 pl-6 pr-10 bg-white border-2 border-gray-50 rounded-2xl text-sm font-black text-gray-600 focus:border-green-500 focus:ring-0 outline-none cursor-pointer shadow-sm transition-all hover:border-gray-200 appearance-none disabled:opacity-50 disabled:cursor-not-allowed"
@@ -286,7 +268,7 @@ if (!service) return;
                 <option value="">店舗がありません</option>
               ) : (
                 <>
-                  {isAdmin && <option value="all">全店舗</option>}
+                  {userIsAdmin && <option value="all">全店舗</option>}
                   {accessibleStores.map(s => (
                     <option key={s.id} value={s.id}>{s.name}</option>
                   ))}
@@ -319,26 +301,23 @@ if (!service) return;
               <th className="w-[30%] px-8 py-5 text-center text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">氏名</th>
               <th className="w-[20%] px-8 py-5 text-center text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">年齢</th>
               <th className="w-[25%] px-8 py-5 text-center text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">ステータス</th>
-              {!isTrainer && (
+              {!userIsTrainer && (
                 <th className="w-[25%] px-8 py-5 text-center text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">編集</th>
               )}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {loading ? (
-                  <LoadingRow colSpan={isTrainer ? 3 : 4} /> 
+                  <LoadingRow colSpan={userIsTrainer ? 3 : 4} /> 
                 ) : customers.length === 0 ? (
-                  <EmptyRow colSpan={isTrainer ? 3 : 4} message="顧客データが登録されていません" />
+                  <EmptyRow colSpan={userIsTrainer ? 3 : 4} message="顧客データが登録されていません" />
                 ) : (
                 customers.map((customer) => (
                   <CustomerCard 
                     key={customer.id} 
                     customer={customer} 
-                    calculateAge={(b) => {
-                      const age = new Date().getFullYear() - new Date(b).getFullYear();
-                      return isNaN(age) ? 0 : age;
-                    }}
-                    onEdit={isTrainer ? undefined : (c) => handleEditClick(c as Customer)}
+                    calculateAge={calculateAge}
+                    onEdit={userIsTrainer ? undefined : (c) => handleEditClick(c as Customer)}
                     onHistoryClick={handleHistoryClick}
                   />
               )))}
@@ -355,16 +334,40 @@ if (!service) return;
       />
 
       {/* モーダル（トレーナーの場合は表示しない） */}
-      {!isTrainer && (
+      {!userIsTrainer && (
         <CustomerFormModal 
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           initialData={selectedCustomer}
           onSubmit={handleSubmit}
-          onDelete={handleDelete}
+          onDelete={handleDeleteClick}
           isSubmitting={isSubmitting}
         />
       )}
+
+      {/* 削除確認モーダル */}
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        title="顧客データの削除"
+        message="この顧客データを完全に削除してもよろしいですか？\n※レッスン履歴がある場合は削除できません。"
+        confirmText="削除"
+        cancelText="キャンセル"
+        onConfirm={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
+        isLoading={isSubmitting}
+      />
+
+      {/* エラーモーダル */}
+      <ConfirmModal
+        isOpen={showErrorModal}
+        title="エラー"
+        message={errorMessage}
+        confirmText="了解"
+        cancelText=""
+        onConfirm={handleErrorModalClose}
+        onCancel={handleErrorModalClose}
+        isLoading={false}
+      />
     </div>
   );
 };

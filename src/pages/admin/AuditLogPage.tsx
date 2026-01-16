@@ -1,24 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { adminLogsApi } from '../../api/admin/logsApi';
 import { AuditLog } from '../../types/admin/log';
 import { LoadingRow, EmptyRow } from '../../components/common/TableStatusRows';
 import { Pagination } from '../../components/common/Pagination';
+import { formatDateTimeSplit } from '../../utils/dateFormatter';
+import { logger } from '../../utils/logger';
 
 const ITEMS_PER_PAGE = 10;
-
-// 日時フォーマット関数
-const formatDateTime = (dateString: string | undefined | null) => {
-  if (!dateString) return { dateStr: '-', timeStr: '--:--' };
-
-  const dateObj = new Date(dateString);
-  // 不正な日付文字列の場合は fallback
-  if (isNaN(dateObj.getTime())) return { dateStr: '不正な日付', timeStr: '--:--' };
-
-  return {
-    dateStr: dateObj.toLocaleDateString('ja-JP'),
-    timeStr: dateObj.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })
-  };
-};
 
 // アクション名の日本語化（レッスン関連のみ）
 const getActionLabel = (action: string): string => {
@@ -53,6 +41,14 @@ export const AuditLogPage: React.FC = () => {
     currentPage * ITEMS_PER_PAGE
   );
 
+  // 日付フォーマットをメモ化
+  const formattedLogs = useMemo(() => {
+    return paginatedLogs.map(log => {
+      const { dateStr, timeStr } = formatDateTimeSplit(log.createdAt);
+      return { ...log, dateStr, timeStr } as AuditLog & { dateStr: string; timeStr: string };
+    });
+  }, [paginatedLogs]);
+
   useEffect(() => {
     const fetchLogs = async () => {
       setLoading(true);
@@ -68,14 +64,15 @@ export const AuditLogPage: React.FC = () => {
         const logsData = response.data || [];
         
         // デバッグ: 取得したログの内容を確認
-        console.log('[AuditLogPage] 取得したログ数:', logsData.length);
-        console.log('[AuditLogPage] APIレスポンス全体:', response);
+        logger.debug('Fetched audit logs', { count: logsData.length }, 'AuditLogPage');
         if (logsData.length > 0) {
-          console.log('[AuditLogPage] 最初のログ:', logsData[0]);
-          console.log('[AuditLogPage] 最初のログのtargetTable:', logsData[0].targetTable);
-          console.log('[AuditLogPage] すべてのtargetTable:', logsData.map(log => log.targetTable));
+          logger.debug('First log details', { 
+            firstLog: logsData[0],
+            targetTable: logsData[0].targetTable,
+            allTargetTables: logsData.map(log => log.targetTable)
+          }, 'AuditLogPage');
         } else {
-          console.warn('[AuditLogPage] ログが0件です。データベースに監査ログが存在しない可能性があります。');
+          logger.warn('No audit logs found', {}, 'AuditLogPage');
         }
         
         setAllLogs(logsData);
@@ -84,12 +81,12 @@ export const AuditLogPage: React.FC = () => {
         const lessonLogs = logsData.filter(log => 
           log.targetTable && log.targetTable.toLowerCase() === 'lessons'
         );
-        console.log('[AuditLogPage] フィルタリング後のレッスンログ数:', lessonLogs.length);
+        logger.debug('Filtered lesson logs', { count: lessonLogs.length }, 'AuditLogPage');
         const filteredCount = lessonLogs.length;
         setTotal(filteredCount);
         setTotalPages(Math.ceil(filteredCount / ITEMS_PER_PAGE) || 1);
       } catch (err: any) {
-        console.error('監査ログ取得エラー:', err);
+        logger.error('Failed to fetch audit logs', err, 'AuditLogPage');
         setError(err.response?.data?.message || '監査ログの取得に失敗しました。');
         setAllLogs([]);
         setTotal(0);
@@ -136,20 +133,19 @@ export const AuditLogPage: React.FC = () => {
             <tbody className="divide-y divide-gray-50 bg-white">
               {loading ? (
                 <LoadingRow colSpan={4} />
-              ) : !paginatedLogs || paginatedLogs.length === 0 ? (
+              ) : !formattedLogs || formattedLogs.length === 0 ? (
                 <EmptyRow colSpan={4} message="レッスン関連のログが登録されていません" />
               ) : (
-                paginatedLogs.map((log) => {
-                  const { dateStr, timeStr } = formatDateTime(log.createdAt);
+                formattedLogs.map((log) => {
                   return (
                     <tr key={log.id} className="hover:bg-green-50/30 transition-colors group">
                       <td className="px-8 py-6">
                         <div className="flex flex-col items-center text-center">
                           <span className="text-base font-bold text-gray-900 group-hover:text-green-600 transition-colors">
-                            {dateStr}
+                            {log.dateStr}
                           </span>
                           <span className="text-[11px] font-black text-gray-400 uppercase tracking-wider mt-0.5">
-                            {timeStr}
+                            {log.timeStr}
                           </span>
                         </div>
                       </td>
