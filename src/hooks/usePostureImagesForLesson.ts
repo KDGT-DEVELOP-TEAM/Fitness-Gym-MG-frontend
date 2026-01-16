@@ -72,7 +72,6 @@ export const usePostureImagesForLesson = (
     } finally {
       setLoading(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postureImages]);
 
   useEffect(() => {
@@ -82,7 +81,6 @@ export const usePostureImagesForLesson = (
       return;
     }
     loadPostureImages();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postureImages, loadPostureImages]);
 
   return { posturePreviews, loading };

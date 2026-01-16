@@ -15,7 +15,7 @@ import { AuditLogPage } from '../pages/admin/AuditLogPage';
 import { MainLayout } from '../components/common/MainLayout';
 import { HiHome, HiUsers, HiUserGroup, HiDocumentAdd, HiClock, HiPhotograph, HiArrowLeft, HiUser, HiClipboardList } from 'react-icons/hi';
 import { ROUTES } from '../constants/routes';
-import { useLessonData } from '../hooks/useLessonData';
+import { useLesson } from '../hooks/useLesson';
 import { useAuth } from '../context/AuthContext';
 // 以下のコンポーネントは実際の実装に合わせてインポートしてください
 // import { CustomerSelectPage } from '../pages/trainer/CustomerSelectPage';
@@ -301,7 +301,7 @@ const LessonDetailWithMenu: React.FC = () => {
   const { lessonId } = useParams<{ lessonId: string }>();
   const location = useLocation();
   const { user } = useAuth();
-  const { lesson, loading } = useLessonData(lessonId);
+  const { lesson, loading } = useLesson(lessonId);
   
   if (!lessonId) {
     return <LessonDetail />;

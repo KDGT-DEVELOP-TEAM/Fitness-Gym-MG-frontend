@@ -5,6 +5,8 @@ import { useAuth } from '../context/AuthContext';
 import { useStores } from './useStore';
 import { User, UserRequest, UserListParams } from '../types/api/user';
 import { UserFilters } from '../types/form/user';
+import { getStoreIdForManagerOrThrow } from '../utils/storeUtils';
+import { isAdmin } from '../utils/roleUtils';
 
 export const useUser = (selectedStoreId?: string) => {
   const { user: authUser } = useAuth();
@@ -35,7 +37,7 @@ export const useUser = (selectedStoreId?: string) => {
   }, [stores, storesLoading]);
 
   const refetchUsers = useCallback(async (page = 0) => {
-    const isAdmin = authUser?.role?.toUpperCase() === 'ADMIN';
+    if (!authUser) return;
 
     setLoading(true);
     setError(null);
@@ -45,32 +47,21 @@ export const useUser = (selectedStoreId?: string) => {
         size: 10,
         name: filtersRef.current.nameOrKana || undefined,
         // Managerの場合は権限フィルタを無効化（roleパラメータを送信しない）
-        role: isAdmin && filtersRef.current.role !== 'all' ? filtersRef.current.role : undefined,
+        role: isAdmin(authUser) && filtersRef.current.role !== 'all' ? filtersRef.current.role : undefined,
       };
       
       // ロールに応じて適切なAPIを呼び出す
       let res;
       
-      if (isAdmin) {
+      if (isAdmin(authUser)) {
         res = await adminUsersApi.getUsers(params);
       } else {
         // MANAGERロールの場合、storeIdを取得
-        // selectedStoreIdが指定されている場合はそれを使用、否则は従来のロジック
-        let storeId: string | null = null;
-        
-        if (selectedStoreId) {
-          storeId = selectedStoreId;
-        } else {
-          const currentStores = storesRef.current;
-          storeId = Array.isArray(authUser?.storeIds) && authUser.storeIds.length > 0
-            ? authUser.storeIds[0]
-            : (currentStores && currentStores.length > 0 ? currentStores[0].id : null);
-        }
-        
-        if (!storeId) {
-          // storeIdが取得できない場合はエラーをスロー
-          throw new Error('店舗IDが取得できませんでした');
-        }
+        const storeId = getStoreIdForManagerOrThrow(
+          authUser,
+          selectedStoreId,
+          storesRef.current
+        );
         
         res = await managerUsersApi.getUsers(storeId, params);
       }
@@ -89,51 +80,48 @@ export const useUser = (selectedStoreId?: string) => {
   };
 
   const createUser = async (data: UserRequest) => {
-    const isAdmin = authUser?.role?.toUpperCase() === 'ADMIN';
-    if (isAdmin) {
+    if (!authUser) return;
+    
+    if (isAdmin(authUser)) {
       await adminUsersApi.createUser(data);
     } else {
-      const currentStores = storesRef.current;
-      const storeId = Array.isArray(authUser?.storeIds) && authUser.storeIds.length > 0
-        ? authUser.storeIds[0]
-        : (currentStores && currentStores.length > 0 ? currentStores[0].id : null);
-      if (!storeId) {
-        throw new Error('店舗IDが取得できませんでした');
-      }
+      const storeId = getStoreIdForManagerOrThrow(
+        authUser,
+        undefined,
+        storesRef.current
+      );
       await managerUsersApi.createUser(storeId, data);
     }
     await refetchUsers();
   };
 
   const updateUser = async (id: string, data: UserRequest) => {
-    const isAdmin = authUser?.role?.toUpperCase() === 'ADMIN';
-    if (isAdmin) {
+    if (!authUser) return;
+    
+    if (isAdmin(authUser)) {
       await adminUsersApi.updateUser(id, data);
     } else {
-      const currentStores = storesRef.current;
-      const storeId = Array.isArray(authUser?.storeIds) && authUser.storeIds.length > 0
-        ? authUser.storeIds[0]
-        : (currentStores && currentStores.length > 0 ? currentStores[0].id : null);
-      if (!storeId) {
-        throw new Error('店舗IDが取得できませんでした');
-      }
+      const storeId = getStoreIdForManagerOrThrow(
+        authUser,
+        undefined,
+        storesRef.current
+      );
       await managerUsersApi.updateUser(storeId, id, data);
     }
     await refetchUsers();
   };
 
   const deleteUser = async (id: string) => {
-    const isAdmin = authUser?.role?.toUpperCase() === 'ADMIN';
-    if (isAdmin) {
+    if (!authUser) return;
+    
+    if (isAdmin(authUser)) {
       await adminUsersApi.deleteUser(id);
     } else {
-      const currentStores = storesRef.current;
-      const storeId = Array.isArray(authUser?.storeIds) && authUser.storeIds.length > 0
-        ? authUser.storeIds[0]
-        : (currentStores && currentStores.length > 0 ? currentStores[0].id : null);
-      if (!storeId) {
-        throw new Error('店舗IDが取得できませんでした');
-      }
+      const storeId = getStoreIdForManagerOrThrow(
+        authUser,
+        undefined,
+        storesRef.current
+      );
       await managerUsersApi.deleteUser(storeId, id);
     }
     await refetchUsers();

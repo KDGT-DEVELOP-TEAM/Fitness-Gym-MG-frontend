@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { formatDateTime } from '../../utils/dateFormatter';
 import { ALL_POSTURE_POSITIONS } from '../../constants/posture';
 import { getPosturePositionLabel } from '../../utils/posture';
-import { useLessonData } from '../../hooks/useLessonData';
+import { useLesson } from '../../hooks/useLesson';
 import { usePostureImagesForLesson } from '../../hooks/usePostureImagesForLesson';
 import { FORM_STYLES } from '../../styles/formStyles';
 import { logger } from '../../utils/logger';
@@ -13,7 +13,7 @@ export const LessonDetail: React.FC = () => {
   const { lessonId } = useParams<{ lessonId: string }>();
 
   // カスタムフックを使用してデータを取得（1回のAPI呼び出しで全てのデータを取得）
-  const { lesson, loading: lessonLoading } = useLessonData(lessonId);
+  const { lesson, loading: lessonLoading } = useLesson(lessonId);
   
   // lessonからtrainingsとpostureImagesを抽出
   // orderNoでソート（バックエンドから順序が保証されているが、念のため）

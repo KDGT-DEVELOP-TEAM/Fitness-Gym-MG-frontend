@@ -7,6 +7,8 @@ import { customerApi } from '../api/customerApi';
 import { Customer, CustomerRequest, CustomerListParams } from '../types/api/customer';
 import { useAuth } from '../context/AuthContext';
 import { useStores } from './useStore';
+import { getStoreIdForManagerOrThrow } from '../utils/storeUtils';
+import { isAdmin, isManager, isTrainer } from '../utils/roleUtils';
 
 interface ApiError {
   message: string;
@@ -41,15 +43,10 @@ export const useCustomers = (selectedStoreId?: string) => {
   const fetchCustomers = useCallback(async (page: number = 0) => {
     if (!authUser) return;
     
-    const role = authUser.role?.toUpperCase();
-    const isAdmin = role === 'ADMIN';
-    const isManager = role === 'MANAGER';
-    const isTrainer = role === 'TRAINER';
-    
     setLoading(true);
     setError(null);
     try {
-      if (isTrainer) {
+      if (isTrainer(authUser)) {
         // トレーナーの場合: 全件取得してフロントエンドでページネーション
         const allCustomersData = await trainerCustomersApi.getCustomers();
         setAllCustomers(allCustomersData);
@@ -82,7 +79,7 @@ export const useCustomers = (selectedStoreId?: string) => {
         
         let response;
         
-        if (isAdmin) {
+        if (isAdmin(authUser)) {
           // ADMINの場合: selectedStoreIdが指定されている場合はそれを使用（nullの場合は全店舗）
           if (selectedStoreId) {
             params.storeId = selectedStoreId;
@@ -90,22 +87,11 @@ export const useCustomers = (selectedStoreId?: string) => {
           response = await adminCustomersApi.getCustomers(params);
         } else {
           // MANAGERロールの場合、storeIdを取得
-          // selectedStoreIdが指定されている場合はそれを使用、否则は従来のロジック
-          let storeId: string | null = null;
-          
-          if (selectedStoreId) {
-            storeId = selectedStoreId;
-          } else {
-            const currentStores = storesRef.current;
-            storeId = Array.isArray(authUser.storeIds) && authUser.storeIds.length > 0
-              ? authUser.storeIds[0]
-              : (currentStores && currentStores.length > 0 ? currentStores[0].id : null);
-          }
-          
-          if (!storeId) {
-            // storeIdが取得できない場合はエラーをスロー
-            throw new Error('店舗IDが取得できませんでした');
-          }
+          const storeId = getStoreIdForManagerOrThrow(
+            authUser,
+            selectedStoreId,
+            storesRef.current
+          );
           
           response = await managerCustomersApi.getCustomers(storeId, params);
         }
