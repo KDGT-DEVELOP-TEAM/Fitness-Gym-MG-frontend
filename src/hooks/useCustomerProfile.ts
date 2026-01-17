@@ -3,6 +3,7 @@ import { customerApi } from '../api/customerApi';
 import { postureApi } from '../api/postureApi';
 import { Gender, CustomerRequest } from '../types/api/customer';
 import { logger } from '../utils/logger';
+import { validateDateString, validatePastDate, validatePhoneWithoutHyphens } from '../utils/validators';
 
 export interface CustomerProfileData {
   id: string;
@@ -45,6 +46,7 @@ export const useCustomerProfile = (customerId: string) => {
   const [error, setError] = useState<string | null>(null);
   const [editingField, setEditingField] = useState<keyof CustomerProfileData | null>(null);
   const fetchedCustomerIdRef = useRef<string | null>(null);
+  const originalValueRef = useRef<string | number | null>(null); // 編集開始時の元の値を保持
   const [profileData, setProfileData] = useState<CustomerProfileData>({
     id: customerId || '',
     kana: '',
@@ -236,6 +238,13 @@ export const useCustomerProfile = (customerId: string) => {
   }, [profileData.birthdate]);
 
   const handleEdit = (fieldName: keyof CustomerProfileData) => {
+    // 編集開始時に元の値を保存（文字列または数値として保存）
+    const currentValue = profileData[fieldName];
+    if (typeof currentValue === 'string' || typeof currentValue === 'number') {
+      originalValueRef.current = currentValue;
+    } else {
+      originalValueRef.current = null;
+    }
     setEditingField(fieldName);
   };
 
@@ -245,6 +254,22 @@ export const useCustomerProfile = (customerId: string) => {
 
   const handleBlur = async () => {
     if (!editingField) return;
+
+    // 現在の値を取得（文字列として比較）
+    const currentValue = profileData[editingField];
+    const currentValueStr = typeof currentValue === 'string' || typeof currentValue === 'number' 
+      ? String(currentValue) 
+      : '';
+    const originalValueStr = originalValueRef.current !== null 
+      ? String(originalValueRef.current) 
+      : '';
+
+    // 値が変更されていない場合は保存処理をスキップ
+    if (currentValueStr === originalValueStr) {
+      setEditingField(null);
+      originalValueRef.current = null;
+      return;
+    }
 
     try {
       setSaving(true);
@@ -263,12 +288,30 @@ export const useCustomerProfile = (customerId: string) => {
       } else if (editingField === 'gender') {
         requestData.gender = profileData.gender as Gender;
       } else if (editingField === 'birthdate') {
+        // 日付のバリデーション
+        if (!validateDateString(profileData.birthdate)) {
+          setError('有効な日付を入力してください');
+          return;
+        }
+        if (!validatePastDate(profileData.birthdate)) {
+          setError('生年月日は過去の日付である必要があります');
+          return;
+        }
         requestData.birthday = profileData.birthdate; // birthdateをbirthdayに変換
       } else if (editingField === 'address') {
         requestData.address = profileData.address;
       } else if (editingField === 'email') {
         requestData.email = profileData.email;
       } else if (editingField === 'phone') {
+        // 電話番号のバリデーション（ハイフンを含めない）
+        if (!validatePhoneWithoutHyphens(profileData.phone)) {
+          if (profileData.phone.includes('-')) {
+            setError('電話番号にハイフン（-）を含めることはできません');
+          } else {
+            setError('電話番号は10文字以上15文字以下の数字のみで入力してください');
+          }
+          return;
+        }
         requestData.phone = profileData.phone;
       } else if (editingField === 'medical') {
         requestData.medical = profileData.medical;
@@ -281,13 +324,14 @@ export const useCustomerProfile = (customerId: string) => {
       // customerApi.updateProfileを使用
       await customerApi.updateProfile(customerId, requestData as CustomerRequest);
 
-      console.log('Saved:', editingField, profileData[editingField]);
+      logger.debug('Saved:', { field: editingField, value: profileData[editingField] }, 'useCustomerProfile');
     } catch (error) {
-      console.error('Failed to save:', error);
+      logger.error('Failed to save:', error, 'useCustomerProfile');
       setError('保存に失敗しました。もう一度お試しください。');
     } finally {
       setSaving(false);
       setEditingField(null);
+      originalValueRef.current = null;
     }
   };
 

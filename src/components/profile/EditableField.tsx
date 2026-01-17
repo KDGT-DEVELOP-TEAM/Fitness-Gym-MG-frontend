@@ -9,10 +9,14 @@ export interface EditableFieldProps<T = any> {
   onEdit: (fieldName: keyof T) => void;
   onChange: (value: string) => void;
   onBlur: () => void;
-  type?: 'text' | 'date' | 'select' | 'textarea';
+  type?: 'text' | 'date' | 'select' | 'textarea' | 'tel';
   options?: { value: string; label: string }[];
   disabled?: boolean;
   icon?: React.ReactNode;
+  isSaving?: boolean;
+  showEmptyOption?: boolean; // 空のオプション（「選択してください」）を表示するかどうか
+  inputMode?: 'text' | 'numeric' | 'tel' | 'email' | 'url' | 'search' | 'decimal'; // 入力モード（モバイルでキーボードタイプを制御）
+  pattern?: string; // 入力パターン
 }
 
 export const EditableField = <T,>({
@@ -28,6 +32,10 @@ export const EditableField = <T,>({
   options = [],
   disabled = false,
   icon,
+  isSaving = false,
+  showEmptyOption = true, // デフォルトはtrue（後方互換性のため）
+  inputMode,
+  pattern,
 }: EditableFieldProps<T>) => {
   const showValidationError = isRequired && !value && !isEditing;
 
@@ -41,19 +49,20 @@ export const EditableField = <T,>({
       </div>
 
       {isEditing ? (
-        <>
+        <div className="relative">
           {type === 'select' ? (
             <select
               value={value}
               onChange={(e) => onChange(e.target.value)}
               onBlur={onBlur}
               autoFocus
-              className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all appearance-none bg-white bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 fill=%22none%22 viewBox=%220 0 20 20%22%3E%3Cpath stroke=%22%236B7280%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22 stroke-width=%221.5%22 d=%22m6 8 4 4 4-4%22/%3E%3C/svg%3E')] bg-[length:1.5em_1.5em] bg-[right_0.75rem_center] bg-no-repeat pr-10"
+              disabled={isSaving}
+              className={`w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all appearance-none bg-white bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 fill=%22none%22 viewBox=%220 0 20 20%22%3E%3Cpath stroke=%22%236B7280%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22 stroke-width=%221.5%22 d=%22m6 8 4 4 4-4%22/%3E%3C/svg%3E')] bg-[length:1.5em_1.5em] bg-[right_0.75rem_center] bg-no-repeat pr-10 ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
               style={{
                 backgroundPosition: `calc(100% - ${value ? value.length * 0.6 : 6}ch) center`,
               }}
             >
-              <option value="">選択してください</option>
+              {showEmptyOption && <option value="">選択してください</option>}
               {options.map((opt) => (
                 <option key={opt.value} value={opt.value}>
                   {opt.label}
@@ -66,79 +75,67 @@ export const EditableField = <T,>({
               onChange={(e) => onChange(e.target.value)}
               onBlur={onBlur}
               autoFocus
+              disabled={isSaving}
               rows={4}
-              className="w-full h-auto min-h-[120px] px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all resize-none"
+              className={`w-full h-auto min-h-[120px] px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all resize-none ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
             />
           ) : type === 'date' ? (
-            <div
-              className="flex items-center gap-2"
-              onBlur={(e) => {
-                // フォーカスが日付入力グループの外に移動した場合のみ保存
-                if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-                  onBlur();
-                }
-              }}
-            >
-              <input
-                type="text"
-                value={value.split('-')[0] || ''}
-                onChange={(e) => {
-                  const year = e.target.value;
-                  const parts = value.split('-');
-                  onChange(`${year}-${parts[1] || '01'}-${parts[2] || '01'}`);
-                }}
-                autoFocus
-                placeholder="年"
-                maxLength={4}
-                className="w-20 h-14 px-3 py-2 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-center"
-              />
-              <span className="text-gray-700">年</span>
-              <input
-                type="text"
-                value={value.split('-')[1] || ''}
-                onChange={(e) => {
-                  const month = e.target.value;
-                  const parts = value.split('-');
-                  onChange(`${parts[0] || '2000'}-${month}-${parts[2] || '01'}`);
-                }}
-                placeholder="月"
-                maxLength={2}
-                className="w-16 h-14 px-3 py-2 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-center"
-              />
-              <span className="text-gray-700">月</span>
-              <input
-                type="text"
-                value={value.split('-')[2] || ''}
-                onChange={(e) => {
-                  const day = e.target.value;
-                  const parts = value.split('-');
-                  onChange(`${parts[0] || '2000'}-${parts[1] || '01'}-${day}`);
-                }}
-                placeholder="日"
-                maxLength={2}
-                className="w-16 h-14 px-3 py-2 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-center"
-              />
-              <span className="text-gray-700">日</span>
-            </div>
-          ) : (
             <input
-              type={type}
-              value={value}
+              type="date"
+              value={value || ''}
               onChange={(e) => onChange(e.target.value)}
               onBlur={onBlur}
               autoFocus
-              className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all"
+              disabled={isSaving}
+              max={new Date().toISOString().split('T')[0]} // 今日以前の日付のみ選択可能
+              className={`w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
+            />
+          ) : (
+            <input
+              type={type === 'tel' ? 'tel' : type}
+              value={value}
+              onChange={(e) => {
+                // 数値のみ入力可能な場合（inputMode='numeric'またはtype='tel'）は、数値以外をフィルタリング
+                if (inputMode === 'numeric' || type === 'tel') {
+                  const numericValue = e.target.value.replace(/[^0-9]/g, '');
+                  onChange(numericValue);
+                } else {
+                  onChange(e.target.value);
+                }
+              }}
+              onBlur={onBlur}
+              autoFocus
+              disabled={isSaving}
+              inputMode={inputMode}
+              pattern={pattern}
+              className={`w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
             />
           )}
-        </>
+          {isSaving && (
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2 text-sm text-[#68BE6B]">
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-[#68BE6B] border-t-transparent"></div>
+              <span>保存中...</span>
+            </div>
+          )}
+        </div>
       ) : (
         <div className="relative">
           <div className={`h-14 px-4 py-3 bg-gray-50 rounded-2xl shadow-sm border-2 border-gray-50 flex items-center ${disabled ? 'text-gray-500' : 'text-gray-900'} pr-16`}>
-            {value || (
-              <span className="text-gray-400">
-                {showValidationError ? '必須項目を入力してください' : '未入力'}
-              </span>
-            )}
+            {(() => {
+              // selectタイプの場合は、valueに対応するlabelを表示
+              if (type === 'select' && value) {
+                const selectedOption = options.find(opt => opt.value === value);
+                if (selectedOption) {
+                  return selectedOption.label;
+                }
+              }
+              // その他の場合はvalueをそのまま表示
+              return value || (
+                <span className="text-gray-400">
+                  {showValidationError ? '必須項目を入力してください' : '未入力'}
+                </span>
+              );
+            })()}
           </div>
           {!disabled && (
             <button

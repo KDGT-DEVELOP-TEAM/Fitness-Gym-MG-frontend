@@ -34,6 +34,26 @@ export const validatePhone = (phone: string): boolean => {
 };
 
 /**
+ * Validate phone number format without hyphens
+ * Only accepts digits, no hyphens allowed
+ * 
+ * @param phone - Phone number to validate
+ * @returns True if phone format is valid (digits only, 10-15 characters)
+ */
+export const validatePhoneWithoutHyphens = (phone: string): boolean => {
+  if (!phone || phone.trim() === '') {
+    return false;
+  }
+  // ハイフンが含まれている場合は無効
+  if (phone.includes('-')) {
+    return false;
+  }
+  // 数字のみで10-15文字
+  const phoneRegex = /^[0-9]{10,15}$/;
+  return phoneRegex.test(phone.trim());
+};
+
+/**
  * Validate required field
  * 
  * @param value - Value to validate
