@@ -316,9 +316,25 @@ const LessonDetailWithMenu: React.FC = () => {
   const targetCustomerId = lesson?.customerId || '';
   
   if (!targetCustomerId) {
-    // customerIdが取得できない場合はデフォルトメニュー
+    // customerIdが取得できない場合はロールに応じたデフォルトメニュー
+    const roleUpper = role.toUpperCase();
+    let defaultMenuItems: any[] = [];
+    
+    switch (roleUpper) {
+      case 'ADMIN':
+        defaultMenuItems = [...adminMenuItems];
+        break;
+      case 'MANAGER':
+        defaultMenuItems = [...managerMenuItems];
+        break;
+      case 'TRAINER':
+      default:
+        defaultMenuItems = [...trainerMenuItems];
+        break;
+    }
+    
     return (
-      <MainLayout menuItems={trainerMenuItems}>
+      <MainLayout menuItems={defaultMenuItems}>
         <LessonDetail />
       </MainLayout>
     );

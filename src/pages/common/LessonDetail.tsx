@@ -13,7 +13,7 @@ export const LessonDetail: React.FC = () => {
   const { lessonId } = useParams<{ lessonId: string }>();
 
   // カスタムフックを使用してデータを取得（1回のAPI呼び出しで全てのデータを取得）
-  const { lesson, loading: lessonLoading } = useLesson(lessonId);
+  const { lesson, loading: lessonLoading, error } = useLesson(lessonId);
   
   // lessonからtrainingsとpostureImagesを抽出
   // orderNoでソート（バックエンドから順序が保証されているが、念のため）
@@ -47,11 +47,20 @@ export const LessonDetail: React.FC = () => {
     );
   }
 
-
   if (!lesson) {
     return (
-      <div className="p-6">
-        <p className="text-red-600">レッスンが見つかりません。</p>
+      <div className="flex items-center justify-center min-h-[400px] p-8">
+        <div className="text-center bg-white rounded-[2rem] shadow-sm border-2 border-gray-50 p-8 max-w-md">
+          <div className="mb-4 flex justify-center text-gray-300">
+            <svg className="w-20 h-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold text-gray-800 mb-2">レッスンが見つかりませんでした</h2>
+          <p className="text-gray-500 text-sm">
+            {error || '指定されたレッスンは存在しないか、アクセス権限がありません。'}
+          </p>
+        </div>
       </div>
     );
   }
