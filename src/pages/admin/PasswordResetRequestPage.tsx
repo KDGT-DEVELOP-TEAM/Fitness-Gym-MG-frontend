@@ -299,7 +299,7 @@ export const PasswordResetRequestPage: React.FC = () => {
               <div>
                 <label className="block text-sm font-bold text-gray-600 mb-2">新しいパスワード <span className="text-red-500">*</span></label>
                 <input
-                  type="password"
+                  type="text"
                   value={newPassword}
                   onChange={(e) => {
                     setNewPassword(e.target.value);
