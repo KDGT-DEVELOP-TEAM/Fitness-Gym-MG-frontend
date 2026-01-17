@@ -15,7 +15,7 @@ export const API_ENDPOINTS = {
   LESSONS: {
     BASE: '/lessons',
     BY_ID: (id: string) => `/lessons/${id}`,
-    BY_CUSTOMER: (customerId: string) => `/lessons/customer/${customerId}`,
+    BY_CUSTOMER: (customerId: string) => `/customers/${customerId}/lessons`,
     BY_CUSTOMER_CREATE: (customerId: string) => `/customers/${customerId}/lessons`,
     NEXT_BY_TRAINER: (trainerId: string) => `/lessons/next-by-trainer/${trainerId}`,
   },
