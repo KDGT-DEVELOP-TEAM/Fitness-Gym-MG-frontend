@@ -53,8 +53,29 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
 
     if (type === 'checkbox') {
       finalValue = (e.target as HTMLInputElement).checked;
+    } else if (name === 'phone') {
+      // 電話番号：数値以外の文字（ハイフン含む）をフィルタリング
+      const numericValue = value.replace(/[^0-9]/g, '');
+      finalValue = numericValue;
     } else if (name === 'height') {
-      finalValue = value === '' ? 0 : parseFloat(value);
+      // 身長：数値に変換し、範囲外の場合は範囲内に制限
+      const numValue = value === '' ? 0 : parseFloat(value);
+      if (!isNaN(numValue)) {
+        // 範囲外の場合は範囲内に制限
+        if (numValue < 50) {
+          finalValue = 50;
+        } else if (numValue > 300) {
+          finalValue = 300;
+        } else {
+          finalValue = numValue;
+        }
+      } else {
+        finalValue = 0;
+      }
+    } else if (name === 'name' || name === 'kana' || name === 'address') {
+      // 氏名、フリガナ、住所：先頭・末尾の空白をトリム（入力中はトリムしないが、送信時に検証）
+      // 入力時はそのまま保持（ユーザーが入力中にトリムされると混乱するため）
+      finalValue = value;
     }
 
     setFormData(prev => ({ ...prev, [name]: finalValue }));
@@ -64,9 +85,47 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
     e.preventDefault();
     setErrorMsg(null);
 
+    // 必須項目の空白チェック（先頭・末尾の空白をトリムして検証）
+    if (!formData.name.trim()) {
+      setErrorMsg('氏名は必須です');
+      return;
+    }
+    if (!formData.kana.trim()) {
+      setErrorMsg('フリガナは必須です');
+      return;
+    }
+    if (!formData.address.trim()) {
+      setErrorMsg('住所は必須です');
+      return;
+    }
+    if (!formData.email.trim()) {
+      setErrorMsg('メールアドレスは必須です');
+      return;
+    }
+    if (!formData.phone.trim()) {
+      setErrorMsg('電話番号は必須です');
+      return;
+    }
+
+    // 電話番号のバリデーション（ハイフンを含めない）
+    if (formData.phone.includes('-')) {
+      setErrorMsg('電話番号にハイフン（-）を含めることはできません');
+      return;
+    }
+    if (!/^[0-9]{10,15}$/.test(formData.phone.trim())) {
+      setErrorMsg('電話番号は10文字以上15文字以下の数字のみで入力してください');
+      return;
+    }
+
     // 過去日付チェック
     if (formData.birthday && !validatePastDate(formData.birthday)) {
       setErrorMsg('生年月日は過去の日付である必要があります');
+      return;
+    }
+
+    // 身長の範囲チェック
+    if (formData.height < 50 || formData.height > 300) {
+      setErrorMsg('身長は50cm以上300cm以下である必要があります');
       return;
     }
 
@@ -75,17 +134,17 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
       // birthday: type="date"のinputから取得されるため、ISO8601形式（YYYY-MM-DD）の文字列として送信
       // height: number型として送信され、Spring Bootが自動的にBigDecimalに変換
       const requestData: CustomerRequest = {
-        name: formData.name,
-        kana: formData.kana,
+        name: formData.name.trim(), // 先頭・末尾の空白をトリム
+        kana: formData.kana.trim(), // 先頭・末尾の空白をトリム
         gender: formData.gender,
         birthday: formData.birthday, // ISO8601形式の文字列（YYYY-MM-DD）
         height: formData.height, // number型、Spring BootがBigDecimalに自動変換
-        email: formData.email,
-        phone: formData.phone,
-        address: formData.address,
-        medical: formData.medical || undefined,
-        taboo: formData.taboo || undefined,
-        memo: formData.memo || undefined,
+        email: formData.email.trim(), // 先頭・末尾の空白をトリム
+        phone: formData.phone.trim(), // 先頭・末尾の空白をトリム（ハイフンは既にフィルタリング済み）
+        address: formData.address.trim(), // 先頭・末尾の空白をトリム
+        medical: formData.medical?.trim() || undefined, // 任意項目：空白の場合はundefined
+        taboo: formData.taboo?.trim() || undefined, // 任意項目：空白の場合はundefined
+        memo: formData.memo?.trim() || undefined, // 任意項目：空白の場合はundefined
         active: formData.active, // バックエンドのCustomerRequestは`active`フィールドを使用
         storeId: formData.storeId || undefined, // ADMINの場合、選択した店舗IDを送信
         // 更新時は既存のfirstPostureGroupIdを保持（nullの場合はフィールドを送信しない）
@@ -166,7 +225,15 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
           </div>
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">生年月日 <RequiredBadge /></label>
-            <input type="date" name="birthday" value={formData.birthday} onChange={handleChange} required className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium" />
+            <input 
+              type="date" 
+              name="birthday" 
+              value={formData.birthday} 
+              onChange={handleChange} 
+              required 
+              max={new Date().toISOString().split('T')[0]} // 今日以前の日付のみ選択可能
+              className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium" 
+            />
           </div>
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">性別 <RequiredBadge /></label>
@@ -239,7 +306,17 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
           </div>
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">電話番号 <RequiredBadge /></label>
-            <input type="tel" name="phone" value={formData.phone || ''} onChange={handleChange} required maxLength={12} pattern="^[0-9\-]+$" className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium" />
+            <input 
+              type="tel" 
+              name="phone" 
+              value={formData.phone || ''} 
+              onChange={handleChange} 
+              required 
+              maxLength={15}
+              inputMode="numeric"
+              pattern="[0-9]*"
+              className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium" 
+            />
           </div>
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">身長 (cm) <RequiredBadge /></label>
