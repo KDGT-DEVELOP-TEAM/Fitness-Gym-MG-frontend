@@ -41,6 +41,13 @@ export const CustomerCard: React.FC<CustomerCardProps> = ({ customer, calculateA
         </span>
       </td>
 
+      {/* 店舗 */}
+      <td className="px-8 py-6 text-center">
+        <span className="text-sm font-bold text-gray-600">
+          {customer.storeName || '-'}
+        </span>
+      </td>
+
       {/* ステータス */}
       <td className="px-8 py-6 text-center">
         <span className={`inline-flex items-center px-4 py-1 rounded-full text-xs font-black tracking-widest uppercase ${

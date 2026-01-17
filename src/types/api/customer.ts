@@ -66,6 +66,8 @@ export interface CustomerListItem {
     kana: string | null;
     birthdate: string; // バックエンドのCustomerResponse.birthdateに対応
     active: boolean; // バックエンドのCustomerResponse.activeに対応
+    storeId?: string | null; // バックエンドのCustomerResponse.storeIdに対応（オプショナル）
+    storeName?: string | null; // バックエンドのCustomerResponse.storeNameに対応（オプショナル）
   }
   
   export interface CustomerListParams {

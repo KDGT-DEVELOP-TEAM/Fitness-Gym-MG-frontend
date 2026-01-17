@@ -298,19 +298,20 @@ export const CustomerManagement: React.FC = () => {
           <table className="min-w-full divide-y divide-gray-50">
             <thead className="bg-gray-50/50">
               <tr>
-              <th className="w-[30%] px-8 py-5 text-center text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">氏名</th>
-              <th className="w-[20%] px-8 py-5 text-center text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">年齢</th>
-              <th className="w-[25%] px-8 py-5 text-center text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">ステータス</th>
+              <th className="w-[25%] px-8 py-5 text-center text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">氏名</th>
+              <th className="w-[15%] px-8 py-5 text-center text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">年齢</th>
+              <th className="w-[20%] px-8 py-5 text-center text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">店舗</th>
+              <th className="w-[20%] px-8 py-5 text-center text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">ステータス</th>
               {!userIsTrainer && (
-                <th className="w-[25%] px-8 py-5 text-center text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">編集</th>
+                <th className="w-[20%] px-8 py-5 text-center text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">編集</th>
               )}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {loading ? (
-                  <LoadingRow colSpan={userIsTrainer ? 3 : 4} /> 
+                  <LoadingRow colSpan={userIsTrainer ? 4 : 5} /> 
                 ) : customers.length === 0 ? (
-                  <EmptyRow colSpan={userIsTrainer ? 3 : 4} message="顧客データが登録されていません" />
+                  <EmptyRow colSpan={userIsTrainer ? 4 : 5} message="顧客データが登録されていません" />
                 ) : (
                 customers.map((customer) => (
                   <CustomerCard 
