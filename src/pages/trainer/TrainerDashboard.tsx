@@ -198,7 +198,7 @@ export const TrainerDashboard: React.FC = () => {
                 <div
                   key={lesson.id}
                   onClick={() => handleLessonClick(lesson.customerId)}
-                  className="group bg-white rounded-[2rem] shadow-sm border-2 border-gray-50 p-5 hover:bg-green-50/30 transition-colors cursor-pointer flex items-center justify-between relative"
+                  className="group bg-white rounded-[2rem] shadow-sm border-2 border-gray-50 p-5 hover:border-[#68BE6B] hover:shadow-md active:border-[#5a9d5a] transition-all duration-200 cursor-pointer flex items-center justify-between relative"
                 >
                   {/* 右側の緑のアクセントバーと矢印 */}
                   <div className="absolute right-4 top-4 bottom-4 bg-[#68BE6B] rounded-full w-[30px] transition-transform group-hover:scale-105 flex items-center justify-center">
