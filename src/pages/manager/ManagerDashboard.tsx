@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { DashboardLessonCard } from '../../components/lesson/DashboardLessonCard';
 import { managerHomeApi } from '../../api/manager/homeApi';
 import { LoadingRow, EmptyRow, LoadingSpinner } from '../../components/common/TableStatusRows';
+import { Pagination } from '../../components/common/Pagination';
 import { ManagerHomeResponse } from '../../types/manager/home';
 import { getAccessibleStores, getInitialStoreId } from '../../utils/storeUtils';
 import { isManager } from '../../utils/roleUtils';
@@ -157,7 +158,7 @@ export const ManagerDashboard: React.FC = () => {
       </div>
 
       {/* 2. 統計グラフ */}
-      <div className="bg-white p-8 rounded-[2rem] shadow-2xl shadow-gray-200/50 border border-gray-100">
+      <div className="bg-white p-8 rounded-[2rem] shadow-sm border-2 border-gray-50">
         <div className="flex justify-between items-center mb-5">
           <h2 className="text-sm font-black text-gray-400 uppercase tracking-[0.2em]">レッスン回数グラフ</h2>
           <div className="flex bg-gray-50 p-1.5 rounded-2xl border border-gray-100">
@@ -202,7 +203,7 @@ export const ManagerDashboard: React.FC = () => {
       </div>
 
       {/* 3. 履歴詳細テーブル */}
-      <div className="bg-white rounded-[2rem] shadow-2xl shadow-gray-200/50 border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-[2rem] shadow-sm border-2 border-gray-50 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full table-fixed divide-y divide-gray-50">
             <thead className="bg-gray-50/50">
@@ -227,29 +228,11 @@ export const ManagerDashboard: React.FC = () => {
       </div>
 
       {/* 4. ページネーション */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between bg-white px-6 py-4 rounded-2xl border border-gray-100 shadow-sm">
-          <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest">
-            Page {currentPage} of {totalPages}
-          </p>
-          <div className="flex gap-3">
-            <button 
-              onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} 
-              disabled={currentPage === 1} 
-              className="h-10 px-6 bg-white border border-gray-200 rounded-xl text-xs font-black text-gray-600 disabled:opacity-30 hover:bg-gray-50 transition-all shadow-sm active:scale-95"
-            >
-              PREV
-            </button>
-            <button 
-              onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))} 
-              disabled={currentPage === totalPages} 
-              className="h-10 px-6 bg-white border border-gray-200 rounded-xl text-xs font-black text-gray-600 disabled:opacity-30 hover:bg-gray-50 transition-all shadow-sm active:scale-95"
-            >
-              NEXT
-            </button>
-          </div>
-        </div>
-      )}
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+      />
     </div>
   );
 };

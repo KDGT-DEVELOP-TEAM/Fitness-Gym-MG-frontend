@@ -28,7 +28,7 @@ export const DashboardLessonCard: React.FC<DashboardLessonCardProps> = ({ lesson
 
     return (
         <tr 
-            className="hover:shadow-sm transition-all duration-200 group cursor-pointer border-l-4 border-l-transparent hover:border-l-[#68BE6B] active:border-l-[#5a9d5a]"
+            className="hover:bg-green-50/30 transition-colors group cursor-pointer"
             onClick={handleClick}
         >
         {/* 1. レッスン日時 */}
