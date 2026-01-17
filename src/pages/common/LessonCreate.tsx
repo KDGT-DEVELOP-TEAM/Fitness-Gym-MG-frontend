@@ -465,9 +465,16 @@ export const LessonCreate: React.FC = () => {
           return; // 画面遷移を停止
         }
       }
-      // 姿勢画像一覧ページに遷移
+      // 履歴一覧ページに遷移
       if (formData.customerId) {
-        navigate(ROUTES.POSTURE_LIST.replace(':customerId', formData.customerId));
+        // ロールに応じた履歴一覧パスを取得
+        const role = user?.role || 'TRAINER';
+        const historyPath = role.toUpperCase() === 'ADMIN'
+          ? ROUTES.LESSON_HISTORY_ADMIN.replace(':customerId', formData.customerId)
+          : role.toUpperCase() === 'MANAGER'
+          ? ROUTES.LESSON_HISTORY_MANAGER.replace(':customerId', formData.customerId)
+          : ROUTES.LESSON_HISTORY_TRAINER.replace(':customerId', formData.customerId);
+        navigate(historyPath);
       } else {
         navigate(ROUTES.LESSON_FORM);
       }
