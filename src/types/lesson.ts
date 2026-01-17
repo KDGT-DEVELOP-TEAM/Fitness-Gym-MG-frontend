@@ -17,6 +17,7 @@ export interface Lesson {
   id: string;
   customerId: string;
   customerName: string;
+  customerDeleted?: boolean; // 顧客が論理削除されているかどうか
   trainerName: string;
   storeName: string;
 
@@ -42,7 +43,7 @@ export interface Lesson {
  */
 export type LessonHistoryItem = Pick<
   Lesson,
-  'id' | 'customerId' | 'customerName' | 'trainerName' | 'storeName' | 'startDate' | 'endDate'
+  'id' | 'customerId' | 'customerName' | 'customerDeleted' | 'trainerName' | 'storeName' | 'startDate' | 'endDate'
 >;
 
 /**

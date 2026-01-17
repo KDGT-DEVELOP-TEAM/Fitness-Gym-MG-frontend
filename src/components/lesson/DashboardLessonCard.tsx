@@ -54,11 +54,18 @@ export const DashboardLessonCard: React.FC<DashboardLessonCardProps> = ({ lesson
 
         {/* 3. 顧客名 */}
         <td className="px-8 py-6">
-            <div className="flex flex-col items-center text-center">
-            <span className="text-base font-bold text-gray-900 group-hover:text-green-600 transition-colors">
-                {lesson.customerName || '不明な顧客'}
-                <span className="text-[10px] text-gray-400 font-normal ml-1">様</span>
-            </span>
+            <div className="flex flex-col items-center text-center gap-1">
+            <div className="flex items-center gap-2">
+              <span className="text-base font-bold text-gray-900 group-hover:text-green-600 transition-colors">
+                  {lesson.customerName || '不明な顧客'}
+                  <span className="text-[10px] text-gray-400 font-normal ml-1">様</span>
+              </span>
+              {lesson.customerDeleted && (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-200 text-gray-600 whitespace-nowrap">
+                  退会済み
+                </span>
+              )}
+            </div>
             {/* 必要であればここにふりがな等を追加可能 */}
             </div>
         </td>

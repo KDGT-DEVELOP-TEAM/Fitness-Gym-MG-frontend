@@ -78,7 +78,14 @@ export const LessonDetail: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-y-4 md:gap-y-5 md:gap-x-12">
             <div className="flex flex-col gap-1">
               <label className={FORM_STYLES.label}>顧客：</label>
-              <input className={FORM_STYLES.inputReadOnly} value={lesson.customerName || ''} readOnly />
+              <div className="flex items-center gap-2">
+                <input className={FORM_STYLES.inputReadOnly} value={lesson.customerName || ''} readOnly />
+                {lesson.customerDeleted && (
+                  <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-200 text-gray-600 whitespace-nowrap">
+                    退会済み
+                  </span>
+                )}
+              </div>
             </div>
             <div className="flex flex-col gap-1">
               <label className={FORM_STYLES.label}>体重 (kg)：</label>

@@ -580,6 +580,11 @@ export const LessonHistory: React.FC = () => {
                           <p className="text-lg font-bold text-gray-900">
                             {lesson.customerName}
                           </p>
+                          {lesson.customerDeleted && (
+                            <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-200 text-gray-600 whitespace-nowrap">
+                              退会済み
+                            </span>
+                          )}
                         </div>
                         <div className="flex items-center gap-3 text-sm text-gray-600">
                           <span className="font-medium">{lesson.storeName || '未設定'}</span>
