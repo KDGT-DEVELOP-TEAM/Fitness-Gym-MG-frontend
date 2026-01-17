@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useCustomers } from '../hooks/useCustomer';
 import { LoadingSpinner } from '../components/common/TableStatusRows';
+import { ErrorDisplay } from '../components/common/ErrorDisplay';
 
 export const CustomerList: React.FC = () => {
   const { customers, loading, error, refetch } = useCustomers();
@@ -16,7 +17,10 @@ export const CustomerList: React.FC = () => {
     </div>
   );
   
-  if (error) return <div className="p-8 text-center text-red-500">エラーが発生しました: {typeof error === 'string' ? error : '不明なエラー'}</div>;
+  if (error) {
+    const errorMessage = typeof error === 'string' ? error : '不明なエラーが発生しました';
+    return <ErrorDisplay error={errorMessage} onRetry={() => window.location.reload()} />;
+  }
 
   return (
     <div className="p-4">

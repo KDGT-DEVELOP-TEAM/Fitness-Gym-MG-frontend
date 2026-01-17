@@ -5,6 +5,7 @@ import { customerApi } from '../../api/customerApi';
 import { lessonApi } from '../../api/lessonApi';
 import { Lesson } from '../../types/lesson';
 import { getErrorMessage } from '../../utils/errorMessages';
+import { ErrorDisplay } from '../../components/common/ErrorDisplay';
 import axios from 'axios';
 import { LoadingSpinner } from '../../components/common/TableStatusRows';
 import { formatTimeOnly, formatDateWithWeekday } from '../../utils/dateFormatter';
@@ -101,13 +102,16 @@ export const LessonHistory: React.FC = () => {
           return;
         }
 
-        // エラーが発生した場合、どちらのAPI呼び出しでエラーが発生したかを判定
+        // エラーが発生した場合、getErrorMessageを使用してエラーメッセージを取得
         if (axios.isAxiosError(err)) {
           // AbortErrorの場合は無視
           if (err.name === 'AbortError' || err.code === 'ERR_CANCELED') {
             return;
           }
-          const errorMessage = err.response?.data?.message || err.message;
+          // 403エラーの場合は論理削除済み顧客のメッセージを表示
+          const errorMessage = err.response?.status === 403
+            ? 'この顧客は無効化されているため、履歴を表示できません。'
+            : getErrorMessage(err);
           setLessonsError(errorMessage);
           setCustomerError(errorMessage);
         } else if (err instanceof Error) {
@@ -115,11 +119,13 @@ export const LessonHistory: React.FC = () => {
           if (err.name === 'AbortError') {
             return;
           }
-          setLessonsError(err.message);
-          setCustomerError(err.message);
+          const errorMessage = getErrorMessage(err);
+          setLessonsError(errorMessage);
+          setCustomerError(errorMessage);
         } else {
-          setLessonsError('不明なエラーが発生しました');
-          setCustomerError('不明なエラーが発生しました');
+          const errorMessage = getErrorMessage(err);
+          setLessonsError(errorMessage);
+          setCustomerError(errorMessage);
         }
       } finally {
         // キャンセルされた場合は状態を更新しない
@@ -306,18 +312,10 @@ export const LessonHistory: React.FC = () => {
   const error = lessonsError || customerError;
   if (error) {
     return (
-      <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
-        <div className="bg-red-50 border-2 border-red-100 rounded-2xl p-6 text-center">
-          <div className="text-red-600 text-lg font-bold mb-2">エラーが発生しました</div>
-          <p className="text-red-700 mb-4">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-6 py-2 bg-red-600 text-white rounded-2xl hover:bg-red-700 transition-colors shadow-sm"
-          >
-            再読み込み
-          </button>
-        </div>
-      </div>
+      <ErrorDisplay 
+        error={error} 
+        onRetry={() => window.location.reload()} 
+      />
     );
   }
 

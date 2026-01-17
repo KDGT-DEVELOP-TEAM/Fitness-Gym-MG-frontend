@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
+import axios from 'axios';
 import { PostureImage } from '../../types/posture';
 import { formatDateForGrouping, formatDateTimeForCompare } from '../../utils/dateFormatter';
 import { logger } from '../../utils/logger';
@@ -13,6 +14,7 @@ import { PostureImageListFloatingButtons } from '../../components/posture/Postur
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import { postureApi } from '../../api/postureApi';
 import { LoadingSpinner } from '../../components/common/TableStatusRows';
+import { ErrorDisplay } from '../../components/common/ErrorDisplay';
 
 /**
  * Custom hook for managing header state and logic in PostureImageList
@@ -301,8 +303,13 @@ export const usePostureImageList = () => {
         
         setImages(validImages);
       } catch (err: unknown) {
-        const errorMessage = handleError(err, 'PostureImageList');
-        setError(errorMessage);
+        // 403エラーの場合は論理削除済み顧客のメッセージを表示
+        if (axios.isAxiosError(err) && err.response?.status === 403) {
+          setError('この顧客は無効化されているため、姿勢画像を表示できません。');
+        } else {
+          const errorMessage = handleError(err, 'PostureImageList');
+          setError(errorMessage);
+        }
       } finally {
         setLoading(false);
         isFetchingRef.current = false;
@@ -386,12 +393,10 @@ export const usePostureImageList = () => {
       <LoadingSpinner />
     </div>
   ) : error ? (
-    <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
-      <div className="bg-red-50 border-2 border-red-100 rounded-2xl p-6 text-center">
-        <div className="text-red-600 text-lg font-bold mb-2">エラーが発生しました</div>
-        <p className="text-red-700">{error}</p>
-      </div>
-    </div>
+    <ErrorDisplay 
+      error={error} 
+      onRetry={() => window.location.reload()} 
+    />
   ) : (
     <PostureImageListContent
       images={images}

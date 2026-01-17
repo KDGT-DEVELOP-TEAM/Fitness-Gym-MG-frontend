@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import axios from 'axios';
 import { customerApi } from '../api/customerApi';
 import { postureApi } from '../api/postureApi';
 import { Gender, CustomerRequest } from '../types/api/customer';
@@ -221,7 +222,12 @@ export const useCustomerProfile = (customerId: string) => {
         });
       } catch (error) {
         console.error('Failed to load profile:', error);
-        setError('プロフィールの読み込みに失敗しました。');
+        // 403エラーの場合は論理削除済み顧客のメッセージを表示
+        if (axios.isAxiosError(error) && error.response?.status === 403) {
+          setError('この顧客は無効化されているため、プロフィールを表示できません。');
+        } else {
+          setError('プロフィールの読み込みに失敗しました。');
+        }
       } finally {
         setLoading(false);
       }

@@ -45,6 +45,9 @@ const getMessageByErrorCode = (errorResponse: ErrorResponse, context?: 'login'):
     case ErrorCode.ACCESS_DENIED:
       return 'この操作を実行する権限がありません。';
 
+    case ErrorCode.CUSTOMER_DELETED:
+      return '顧客は退会済みです';
+
     case ErrorCode.NOT_FOUND:
       return context === 'login'
         ? '登録されていないメールアドレスです'

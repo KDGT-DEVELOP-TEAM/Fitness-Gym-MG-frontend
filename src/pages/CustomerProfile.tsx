@@ -17,6 +17,7 @@ import {
 import { EditableField } from '../components/profile/EditableField';
 import { useCustomerProfile } from '../hooks/useCustomerProfile';
 import { LoadingSpinner } from '../components/common/TableStatusRows';
+import { ErrorDisplay } from '../components/common/ErrorDisplay';
 
 export const CustomerProfile: React.FC = () => {
   const { id, customerId } = useParams<{ id?: string; customerId?: string }>();
@@ -52,14 +53,24 @@ export const CustomerProfile: React.FC = () => {
     );
   }
 
+  // エラー表示（プロフィール読み込みエラーの場合）
+  if (error && !profileData?.id) {
+    return (
+      <ErrorDisplay 
+        error={error} 
+        onRetry={() => window.location.reload()} 
+      />
+    );
+  }
+
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
-      {/* エラーメッセージ */}
+      {/* エラーメッセージ（編集時のエラーなど、インライン表示） */}
       {error && (
         <div className="p-4 bg-red-50 border border-red-100 rounded-2xl flex items-start gap-3">
           <HiExclamation className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
           <div className="flex-1">
-            <p className="text-red-800 font-medium">エラー</p>
+            <p className="text-red-800 font-medium">エラーが発生しました</p>
             <p className="text-red-600 text-sm">{error}</p>
           </div>
           <button

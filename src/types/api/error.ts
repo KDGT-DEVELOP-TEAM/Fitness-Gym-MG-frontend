@@ -46,6 +46,7 @@ export enum ErrorCode {
   
   // 403 Forbidden
   ACCESS_DENIED = 'ACCESS_DENIED',
+  CUSTOMER_DELETED = 'CUSTOMER_DELETED',
   
   // 404 Not Found
   NOT_FOUND = 'NOT_FOUND',
