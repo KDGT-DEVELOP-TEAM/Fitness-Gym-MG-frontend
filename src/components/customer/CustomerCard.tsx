@@ -9,23 +9,30 @@ interface CustomerCardProps {
 }
 
 export const CustomerCard: React.FC<CustomerCardProps> = ({ customer, calculateAge, onEdit, onHistoryClick }) => {
-  const handleNameClick = () => {
+  const handleRowClick = () => {
     if (onHistoryClick) {
       onHistoryClick(customer.id);
     }
   };
 
+  const handleEditClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // カード全体のクリックイベントを停止
+    if (onEdit) {
+      onEdit(customer);
+    }
+  };
+
   return (
-    <tr className="hover:bg-green-50/30 transition-colors group">
+    <tr 
+      className={`hover:bg-green-50/30 transition-colors group ${
+        onHistoryClick ? 'cursor-pointer' : ''
+      }`}
+      onClick={handleRowClick}
+    >
       {/* 氏名 */}
       <td className="px-8 py-6">
         <div className="flex flex-col items-center text-center">
-          <span 
-            className={`text-base font-bold text-gray-900 group-hover:text-green-600 transition-colors ${
-              onHistoryClick ? 'cursor-pointer' : ''
-            }`}
-            onClick={handleNameClick}
-          >
+          <span className="text-base font-bold text-gray-900 group-hover:text-green-600 transition-colors">
             {customer.name}
           </span>
           <span className="text-[11px] font-bold text-gray-400 uppercase tracking-tight">
@@ -62,7 +69,7 @@ export const CustomerCard: React.FC<CustomerCardProps> = ({ customer, calculateA
         <td className="px-8 py-6">
           <div className="flex justify-center">
             <button 
-              onClick={() => onEdit(customer)} 
+              onClick={handleEditClick} 
               className="inline-flex items-center gap-2 px-5 py-2 text-green-600 hover:bg-green-600 hover:text-white rounded-xl transition-all font-bold text-sm border border-green-50 shadow-sm hover:shadow-green-100 active:scale-95"
             >
               <span>編集</span>
