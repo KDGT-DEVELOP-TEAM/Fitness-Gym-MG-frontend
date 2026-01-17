@@ -47,8 +47,11 @@ export const useCustomers = (selectedStoreId?: string) => {
     setError(null);
     try {
       if (isTrainer(authUser)) {
-        // トレーナーの場合: 全件取得してフロントエンドでページネーション
-        const allCustomersData = await trainerCustomersApi.getCustomers();
+        // トレーナーの場合: 店舗IDを指定して取得
+        const params: CustomerListParams = {
+          storeId: selectedStoreId || undefined,
+        };
+        const allCustomersData = await trainerCustomersApi.getCustomers(params) as Customer[];
         setAllCustomers(allCustomersData);
         
         // 検索フィルタリング

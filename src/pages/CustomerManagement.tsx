@@ -21,7 +21,7 @@ export const CustomerManagement: React.FC = () => {
   const { user: authUser } = useAuth();
   const navigate = useNavigate();
   const { stores, loading: storesLoading } = useStores();
-  // ADMINの場合は'all'も選択可能、MANAGERの場合は店舗IDのみ
+  // ADMINの場合は'all'も選択可能、MANAGER/TRAINERの場合は店舗IDのみ
   const [selectedStoreId, setSelectedStoreId] = useState<'all' | string>('');
   
   // トレーナーの場合は編集・作成機能を無効化
@@ -29,7 +29,7 @@ export const CustomerManagement: React.FC = () => {
   const userIsManager = isManager(authUser);
   const userIsAdmin = isAdmin(authUser);
   
-  // ADMIN/MANAGERがアクセス可能な店舗のリスト
+  // ADMIN/MANAGER/TRAINERがアクセス可能な店舗のリスト
   const accessibleStores = React.useMemo(() => {
     return getAccessibleStores(authUser, stores);
   }, [authUser, stores]);
@@ -46,15 +46,15 @@ export const CustomerManagement: React.FC = () => {
     }
   }, [authUser, stores, storesLoading, accessibleStores, selectedStoreId, userIsAdmin]);
 
-  // useCustomersに渡すstoreId: ADMINの場合は'all'の時はundefined、MANAGERの場合はselectedStoreId
+  // useCustomersに渡すstoreId: ADMINの場合は'all'の時はundefined、MANAGER/TRAINERの場合はselectedStoreId
   const storeIdForApi = React.useMemo(() => {
     if (userIsAdmin) {
       return selectedStoreId === 'all' ? undefined : selectedStoreId;
-    } else if (userIsManager) {
+    } else if (userIsManager || userIsTrainer) {
       return selectedStoreId || undefined;
     }
     return undefined;
-  }, [userIsAdmin, userIsManager, selectedStoreId]);
+  }, [userIsAdmin, userIsManager, userIsTrainer, selectedStoreId]);
 
   const { 
     customers,
@@ -97,13 +97,13 @@ export const CustomerManagement: React.FC = () => {
   // ページ変更時またはフィルタ変更時にデータを再取得（統合版）
   const lastFetchKeyRef = useRef<string>('');
   useEffect(() => {
-    // storesの読み込みが完了するまで待つ（MANAGERの場合）
-    if (userIsManager && storesLoading) {
+    // storesの読み込みが完了するまで待つ（MANAGER/TRAINERの場合）
+    if ((userIsManager || userIsTrainer) && storesLoading) {
       return;
     }
     
-    // selectedStoreIdが設定されていない場合は待つ（MANAGERの場合）
-    if (userIsManager && !selectedStoreId) {
+    // selectedStoreIdが設定されていない場合は待つ（MANAGER/TRAINERの場合）
+    if ((userIsManager || userIsTrainer) && !selectedStoreId) {
       return;
     }
     
@@ -116,7 +116,7 @@ export const CustomerManagement: React.FC = () => {
     
     lastFetchKeyRef.current = fetchKey;
     refetchRef.current(currentPage - 1);
-  }, [currentPage, searchQuery, selectedStoreId, userIsManager, storesLoading]); // refetchを依存配列から除外
+  }, [currentPage, searchQuery, selectedStoreId, userIsManager, userIsTrainer, storesLoading]); // refetchを依存配列から除外
 
   // --- Handlers ---
   const handleSubmit = async (formData: CustomerRequest) => {
@@ -250,8 +250,8 @@ export const CustomerManagement: React.FC = () => {
             maxLength={100}
           />
         </div>
-        {/* 店舗選択ドロップダウン（ADMIN/MANAGERロールの場合のみ表示） */}
-        {(userIsAdmin || userIsManager) && (
+        {/* 店舗選択ドロップダウン（ADMIN/MANAGER/TRAINERロールの場合に表示） */}
+        {(userIsAdmin || userIsManager || userIsTrainer) && (
           <div className="relative group">
             <select 
               className="h-14 pl-6 pr-10 bg-white border-2 border-gray-50 rounded-2xl text-sm font-black text-gray-600 focus:border-green-500 focus:ring-0 outline-none cursor-pointer shadow-sm transition-all hover:border-gray-200 appearance-none disabled:opacity-50 disabled:cursor-not-allowed"

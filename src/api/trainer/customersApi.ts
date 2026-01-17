@@ -14,6 +14,13 @@ export const trainerCustomersApi = {
    * @returns ページネーションパラメータが指定されている場合はPaginatedResponse、それ以外はCustomer[]
    */
   getCustomers: (params?: CustomerListParams): Promise<PaginatedResponse<Customer> | Customer[]> => {
+    const query = new URLSearchParams();
+    
+    // 店舗IDが指定されている場合はクエリパラメータに追加
+    if (params?.storeId) {
+      query.append('storeId', params.storeId);
+    }
+    
     // バックエンドがページネーションをサポートするまで、paramsが指定されていない場合は全件取得
     if (!params) {
       return axiosInstance.get<Customer[]>(`/trainers/customers`).then(res => res.data);
@@ -21,7 +28,6 @@ export const trainerCustomersApi = {
     
     // バックエンドがページネーションをサポートしたらこちらを使用
     // 現時点ではバックエンドが未対応のため、このコードは将来の実装用
-    const query = new URLSearchParams();
     if (params.page !== undefined) query.append('page', String(params.page));
     if (params.size !== undefined) query.append('size', String(params.size));
     if (params.name) query.append('name', params.name);
@@ -33,6 +39,8 @@ export const trainerCustomersApi = {
     //   .then(res => convertPageResponse(res.data));
     
     // 暫定対応: paramsが指定されていても全件取得を返す（後方互換性のため）
-    return axiosInstance.get<Customer[]>(`/trainers/customers`).then(res => res.data);
+    const queryString = query.toString();
+    const url = queryString ? `/trainers/customers?${queryString}` : `/trainers/customers`;
+    return axiosInstance.get<Customer[]>(url).then(res => res.data);
   },
 };

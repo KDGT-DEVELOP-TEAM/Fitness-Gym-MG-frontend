@@ -1,6 +1,6 @@
 import { User } from '../types/auth';
 import { Store } from '../types/store';
-import { isAdmin, isManager } from './roleUtils';
+import { isAdmin, isManager, isTrainer } from './roleUtils';
 
 /**
  * Managerロールのユーザー向けにstoreIdを取得する
@@ -67,8 +67,8 @@ export const getAccessibleStores = (
 ): Store[] => {
   if (!stores || stores.length === 0) return [];
   
-  // ADMIN and MANAGER can access all stores
-  if (isAdmin(authUser) || isManager(authUser)) {
+  // ADMIN, MANAGER, and TRAINER can access all stores
+  if (isAdmin(authUser) || isManager(authUser) || isTrainer(authUser)) {
     return stores;
   }
   
