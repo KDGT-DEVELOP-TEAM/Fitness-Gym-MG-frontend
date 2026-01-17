@@ -4,8 +4,17 @@ import { User, UserRequest, UserListParams } from '../../types/api/user';
 
 export const managerUsersApi = {
   getUsers: (storeId: string, params?: UserListParams): Promise<PaginatedResponse<User>> => {
-    const queryString = new URLSearchParams(params as Record<string, string>).toString();
-    return axiosInstance.get<SpringPage<User>>(`/stores/${storeId}/manager/users?${queryString}`)
+    const queryParams = new URLSearchParams();
+    if (params?.page !== undefined) queryParams.append('page', String(params.page));
+    if (params?.size !== undefined) queryParams.append('size', String(params.size));
+    if (params?.name) queryParams.append('name', params.name);
+    if (params?.role) queryParams.append('role', params.role);
+    if (params?.sort) queryParams.append('sort', params.sort);
+    
+    const queryString = queryParams.toString();
+    const url = queryString ? `/stores/${storeId}/manager/users?${queryString}` : `/stores/${storeId}/manager/users`;
+    
+    return axiosInstance.get<SpringPage<User>>(url)
       .then(res => convertPageResponse(res.data));
   },
 
@@ -14,14 +23,14 @@ export const managerUsersApi = {
 
   // createUser: (storeId: string, userData: UserFormData): Promise<User> =>
   //   axiosInstance.post<User>(`/stores/${storeId}/manager/users`, userData).then(res => res.data),
-  createUser: (storeId: string, userData: UserRequest): Promise<User> => {
-    return axiosInstance.post<User>(`/stores/${storeId}/manager/users`, userData).then(res => res.data);
+  createUser: (storeId: string, userData: UserRequest): Promise<void> => {
+    return axiosInstance.post<void>(`/stores/${storeId}/manager/users`, userData).then(() => undefined);
   },
 
   // updateUser: (storeId: string, userId: string, userData: UserFormData): Promise<User> =>
   //   axiosInstance.patch<User>(`/stores/${storeId}/manager/users/${userId}`, userData).then(res => res.data),
-  updateUser: (storeId: string, userId: string, userData: UserRequest): Promise<User> => {
-    return axiosInstance.patch<User>(`/stores/${storeId}/manager/users/${userId}`, userData).then(res => res.data);
+  updateUser: (storeId: string, userId: string, userData: UserRequest): Promise<void> => {
+    return axiosInstance.patch<void>(`/stores/${storeId}/manager/users/${userId}`, userData).then(() => undefined);
   },
 
   // 有効無効切り替えは編集モーダル内(update)でしか行わないため、コメントアウト
@@ -32,5 +41,5 @@ export const managerUsersApi = {
   //   axiosInstance.patch<User>(`/stores/${storeId}/manager/users/${userId}/disable`).then(res => res.data),
 
   deleteUser: (storeId: string, userId: string): Promise<void> =>
-    axiosInstance.delete<void>(`/stores/${storeId}/manager/users/${userId}`).then(res => res.data),
+    axiosInstance.delete<void>(`/stores/${storeId}/manager/users/${userId}`).then(() => undefined),
 };

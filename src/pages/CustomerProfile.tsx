@@ -16,12 +16,16 @@ import {
 } from 'react-icons/hi';
 import { EditableField } from '../components/profile/EditableField';
 import { useCustomerProfile } from '../hooks/useCustomerProfile';
+import { LoadingSpinner } from '../components/common/TableStatusRows';
+import { ErrorDisplay } from '../components/common/ErrorDisplay';
 
 export const CustomerProfile: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id, customerId } = useParams<{ id?: string; customerId?: string }>();
+  // 新しいパス形式を優先、なければ旧パス形式
+  const profileId = customerId || id;
 
   // idが存在しない場合のエラーハンドリング
-  if (!id) {
+  if (!profileId) {
     return (
       <div className="p-8 text-center">
         <p className="text-red-600 text-lg">顧客IDが指定されていません</p>
@@ -39,26 +43,34 @@ export const CustomerProfile: React.FC = () => {
     handleChange,
     handleBlur,
     dismissError,
-  } = useCustomerProfile(id);
+  } = useCustomerProfile(profileId);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#68BE6B]"></div>
+      <div className="p-8 max-w-7xl mx-auto">
+        <LoadingSpinner minHeight="min-h-[400px]" />
       </div>
     );
   }
 
-  return (
-    <div className="p-8 font-poppins bg-[#FAF8F3] min-h-screen">
-      <h1 className="text-3xl font-semibold mb-6 text-gray-800">プロフィール</h1>
+  // エラー表示（プロフィール読み込みエラーの場合）
+  if (error && !profileData?.id) {
+    return (
+      <ErrorDisplay 
+        error={error} 
+        onRetry={() => window.location.reload()} 
+      />
+    );
+  }
 
-      {/* エラーメッセージ */}
+  return (
+    <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
+      {/* エラーメッセージ（編集時のエラーなど、インライン表示） */}
       {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+        <div className="p-4 bg-red-50 border border-red-100 rounded-2xl flex items-start gap-3">
           <HiExclamation className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
           <div className="flex-1">
-            <p className="text-red-800 font-medium">エラー</p>
+            <p className="text-red-800 font-medium">エラーが発生しました</p>
             <p className="text-red-600 text-sm">{error}</p>
           </div>
           <button
@@ -73,7 +85,7 @@ export const CustomerProfile: React.FC = () => {
         </div>
       )}
 
-      <div className="bg-white border border-[#DFDFDF] rounded-[15px] p-8">
+      <div className="bg-white rounded-[2rem] shadow-sm border-2 border-gray-50 p-8">
         {/* 基本情報セクション */}
         <div className="mb-8">
           <h2 className="text-xl font-semibold mb-4 text-gray-800 pb-2 border-b border-gray-200">
@@ -81,18 +93,7 @@ export const CustomerProfile: React.FC = () => {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
             <EditableField
-              label="フリガナ"
-              value={profileData.furigana}
-              isRequired
-              isEditing={editingField === 'furigana'}
-              fieldName="furigana"
-              onEdit={handleEdit}
-              onChange={(value) => handleChange('furigana', value)}
-              onBlur={handleBlur}
-              icon={<HiIdentification className="w-4 h-4" />}
-            />
-            <EditableField
-              label="名前"
+              label="氏名"
               value={profileData.name}
               isRequired
               isEditing={editingField === 'name'}
@@ -100,11 +101,37 @@ export const CustomerProfile: React.FC = () => {
               onEdit={handleEdit}
               onChange={(value) => handleChange('name', value)}
               onBlur={handleBlur}
+              isSaving={saving && editingField === 'name'}
               icon={<HiUser className="w-4 h-4" />}
             />
             <EditableField
+              label="フリガナ"
+              value={profileData.kana}
+              isRequired
+              isEditing={editingField === 'kana'}
+              fieldName="kana"
+              onEdit={handleEdit}
+              onChange={(value) => handleChange('kana', value)}
+              onBlur={handleBlur}
+              isSaving={saving && editingField === 'kana'}
+              icon={<HiIdentification className="w-4 h-4" />}
+            />
+            <EditableField
+              label="生年月日"
+              value={profileData.birthdate}
+              isRequired
+              isEditing={editingField === 'birthdate'}
+              fieldName="birthdate"
+              onEdit={handleEdit}
+              onChange={(value) => handleChange('birthdate', value)}
+              onBlur={handleBlur}
+              type="date"
+              isSaving={saving && editingField === 'birthdate'}
+              icon={<HiCalendar className="w-4 h-4" />}
+            />
+            <EditableField
               label="性別"
-              value={profileData.gender}
+              value={profileData.gender || 'MALE'}
               isRequired
               isEditing={editingField === 'gender'}
               fieldName="gender"
@@ -113,23 +140,12 @@ export const CustomerProfile: React.FC = () => {
               onBlur={handleBlur}
               type="select"
               options={[
-                { value: '男性', label: '男性' },
-                { value: '女性', label: '女性' },
-                { value: 'その他', label: 'その他' },
+                { value: 'MALE', label: '男' },
+                { value: 'FEMALE', label: '女' },
               ]}
+              showEmptyOption={false}
+              isSaving={saving && editingField === 'gender'}
               icon={<HiUser className="w-4 h-4" />}
-            />
-            <EditableField
-              label="生年月日"
-              value={profileData.birthDate}
-              isRequired
-              isEditing={editingField === 'birthDate'}
-              fieldName="birthDate"
-              onEdit={handleEdit}
-              onChange={(value) => handleChange('birthDate', value)}
-              onBlur={handleBlur}
-              type="date"
-              icon={<HiCalendar className="w-4 h-4" />}
             />
             <EditableField
               label="年齢"
@@ -151,6 +167,7 @@ export const CustomerProfile: React.FC = () => {
               onEdit={handleEdit}
               onChange={(value) => handleChange('height', value)}
               onBlur={handleBlur}
+              isSaving={saving && editingField === 'height'}
               icon={<HiArrowsExpand className="w-4 h-4" />}
             />
           </div>
@@ -171,6 +188,7 @@ export const CustomerProfile: React.FC = () => {
               onEdit={handleEdit}
               onChange={(value) => handleChange('address', value)}
               onBlur={handleBlur}
+              isSaving={saving && editingField === 'address'}
               icon={<HiLocationMarker className="w-4 h-4" />}
             />
             <EditableField
@@ -183,38 +201,23 @@ export const CustomerProfile: React.FC = () => {
               onChange={(value) => handleChange('email', value)}
               onBlur={handleBlur}
               type="text"
+              isSaving={saving && editingField === 'email'}
               icon={<HiMail className="w-4 h-4" />}
             />
-          </div>
-        </div>
-
-        {/* 医療情報セクション */}
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold mb-4 text-gray-800 pb-2 border-b border-gray-200">
-            医療情報
-          </h2>
-          <div className="grid grid-cols-1 gap-x-6">
             <EditableField
-              label="既往歴"
-              value={profileData.medicalHistory}
-              isEditing={editingField === 'medicalHistory'}
-              fieldName="medicalHistory"
+              label="電話番号"
+              value={profileData.phone}
+              isRequired
+              isEditing={editingField === 'phone'}
+              fieldName="phone"
               onEdit={handleEdit}
-              onChange={(value) => handleChange('medicalHistory', value)}
+              onChange={(value) => handleChange('phone', value)}
               onBlur={handleBlur}
-              type="textarea"
-              icon={<HiDocumentText className="w-4 h-4" />}
-            />
-            <EditableField
-              label="禁忌"
-              value={profileData.contraindications}
-              isEditing={editingField === 'contraindications'}
-              fieldName="contraindications"
-              onEdit={handleEdit}
-              onChange={(value) => handleChange('contraindications', value)}
-              onBlur={handleBlur}
-              type="textarea"
-              icon={<HiExclamation className="w-4 h-4" />}
+              type="tel"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              isSaving={saving && editingField === 'phone'}
+              icon={<HiMail className="w-4 h-4" />}
             />
           </div>
         </div>
@@ -249,6 +252,39 @@ export const CustomerProfile: React.FC = () => {
           </div>
         </div>
 
+        {/* 医療情報セクション */}
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold mb-4 text-gray-800 pb-2 border-b border-gray-200">
+            医療情報
+          </h2>
+          <div className="grid grid-cols-1 gap-x-6">
+            <EditableField
+              label="禁忌事項"
+              value={profileData.taboo}
+              isEditing={editingField === 'taboo'}
+              fieldName="taboo"
+              onEdit={handleEdit}
+              onChange={(value) => handleChange('taboo', value)}
+              onBlur={handleBlur}
+              type="textarea"
+              isSaving={saving && editingField === 'taboo'}
+              icon={<HiExclamation className="w-4 h-4" />}
+            />
+            <EditableField
+              label="既往歴"
+              value={profileData.medical}
+              isEditing={editingField === 'medical'}
+              fieldName="medical"
+              onEdit={handleEdit}
+              onChange={(value) => handleChange('medical', value)}
+              onBlur={handleBlur}
+              type="textarea"
+              isSaving={saving && editingField === 'medical'}
+              icon={<HiDocumentText className="w-4 h-4" />}
+            />
+          </div>
+        </div>
+
         {/* 備考セクション */}
         <div>
           <h2 className="text-xl font-semibold mb-4 text-gray-800 pb-2 border-b border-gray-200">
@@ -263,17 +299,11 @@ export const CustomerProfile: React.FC = () => {
             onChange={(value) => handleChange('memo', value)}
             onBlur={handleBlur}
             type="textarea"
+            isSaving={saving && editingField === 'memo'}
             icon={<HiAnnotation className="w-4 h-4" />}
           />
         </div>
 
-        {/* 保存中のインジケーター */}
-        {saving && (
-          <div className="mt-4 flex items-center justify-end text-sm text-gray-500">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#68BE6B] mr-2"></div>
-            保存中...
-          </div>
-        )}
       </div>
     </div>
   );

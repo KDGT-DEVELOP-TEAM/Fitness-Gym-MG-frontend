@@ -1,39 +1,27 @@
 import axiosInstance from './axiosConfig';
-import { Customer,VitalRecord,VitalsHistory } from '../types/api/customer';
-import { CustomerFormData } from '../types/form/customer'
-import { PaginatedResponse, PaginationParams } from '../types/common';
+import { Customer, CustomerRequest, VitalsHistory } from '../types/api/customer';
+import { API_ENDPOINTS } from '../constants/apiEndpoints';
 
 export const customerApi = {
+  /**
+   * 顧客プロフィール取得
+   * GET /api/customers/{customer_id}/profile
+   */
   getProfile: (customerId: string): Promise<Customer> =>
-    axiosInstance.get<Customer>(`/customers/${customerId}/profile`).then(res => res.data),
+    axiosInstance.get<Customer>(`${API_ENDPOINTS.CUSTOMERS.BY_ID(customerId)}/profile`).then(res => res.data),
 
-  updateProfile: (customerId: string, profileData: VitalRecord): Promise<Customer> =>
-    axiosInstance.patch<Customer>(`/customers/${customerId}/profile`, profileData).then(res => res.data),
+  /**
+   * 顧客プロフィール更新
+   * PATCH /api/customers/{customer_id}/profile
+   * バックエンドはCustomerRequestを期待
+   */
+  updateProfile: (customerId: string, profileData: CustomerRequest): Promise<void> =>
+    axiosInstance.patch<void>(`${API_ENDPOINTS.CUSTOMERS.BY_ID(customerId)}/profile`, profileData).then(() => undefined),
 
+  /**
+   * 体重/BMI履歴取得
+   * GET /api/customers/{customer_id}/vitals/history
+   */
   getVitalsHistory: (customerId: string): Promise<VitalsHistory> =>
-    axiosInstance.get<VitalsHistory>(`/customers/${customerId}/vitals/history`).then(res => res.data),
-
-  getAll: async (params?: PaginationParams): Promise<PaginatedResponse<Customer>> => {
-    const response = await axiosInstance.get<PaginatedResponse<Customer>>('/customers', { params });
-    return response.data;
-  },
-
-  getById: async (id: string): Promise<Customer> => {
-    const response = await axiosInstance.get<Customer>(`/customers/${id}`);
-    return response.data;
-  },
-
-  create: async (data: CustomerFormData): Promise<Customer> => {
-    const response = await axiosInstance.post<Customer>('/customers', data);
-    return response.data;
-  },
-
-  update: async (id: string, data: Partial<CustomerFormData>): Promise<Customer> => {
-    const response = await axiosInstance.put<Customer>(`/customers/${id}`, data);
-    return response.data;
-  },
-
-  delete: async (id: string): Promise<void> => {
-    await axiosInstance.delete(`/customers/${id}`);
-  },
+    axiosInstance.get<VitalsHistory>(`${API_ENDPOINTS.CUSTOMERS.BY_ID(customerId)}/vitals/history`).then(res => res.data),
 };

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { Lesson, LessonHistoryItem } from '../types/lesson';
 import { lessonApi } from '../api/lessonApi';
@@ -11,12 +11,13 @@ export const useLesson = (id?: string) => {
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const fetchedIdRef = useRef<string | null>(null);
 
   const fetchLesson = useCallback(async (lessonId: string) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await lessonApi.getLesson(lessonId);
+      const data = await lessonApi.getById(lessonId);
       setLesson(data);
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
@@ -32,9 +33,17 @@ export const useLesson = (id?: string) => {
   }, []);
 
   useEffect(() => {
-    if (id) {
-      fetchLesson(id);
+    if (!id) {
+      return;
     }
+
+    // 既に取得済みの場合は fetchLesson を実行しないガード
+    if (fetchedIdRef.current === id) {
+      return;
+    }
+
+    fetchedIdRef.current = id;
+    fetchLesson(id);
   }, [id, fetchLesson]);
 
   return {
@@ -52,21 +61,20 @@ export const useLesson = (id?: string) => {
 
 /* =========================
  * Lesson 履歴一覧（ページング）
+ * @deprecated バックエンドに実装されていないため、このフックは非推奨です
  * ========================= */
 export const useLessons = (params?: PaginationParams) => {
   const [lessons, setLessons] = useState<LessonHistoryItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>('バックエンドに実装されていないため、レッスン履歴の取得は現在利用できません');
 
   const fetchLessons = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await lessonApi.getHistory({
-        page: params?.page,
-        size: params?.limit,
-      });
-      setLessons(response.data);
+      // バックエンドに実装が存在しないため、空のデータを返す
+      setLessons([]);
+      setError('バックエンドに実装されていないため、レッスン履歴の取得は現在利用できません');
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
         setError(err.response?.data?.message || err.message);
@@ -99,6 +107,7 @@ export const useLessonsByCustomer = (customerId?: string) => {
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const fetchedCustomerIdRef = useRef<string | null>(null);
 
   const fetchLessons = useCallback(async () => {
     if (!customerId) return;
@@ -106,7 +115,8 @@ export const useLessonsByCustomer = (customerId?: string) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await lessonApi.getByCustomerId(customerId);
+      const response = await lessonApi.getByCustomer(customerId);
+      const data = response.data || [];
       setLessons(data);
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
@@ -122,8 +132,18 @@ export const useLessonsByCustomer = (customerId?: string) => {
   }, [customerId]);
 
   useEffect(() => {
+    if (!customerId) {
+      return;
+    }
+
+    // 既に取得済みの場合は fetchLessons を実行しないガード
+    if (fetchedCustomerIdRef.current === customerId) {
+      return;
+    }
+
+    fetchedCustomerIdRef.current = customerId;
     fetchLessons();
-  }, [fetchLessons]);
+  }, [customerId, fetchLessons]);
 
   return {
     lessons,

@@ -1,19 +1,27 @@
 import React from 'react';
-import { userApi } from '../api/userApi';
+import axiosInstance from '../api/axiosConfig';
 import { User } from '../types/api/user';
 import { useState, useEffect } from 'react';
+import { LoadingSpinner } from '../components/common/TableStatusRows';
 
 export const UserList: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
+  const roleLabels: { [key: string]: string } = {
+    ADMIN: '本部',
+    MANAGER: '店長',
+    TRAINER: 'トレーナー',
+  };
+
   useEffect(() => {
     const fetchUsers = async () => {
       setLoading(true);
       try {
-        const data = await userApi.getAll();
-        setUsers(data.data);
+        // バックエンドのGET /api/usersはオプション選択用（ページングなし、全ユーザー返却）
+        const response = await axiosInstance.get<User[]>('/users');
+        setUsers(response.data);
       } catch (err) {
         setError(err as Error);
       } finally {
@@ -23,7 +31,11 @@ export const UserList: React.FC = () => {
     fetchUsers();
   }, []);
 
-  if (loading) return <div>読み込み中...</div>;
+  if (loading) return (
+    <div className="p-8">
+      <LoadingSpinner minHeight="min-h-[300px]" />
+    </div>
+  );
   if (error) return <div>エラー: {error.message}</div>;
 
   return (
@@ -43,7 +55,7 @@ export const UserList: React.FC = () => {
               <tr key={user.id}>
                 <td className="px-4 py-2 border">{user.name}</td>
                 <td className="px-4 py-2 border">{user.email}</td>
-                <td className="px-4 py-2 border">{user.role}</td>
+                <td className="px-4 py-2 border">{roleLabels[user.role] || user.role}</td>
               </tr>
             ))}
           </tbody>

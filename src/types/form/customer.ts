@@ -12,6 +12,7 @@ export interface CustomerFormData {
   medical: string;
   taboo: string;
   memo: string;
+  storeId?: string;
 }
 
 export interface CustomerStatusUpdate {

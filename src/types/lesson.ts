@@ -1,58 +1,120 @@
-import { Customer } from './api/customer';
-import { User } from './api/user';
-import { Store } from './store';
+import { PostureImage } from './posture';
 
-// バックエンド (Java) から返ってくる基本の型
+/**
+ * バックエンドのTrainingResponseに対応する型
+ */
+export interface TrainingResponse {
+  orderNo: number; // 順序番号（1以上）
+  name: string; // トレーニング種目名
+  reps: number; // 実施回数
+}
+
+/**
+ * レッスン本体（取得用）
+ * バックエンドのLessonResponseに対応
+ */
 export interface Lesson {
   id: string;
-  customer: Customer;   // オブジェクトで返ってくる
-  trainer: User;        // オブジェクトで返ってくる
-  store: Store;         // オブジェクトで返ってくる
-  startDate: string;      // ISO形式
-  endDate: string;        // ISO形式
+  customerId: string;
+  customerName: string;
+  customerDeleted?: boolean; // 顧客が論理削除されているかどうか
+  trainerName: string;
+  storeName: string;
+
+  startDate: string; // ISO8601
+  endDate: string;   // ISO8601
+
   condition: string | null;
   weight: number | null;
-  bmi: number | null;     // Java側で計算済み
+  bmi: number | null; // Java側計算済み
   meal: string | null;
   memo: string | null;
+
   nextDate: string | null;
-  nextStore?: Store | null;
-  nextTrainer?: User | null;
-  postureGroupId?: string | null;
-  nextStoreId?: string | null;
+  nextStoreName: string | null;
+  nextTrainerName: string | null;
+
+  trainings?: TrainingResponse[]; // トレーニングリスト
+  postureImages?: PostureImage[]; // 姿勢画像リスト
 }
 
-export interface TrainingInput {
-  name: string;
-  reps: number;
-  orderNo?: number;
-}
+/**
+ * レッスン履歴一覧用（軽量）
+ */
+export type LessonHistoryItem = Pick<
+  Lesson,
+  'id' | 'customerId' | 'customerName' | 'customerDeleted' | 'trainerName' | 'storeName' | 'startDate' | 'endDate'
+>;
 
-export interface LessonFormData {
-  storeId: string;
-  customerId: string;
+/**
+ * ============================
+ * Request / Form
+ * ============================
+ */
+
+/**
+ * レッスン作成・更新共通リクエスト
+ * ※ Spring Controller の DTO と対応
+ * customerIdはパスパラメータとして送信されるため、リクエストボディには含めない
+ */
+export interface LessonRequest {
   trainerId: string;
+  storeId: string;
+
   startDate: string;
   endDate: string;
-  condition: string;
-  weight: number | null;
-  bmi: string | null;
-  meal: string | null;
-  memo: string | null;
-  nextDate: string | null;
-  nextStoreId: string | null;
-  nextTrainerId: string | null;
-  postureGroupId?: string | null;
+
+  condition?: string;
+  weight?: number | null;
+  meal?: string | null;
+  memo?: string | null;
+
+  nextDate?: string | null;
+  nextStoreId?: string | null;
+  nextTrainerId?: string | null;
+
+  trainings?: TrainingRequest[];
+}
+
+/**
+ * フォーム専用（UI都合）
+ * trainerId → userId, nextTrainerId → nextUserId に変換
+ * customerIdはフォームで選択するため必要
+ */
+export interface LessonFormData extends Omit<LessonRequest, 'trainerId' | 'nextTrainerId'> {
+  userId: string;
+  nextUserId?: string | null;
+  customerId: string; // フォームで選択するため必要
   trainings?: TrainingInput[];
 }
 
-export type LessonHistoryItem = Pick<
-Lesson,
-'id' | 'customer' | 'trainer' | 'store' | 'startDate' | 'endDate'>;
+/**
+ * バックエンドのTrainingRequestに対応する型
+ * レッスン作成・更新時に使用
+ */
+export interface TrainingRequest {
+  orderNo: number; // 順序番号（1以上、必須）
+  name: string; // トレーニング種目名（必須）
+  reps: number; // 実施回数（1以上、必須）
+}
 
-// グラフ表示用の型（JavaのLessonChartData / ChartSeriesに合わせる）
+/**
+ * トレーニング入力（フォーム用）
+ */
+export interface TrainingInput {
+  name: string;
+  reps: number;
+  orderNo: number; // 必須（フォーム送信時に自動設定）
+}
+
+/**
+ * ============================
+ * Chart / Analytics
+ * ============================
+ */
+
 export interface ChartSeries {
-  period: string; // "10/25 - 10/31" など
+  period: string; // "10/25 - 10/31"
   count: number;
 }
 
@@ -62,44 +124,13 @@ export interface LessonChartData {
   type: 'week' | 'month';
 }
 
+/**
+ * ============================
+ * Admin
+ * ============================
+ */
+
 export interface LessonAdmin extends Lesson {
   createdAt: string;
   updatedAt: string;
-}
-
-export interface LessonRequest {
-  customerId: string;
-  trainerId: string;
-  storeId: string;
-  startDate: string;
-  endDate: string;
-  condition?: string;
-  weight?: number;
-  bmi?: number;
-  meal?: string;
-  memo?: string;
-  nextDate?: string;
-  nextStoreId?: string;
-  nextTrainerId?: string;
-}
-
-export interface AppointmentWithDetails {
-  id: string;
-  date: string;
-  startTime: string;
-  endTime: string;
-  status: string;
-  customer: {
-    id: string;
-    name: string;
-    phone?: string;
-  };
-  instructor: {
-    id: string;
-    name: string;
-  };
-  shop: {
-    id: string;
-    name: string;
-  };
 }

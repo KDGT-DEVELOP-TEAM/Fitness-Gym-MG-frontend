@@ -13,6 +13,8 @@ export const adminLogsApi = {
     if (params?.size !== undefined) searchParams.append('size', params.size.toString());
 
     // 2. APIリクエスト
+    // バックエンド: GET /api/admin/logs
+    // axiosConfigのbaseURLが /api なので、/admin/logs で正しい
     const response = await axiosInstance.get<SpringPage<AuditLog>>(
       `/admin/logs?${searchParams.toString()}`
     );

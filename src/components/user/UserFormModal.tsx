@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import UserForm from './UserForm';
 import { User, UserRequest } from '../../types/api/user'; 
-import { Store } from '../../types/store'; 
+import { Store } from '../../types/store';
+import { useAuth } from '../../context/AuthContext'; 
 
 interface UserFormModalProps {
   isOpen: boolean;
@@ -16,6 +18,21 @@ interface UserFormModalProps {
 const UserFormModal: React.FC<UserFormModalProps> = ({ 
   isOpen, onClose, initialData, stores, onSubmit, onDelete, isSubmitting 
 }) => {
+  const { user: authUser } = useAuth();
+  
+  // モーダルが開いている時、背景のスクロールを無効化
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    // クリーンアップ: コンポーネントがアンマウントされる時も元に戻す
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const handleSafeClose = () => {
@@ -24,9 +41,9 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
     }
   };
 
-  return (
+  return createPortal(
     <div onClick={handleSafeClose} className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-center items-center p-4">
-      <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl relative overflow-hidden animate-in zoom-in-95 duration-300">
+      <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl relative overflow-hidden animate-in zoom-in-95 duration-200">
         {!isSubmitting && (
           <button 
             onClick={onClose} 
@@ -38,12 +55,8 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
           </button>
         )}
         
-        <div className="p-10 md:p-12">
-          <header className="mb-10 space-y-2">
-            <h2 className="text-3xl font-black text-gray-900 tracking-tight">
-              {initialData ? 'ユーザー情報の編集' : '新規ユーザーの登録'}
-            </h2>
-          </header>
+        <div className="p-10">
+          <h2 className="text-2xl font-black text-gray-900 mb-8">{initialData ? 'ユーザー情報の編集' : '新規ユーザーの登録'}</h2>
 
           <UserForm 
             initialData={initialData}
@@ -56,11 +69,13 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                 await onDelete(id);
                 onClose();
             }}
-            isSubmitting={isSubmitting} 
+            isSubmitting={isSubmitting}
+            currentUserRole={authUser?.role}
           />
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

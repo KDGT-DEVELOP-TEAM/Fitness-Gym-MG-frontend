@@ -3,6 +3,8 @@
  * Spring Data JPA形式のPage<T>からフロントエンド形式のPaginatedResponse<T>に変換
  */
 
+import { PaginatedResponse } from '../types/common';
+
 /**
  * Spring Data JPA形式のページネーションレスポンス
  */
@@ -18,14 +20,10 @@ export interface SpringPage<T> {
 }
 
 /**
- * フロントエンド形式のページネーションレスポンス
+ * PaginatedResponse型を再エクスポート（後方互換性のため）
+ * 新しいコードでは types/common.ts から直接インポートすることを推奨
  */
-export interface PaginatedResponse<T> {
-  data: T[];
-  total: number;
-  page: number;
-  limit: number;
-}
+export type { PaginatedResponse } from '../types/common';
 
 /**
  * Spring Data JPA形式のPage<T>からフロントエンド形式のPaginatedResponse<T>に変換

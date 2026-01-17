@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { User, UserRequest } from '../../types/api/user';
+import { User, UserRequest, UserRole } from '../../types/api/user';
 import { UserFormData } from '../../types/form/user';
 import { Store } from '../../types/store';
+import { validatePasswordPattern } from '../../utils/validators';
+import { getAllErrorMessages } from '../../utils/errorMessages';
+import { isErrorResponse } from '../../types/api/error';
+import { ConfirmModal } from '../common/ConfirmModal';
 
 interface UserFormProps {
   initialData?: User;
@@ -11,26 +15,34 @@ interface UserFormProps {
   onSubmit: (data: UserRequest) => Promise<void>;
   onDelete?: (id: string) => Promise<void>;
   isSubmitting: boolean;
+  currentUserRole?: UserRole;
 }
 
 interface ApiErrorResponse {
   message: string;
 }
 
-const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDelete, isSubmitting }) => {
+const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDelete, isSubmitting, currentUserRole }) => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [errorMessages, setErrorMessages] = useState<string[]>([]);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const isEditMode = !!initialData;
+  
+  // マネージャーの場合はトレーナーのみ選択可能
+  // 注意: currentUserRoleはUserRole型なので、直接比較が型安全で明確
+  // roleUtils.tsのisManager関数はUser | nullを引数に取るため、ここでは直接比較を使用
+  const isManager = currentUserRole === 'MANAGER';
 
   // 1. フォームの状態管理 (UIの都合に合わせた型)
-  // ステータス(isActive)も管理しやすいように統合しています
-  const [formData, setFormData] = useState<UserFormData & { isActive: boolean }>({
+  // ステータス(active)も管理しやすいように統合しています
+  const [formData, setFormData] = useState<UserFormData & { active: boolean }>({
     email: '',
     name: '',
     kana: '',
     pass: '',
     role: 'TRAINER',
     storeIds: [],
-    isActive: true,
+    active: true,
   });
 
   // 初期データの同期
@@ -43,7 +55,7 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
         pass: '', // 更新時は空文字スタート
         role: initialData.role,
         storeIds: initialData.storeIds || [],
-        isActive: initialData.isActive,
+        active: initialData.active,
       });
     }
   }, [initialData]);
@@ -63,6 +75,19 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
     e.preventDefault();
     setErrorMsg(null);
 
+    // パスワードバリデーション（新規作成時、または更新時にパスワードが指定されている場合）
+    if ((!isEditMode || (formData.pass && formData.pass.trim() !== '')) && formData.pass && !validatePasswordPattern(formData.pass)) {
+      setErrorMsg('パスワードは8文字以上16文字以内で設定してください');
+      return;
+    }
+
+    // トレーナーと店長の場合、店舗が1つ以上選択されていることを確認
+    if ((formData.role === 'MANAGER' || formData.role === 'TRAINER') && 
+        (!formData.storeIds || formData.storeIds.length === 0)) {
+      setErrorMsg('店舗を1つ以上選択してください');
+      return;
+    }
+
     try {
       // 2. 🔑 UserFormData から UserRequest へのマッピング（変換）
       const requestData: UserRequest = {
@@ -70,9 +95,9 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
         name: formData.name,
         kana: formData.kana,
         role: formData.role,
-        isActive: formData.isActive,
-        // 仕様: MANAGER以外は店舗IDを送らない
-        storeIds: formData.role === 'MANAGER' ? formData.storeIds : [],
+        active: formData.active,
+        // 仕様: MANAGERとTRAINERは店舗IDを送る
+        storeIds: (formData.role === 'MANAGER' || formData.role === 'TRAINER') ? formData.storeIds : [],
       };
 
       // パスワード: 入力がある場合のみリクエストに含める
@@ -82,19 +107,40 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
 
       await onSubmit(requestData);
     } catch (err: unknown) {
-      let message = "保存中にエラーが発生しました。";
-      if (axios.isAxiosError<ApiErrorResponse>(err)) {
-        message = err.response?.data?.message || err.message;
-      } else if (err instanceof Error) {
-        message = err.message;
-      }
-      
-      if (message.includes("関連データが存在するため")) {
-        setErrorMsg("このユーザーにはレッスン履歴があるため削除できません。");
-      } else if (message.includes("有効ユーザーは削除できません")) {
-        setErrorMsg("有効なステータスのままでは削除できません。");
+      // 複数エラーメッセージを取得
+      const allErrors = getAllErrorMessages(err);
+      if (allErrors.length > 0) {
+        setErrorMessages(allErrors);
+        // 最初のエラーメッセージを単一エラーとしても設定（後方互換性）
+        const firstError = allErrors[0];
+        if (firstError.includes("関連データが存在するため")) {
+          setErrorMsg("このユーザーにはレッスン履歴があるため削除できません。");
+        } else if (firstError.includes("有効ユーザーは削除できません")) {
+          setErrorMsg("有効なステータスのままでは削除できません。");
+        } else {
+          setErrorMsg(firstError);
+        }
       } else {
-        setErrorMsg(message);
+        // エラーメッセージを取得
+        let message = "保存中にエラーが発生しました。";
+        if (axios.isAxiosError(err)) {
+          if (err.response?.data && isErrorResponse(err.response.data)) {
+            message = err.response.data.message || err.message;
+          } else {
+            message = (err.response?.data as { message?: string })?.message || err.message;
+          }
+        } else if (err instanceof Error) {
+          message = err.message;
+        }
+        
+        if (message.includes("関連データが存在するため")) {
+          setErrorMsg("このユーザーにはレッスン履歴があるため削除できません。");
+        } else if (message.includes("有効ユーザーは削除できません")) {
+          setErrorMsg("有効なステータスのままでは削除できません。");
+        } else {
+          setErrorMsg(message);
+        }
+        setErrorMessages([]);
       }
     }
   };
@@ -106,61 +152,78 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
     );
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-8 max-h-[70vh] overflow-y-auto px-1 custom-scrollbar">
+        <form onSubmit={handleSubmit} className="space-y-6 max-h-[70vh] overflow-y-auto px-2">
 
             {/* エラーメッセージ表示エリア */}
-            {errorMsg && (
-                <div className="p-4 bg-red-50 border-2 border-red-200 text-red-600 rounded-2xl font-bold text-sm animate-bounce">
-                ⚠️ {errorMsg}
+            {(errorMsg || errorMessages.length > 0) && (
+                <div className="p-4 bg-red-50 border-2 border-red-200 text-red-600 rounded-2xl text-sm">
+                  {errorMessages.length > 1 ? (
+                    // 複数エラーの場合
+                    <div>
+                      <div className="font-bold mb-2">⚠️ 以下のエラーが発生しました:</div>
+                      <ul className="list-disc list-inside space-y-1">
+                        {errorMessages.map((msg, index) => (
+                          <li key={index}>{msg}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : (
+                    // 単一エラーの場合
+                    <div className="font-bold">⚠️ {errorMsg}</div>
+                  )}
                 </div>
             )}
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Email */}
-                <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1">メールアドレス <RequiredBadge /></label>
-                    <input type="email" name="email" value={formData.email} onChange={handleChange} required disabled={isEditMode} className="w-full border p-2 rounded disabled:bg-gray-100 shadow-sm" />
+            {/* 基本情報セクション */}
+            <section className="space-y-4">
+                <h3 className="text-lg font-medium border-b pb-2">基本情報</h3>
+                <div className="grid grid-cols-2 gap-4">
+                    {/* Email */}
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">メールアドレス <RequiredBadge /></label>
+                        <input type="email" name="email" value={formData.email} onChange={handleChange} required maxLength={255} disabled={isEditMode} className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium disabled:bg-gray-50" />
+                    </div>
+
+                    {/* Role */}
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">権限 <RequiredBadge /></label>
+                        <select name="role" value={formData.role} onChange={handleChange} required className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium cursor-pointer appearance-none bg-white">
+                            {!isManager && <option value="ADMIN">管理者</option>}
+                            {!isManager && <option value="MANAGER">店長</option>}
+                            <option value="TRAINER">トレーナー</option>
+                        </select>
+                    </div>
                 </div>
 
-                {/* Role */}
-                <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1">権限ロール <RequiredBadge /></label>
-                    <select name="role" value={formData.role} onChange={handleChange} required className="w-full border p-2 rounded shadow-sm">
-                        <option value="ADMIN">管理者</option>
-                        <option value="MANAGER">店長</option>
-                        <option value="TRAINER">トレーナー</option>
-                    </select>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Name */}
-                <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1">氏名 <RequiredBadge /></label>
-                    <input type="text" name="name" value={formData.name} onChange={handleChange} required className="w-full border p-2 rounded shadow-sm" />
+                <div className="grid grid-cols-2 gap-4">
+                    {/* Name */}
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">氏名 <RequiredBadge /></label>
+                        <input type="text" name="name" value={formData.name} onChange={handleChange} required minLength={2} maxLength={100} className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium" />
+                    </div>
+                    
+                    {/* Kana */}
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">フリガナ <RequiredBadge /></label>
+                        <input type="text" name="kana" value={formData.kana} onChange={handleChange} required minLength={2} maxLength={100} className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium" />
+                    </div>
                 </div>
                 
-                {/* Kana */}
+                {/* Password */}
                 <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1">ふりがな <RequiredBadge /></label>
-                    <input type="text" name="kana" value={formData.kana} onChange={handleChange} className="w-full border p-2 rounded shadow-sm" />
+                    <label className="block text-sm font-bold text-gray-700 mb-1">パスワード {isEditMode && '(変更する場合のみ)'}</label>
+                    <input type="password" name="pass" value={formData.pass} onChange={handleChange} required={!isEditMode} className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium" />
                 </div>
-            </div>
+            </section>
             
-            {/* Password */}
-            <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">パスワード {isEditMode && '(変更する場合のみ)'}</label>
-                <input type="password" name="pass" value={formData.pass} onChange={handleChange} required={!isEditMode} className="w-full border p-2 rounded shadow-sm" />
-            </div>
-            
-            {/* 🔑 manager（店長）の時のみ表示 */}
-            {formData.role === 'MANAGER' && (
-                <div className="space-y-3 p-4 bg-green-50/50 rounded-xl border border-green-100 animate-in fade-in slide-in-from-top-2 duration-300">
-                    <label className="block text-sm font-bold text-green-900 flex items-center gap-2">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {/* 🔑 manager（店長）とtrainer（トレーナー）の時のみ表示 */}
+            {(formData.role === 'MANAGER' || formData.role === 'TRAINER') && (
+                <div className="space-y-3 p-4 bg-white rounded-2xl border-2 border-gray-50 shadow-sm animate-in fade-in slide-in-from-top-2 duration-300">
+                    <label className="block text-sm font-bold text-gray-700 mb-1 flex items-center gap-2">
+                        <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-7h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                         </svg>
-                        担当店舗の設定 (店長権限) <RequiredBadge />
+                        担当店舗の設定 {formData.role === 'MANAGER' ? '(店長権限)' : '(トレーナー権限)'} <RequiredBadge />
                     </label>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto p-1">
@@ -173,10 +236,10 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
                                 <label 
                                     key={store.id} 
                                     className={`
-                                        flex items-center p-2.5 rounded-lg border cursor-pointer transition-all
+                                        flex items-center p-2.5 rounded-2xl border-2 cursor-pointer transition-all shadow-sm
                                         ${isSelected 
-                                            ? 'bg-white border-green-500 text-green-700 shadow-sm ring-1 ring-green-500' 
-                                            : 'bg-white/50 border-gray-200 text-gray-500 hover:bg-white'}
+                                            ? 'bg-white border-green-500 text-green-700 ring-1 ring-green-500' 
+                                            : 'bg-white/50 border-gray-50 text-gray-500 hover:bg-white'}
                                     `}
                                 >
                                     <input
@@ -203,15 +266,16 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
 
             {/* 有効/無効の切り替え */}
             {isEditMode && (
-                <div className="flex items-center p-2 bg-gray-50 rounded-lg">
+                <div className="flex items-center p-4 bg-gray-50 rounded-2xl border-2 border-gray-50 shadow-sm">
                     <input
-                        id="isActive"
+                        id="active"
+                        name="active"
                         type="checkbox"
-                        checked={formData.isActive}
+                        checked={formData.active}
                         onChange={handleChange}
-                        className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                        className="w-5 h-5 text-green-600 rounded"
                     />
-                    <label htmlFor="isActive" className="ml-2 block text-sm font-bold text-gray-700">
+                    <label htmlFor="active" className="ml-3 text-sm font-bold text-gray-700">
                         このユーザーを有効な状態にする
                     </label>
                 </div>
@@ -221,7 +285,7 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
                 <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full px-4 py-3 text-white bg-green-600 rounded-xl font-bold hover:bg-green-700 disabled:bg-gray-400 shadow-md transition-all active:scale-[0.98]"
+                    className="w-full py-4 bg-green-600 text-white font-bold rounded-2xl hover:bg-green-700 shadow-lg transition-all active:scale-[0.98] disabled:opacity-50"
                 >
                     {isSubmitting ? '処理中...' : isEditMode ? '情報を更新する' : '新規ユーザーを登録する'}
                 </button>
@@ -229,14 +293,35 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
                 {isEditMode && onDelete && (
                     <button
                         type="button"
-                        onClick={() => initialData && window.confirm('本当に削除しますか？') && onDelete(initialData.id)}
-                        className="w-full px-4 py-2 text-red-600 font-bold bg-white border border-red-200 rounded-xl hover:bg-red-50 transition-all"
+                        onClick={() => {
+                            if (initialData) {
+                                setShowDeleteConfirm(true);
+                            }
+                        }}
+                        className="w-full py-3 text-red-500 font-bold hover:bg-red-50 rounded-2xl transition-all"
                         disabled={isSubmitting}
                     >
                         ユーザーを削除
                     </button>
                 )}
             </div>
+
+            {/* 削除確認モーダル */}
+            <ConfirmModal
+                isOpen={showDeleteConfirm}
+                title="ユーザーの削除"
+                message="本当に削除しますか？"
+                confirmText="削除"
+                cancelText="キャンセル"
+                onConfirm={() => {
+                    if (initialData && onDelete) {
+                        onDelete(initialData.id);
+                    }
+                    setShowDeleteConfirm(false);
+                }}
+                onCancel={() => setShowDeleteConfirm(false)}
+                isLoading={isSubmitting}
+            />
         </form>
     );
 };
