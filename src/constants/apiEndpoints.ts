@@ -43,4 +43,11 @@ export const API_ENDPOINTS = {
     BASE: '/stores',
     BY_ID: (id: string) => `/stores/${id}`,
   },
+  PASSWORD_RESET: {
+    REQUEST: '/password-reset/request',
+    REQUESTS: '/password-reset/requests',
+    APPROVE: '/password-reset/approve',
+    REJECT: '/password-reset/reject',
+    BY_ID: (id: string) => `/password-reset/${id}`,
+  },
 } as const;

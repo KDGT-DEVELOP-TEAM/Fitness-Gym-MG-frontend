@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { ROUTES } from '../../constants/routes';
 import { getErrorMessage, getAllErrorMessages } from '../../utils/errorMessages';
 import { logger } from '../../utils/logger';
+import { passwordResetApi } from '../../api/passwordResetApi';
 
 export const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -12,6 +13,7 @@ export const Login: React.FC = () => {
   const [error, setError] = useState('');
   const [showResetModal, setShowResetModal] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
+  const [resetName, setResetName] = useState('');
   const [resetError, setResetError] = useState('');
   const [resetSuccess, setResetSuccess] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
@@ -64,18 +66,29 @@ export const Login: React.FC = () => {
       setResetError('メールアドレスを入力してください');
       return;
     }
+    if (!resetName.trim()) {
+      setResetError('名前を入力してください');
+      return;
+    }
 
     setResetError('');
     setResetLoading(true);
 
     try {
-      // パスワードリセット機能は現在バックエンドで実装されていません
-      // TODO: バックエンドに実装が追加されたら、authApi.resetPassword()を呼び出す
-      logger.warn('Password reset not implemented', { email: resetEmail }, 'Login');
-      setResetError('パスワードリセット機能は現在利用できません。管理者にお問い合わせください。');
+      await passwordResetApi.createRequest({
+        email: resetEmail.trim(),
+        name: resetName.trim(),
+      });
+      setResetSuccess(true);
+      logger.info('Password reset request created', { email: resetEmail }, 'Login');
     } catch (err) {
-      logger.error('Password reset failed', err, 'Login');
-      setResetError('パスワードリセットメールの送信に失敗しました。メールアドレスを確認してください。');
+      logger.error('Password reset request failed', err, 'Login');
+      const errorMessages = getAllErrorMessages(err);
+      if (errorMessages.length > 0) {
+        setResetError(errorMessages.join('\n'));
+      } else {
+        setResetError('リクエストの送信に失敗しました。メールアドレスと名前を確認してください。');
+      }
     } finally {
       setResetLoading(false);
     }
@@ -84,6 +97,7 @@ export const Login: React.FC = () => {
   const handleCloseResetModal = () => {
     setShowResetModal(false);
     setResetEmail('');
+    setResetName('');
     setResetError('');
     setResetSuccess(false);
   };
@@ -169,9 +183,11 @@ export const Login: React.FC = () => {
             {resetSuccess ? (
               <div className="space-y-4">
                 <p className="text-gray-600 text-center">
-                  パスワードリセット用のメールを送信しました。
+                  パスワードリセットリクエストを受け付けました。
                   <br />
-                  メール内のリンクからパスワードを再設定してください。
+                  管理者が確認後、新しいパスワードを設定します。
+                  <br />
+                  しばらくお待ちください。
                 </p>
                 <button
                   type="button"
@@ -184,9 +200,9 @@ export const Login: React.FC = () => {
             ) : (
               <div className="space-y-6">
                 <p className="text-gray-600 text-sm text-center">
-                  登録されているメールアドレスを入力してください。
+                  登録されているメールアドレスと名前を入力してください。
                   <br />
-                  パスワードリセット用のリンクを送信します。
+                  管理者が確認後、パスワードをリセットします。
                 </p>
                 {resetError && (
                   <div className="text-red-600 bg-red-50 border border-red-200 px-4 py-2 rounded-2xl text-sm text-center">
@@ -194,7 +210,7 @@ export const Login: React.FC = () => {
                   </div>
                 )}
                 <div>
-                  <label className="block text-sm font-black text-gray-600 mb-2">Email</label>
+                  <label className="block text-sm font-black text-gray-600 mb-2">メールアドレス</label>
                   <input
                     type="email"
                     value={resetEmail}
@@ -202,6 +218,17 @@ export const Login: React.FC = () => {
                     disabled={resetLoading}
                     className="w-full px-4 py-3 rounded-2xl border-2 border-gray-50 shadow-sm bg-white text-gray-900 focus:outline-none focus:border-green-500 focus:ring-0 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     placeholder="メールアドレスを入力"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-black text-gray-600 mb-2">名前</label>
+                  <input
+                    type="text"
+                    value={resetName}
+                    onChange={(e) => setResetName(e.target.value)}
+                    disabled={resetLoading}
+                    className="w-full px-4 py-3 rounded-2xl border-2 border-gray-50 shadow-sm bg-white text-gray-900 focus:outline-none focus:border-green-500 focus:ring-0 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    placeholder="名前を入力"
                   />
                 </div>
                 <div className="flex gap-3">
