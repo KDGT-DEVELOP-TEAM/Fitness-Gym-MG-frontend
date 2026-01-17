@@ -13,7 +13,7 @@ import { IMAGE_QUALITY, CANVAS_DIMENSIONS } from '../../constants/image';
 import { IMAGE_CONSTANTS, MAX_FILE_SIZE_BYTES } from '../../constants/image';
 import { FORM_STYLES } from '../../styles/formStyles';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
-import { validateRequired, validateDateRange, validateNumericRange, validateNextLesson } from '../../utils/validators';
+import { validateRequired, validateDateRange, validateNumericRange, validateNextLesson, validateNotFutureDateTime } from '../../utils/validators';
 import { ERROR_MESSAGES } from '../../constants/errorMessages';
 import { useAuth } from '../../context/AuthContext';
 
@@ -389,6 +389,16 @@ export const LessonCreate: React.FC = () => {
       return;
     }
 
+    // 未来の日時を禁止するバリデーション
+    if (formData.startDate && !validateNotFutureDateTime(formData.startDate)) {
+      setError('開始時間は現在の日時より未来に設定できません');
+      return;
+    }
+    if (formData.endDate && !validateNotFutureDateTime(formData.endDate)) {
+      setError('終了時間は現在の日時より未来に設定できません');
+      return;
+    }
+
     // 体重が指定されている場合のバリデーション
     if (formData.weight !== null && formData.weight !== undefined) {
       if (!validateNumericRange(formData.weight, 30, 300)) {
@@ -583,6 +593,7 @@ export const LessonCreate: React.FC = () => {
                 className={FORM_STYLES.input}
                 value={formData.startDate ?? ''}
                 onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                max={new Date().toISOString().slice(0, 16)}
                 required
               />
             </div>
@@ -594,6 +605,7 @@ export const LessonCreate: React.FC = () => {
                 className={FORM_STYLES.input}
                 value={formData.endDate ?? ''}
                 onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                max={new Date().toISOString().slice(0, 16)}
                 required
               />
             </div>

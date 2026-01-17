@@ -169,6 +169,25 @@ export const validatePastDate = (dateString: string): boolean => {
 };
 
 /**
+ * Validate that date/time is not in the future
+ * Ensures the date/time is in the past or present
+ * 
+ * @param dateTimeString - Date-time string to validate (ISO 8601 format)
+ * @returns True if date-time is not in the future
+ */
+export const validateNotFutureDateTime = (dateTimeString: string): boolean => {
+  if (!dateTimeString || dateTimeString.trim() === '') {
+    return true; // Optional field
+  }
+  const dateTime = new Date(dateTimeString);
+  if (isNaN(dateTime.getTime())) {
+    return false;
+  }
+  const now = new Date();
+  return dateTime <= now;
+};
+
+/**
  * Validate next lesson fields correlation
  * If any next lesson field is set, all must be set
  * 
