@@ -22,6 +22,17 @@ interface BMIHistoryItem {
 // ページネーション用の定数
 const ITEMS_PER_PAGE = 10;
 
+// モジュールレベルの実行ガード（全インスタンス間で共有）
+const globalFetchState: {
+  lastFetchKey: string;
+  isFetching: boolean;
+  abortController: AbortController | null;
+} = {
+  lastFetchKey: '',
+  isFetching: false,
+  abortController: null,
+};
+
 export const LessonHistory: React.FC = () => {
   const { customerId } = useParams<{ customerId: string }>();
   const navigate = useNavigate();
@@ -35,39 +46,41 @@ export const LessonHistory: React.FC = () => {
   const [customerLoading, setCustomerLoading] = useState(true);
   const [customerError, setCustomerError] = useState<string | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-  // レッスン一覧と顧客情報を並列取得（重複実行を防止）
-  const lastFetchKeyRef = useRef<string>('');
-  const isFetchingRef = useRef<boolean>(false);
+  
   useEffect(() => {
+    if (!customerId) {
+      setCustomerLoading(false);
+      setLessonsLoading(false);
+      return;
+    }
+
+    const fetchKey = customerId;
+    
+    // customerIdが変更された場合、前回の取得処理をキャンセル
+    if (globalFetchState.lastFetchKey !== fetchKey && globalFetchState.abortController) {
+      globalFetchState.abortController.abort();
+      globalFetchState.isFetching = false;
+    }
+    
+    // 既に同じ条件で取得済み、または取得中の場合は実行しないガード
+    if (globalFetchState.lastFetchKey === fetchKey && globalFetchState.isFetching) {
+      return;
+    }
+    
+    // 実行フラグを設定（非同期処理開始前に設定）
+    globalFetchState.lastFetchKey = fetchKey;
+    globalFetchState.isFetching = true;
+
+    // 新しいAbortControllerを作成
+    const abortController = new AbortController();
+    globalFetchState.abortController = abortController;
+
+    setLessonsLoading(true);
+    setCustomerLoading(true);
+    setLessonsError(null);
+    setCustomerError(null);
+
     const fetchData = async () => {
-      if (!customerId) {
-        setCustomerLoading(false);
-        setLessonsLoading(false);
-        return;
-      }
-
-      const fetchKey = customerId;
-      
-      // customerIdが変更された場合、前回の取得処理をリセット
-      if (lastFetchKeyRef.current !== fetchKey) {
-        isFetchingRef.current = false;
-      }
-      
-      // 既に同じ条件で取得済み、または取得中の場合は実行しないガード
-      if (lastFetchKeyRef.current === fetchKey || isFetchingRef.current) {
-        return;
-      }
-      
-      // 実行フラグを設定（非同期処理開始前に設定）
-      lastFetchKeyRef.current = fetchKey;
-      isFetchingRef.current = true;
-
-      setLessonsLoading(true);
-      setCustomerLoading(true);
-      setLessonsError(null);
-      setCustomerError(null);
-
       try {
         // レッスン一覧と顧客情報を並列取得
         const [lessonsResponse, customerResponse] = await Promise.all([
@@ -75,15 +88,33 @@ export const LessonHistory: React.FC = () => {
           customerApi.getProfile(customerId)
         ]);
 
+        // キャンセルされた場合は状態を更新しない
+        if (abortController.signal.aborted) {
+          return;
+        }
+
         setLessons(lessonsResponse.data || []);
         setCustomerHeight(customerResponse.height || 189);
       } catch (err) {
+        // キャンセルされた場合はエラー処理も実行しない
+        if (abortController.signal.aborted) {
+          return;
+        }
+
         // エラーが発生した場合、どちらのAPI呼び出しでエラーが発生したかを判定
         if (axios.isAxiosError(err)) {
+          // AbortErrorの場合は無視
+          if (err.name === 'AbortError' || err.code === 'ERR_CANCELED') {
+            return;
+          }
           const errorMessage = err.response?.data?.message || err.message;
           setLessonsError(errorMessage);
           setCustomerError(errorMessage);
         } else if (err instanceof Error) {
+          // AbortErrorの場合は無視
+          if (err.name === 'AbortError') {
+            return;
+          }
           setLessonsError(err.message);
           setCustomerError(err.message);
         } else {
@@ -91,13 +122,25 @@ export const LessonHistory: React.FC = () => {
           setCustomerError('不明なエラーが発生しました');
         }
       } finally {
-        setLessonsLoading(false);
-        setCustomerLoading(false);
-        isFetchingRef.current = false;
+        // キャンセルされた場合は状態を更新しない
+        if (!abortController.signal.aborted) {
+          setLessonsLoading(false);
+          setCustomerLoading(false);
+          globalFetchState.isFetching = false;
+        }
       }
     };
 
     fetchData();
+
+    // クリーンアップ関数: コンポーネントのアンマウント時またはcustomerId変更時に実行
+    return () => {
+      // このインスタンスのfetchKeyと一致する場合のみクリーンアップ
+      if (globalFetchState.lastFetchKey === fetchKey && globalFetchState.abortController) {
+        globalFetchState.abortController.abort();
+        globalFetchState.isFetching = false;
+      }
+    };
   }, [customerId]);
 
   // BMIデータを抽出（useMemoでメモ化）
