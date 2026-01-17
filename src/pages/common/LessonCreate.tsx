@@ -485,11 +485,12 @@ export const LessonCreate: React.FC = () => {
         <form onSubmit={handleSubmit} className="space-y-6">
         {error && <div className="text-red-600 text-sm">{error}</div>}
 
-        <div className="space-y-4">
-          <h2 className={FORM_STYLES.sectionHeading}>顧客・体重</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 md:gap-y-5 md:gap-x-12">
-            <div className="flex flex-col gap-1">
-              <label className={FORM_STYLES.label}>顧客：</label>
+        {/* 基本情報セクション */}
+        <section className="space-y-4">
+          <h3 className={FORM_STYLES.sectionHeading}>基本情報</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className={FORM_STYLES.label}>顧客</label>
               <input
                 className={FORM_STYLES.inputReadOnly}
                 value={(() => {
@@ -498,164 +499,106 @@ export const LessonCreate: React.FC = () => {
                 })()}
                 readOnly
               />
-          </div>
+            </div>
 
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-              <label className={FORM_STYLES.label}>体重 (kg)：</label>
+            <div>
+              <label className={FORM_STYLES.label}>体重 (kg)</label>
               <input
                 type="number"
                 step="0.1"
-                className={`${FORM_STYLES.input} sm:flex-1`}
+                className={FORM_STYLES.input}
                 value={formData.weight ?? ''}
                 onChange={(e) =>
                   setFormData({ ...formData, weight: e.target.value ? Number(e.target.value) : null })
                 }
               />
             </div>
-          </div>
-        </div>
 
-        <div className="space-y-4">
-          <h2 className={FORM_STYLES.sectionHeading}>担当・店舗</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 md:gap-y-5 md:gap-x-12">
-            <div className="flex flex-col gap-1">
-              <label className={FORM_STYLES.label}>担当：</label>
+            <div>
+              <label className={FORM_STYLES.label}>担当トレーナー</label>
               <input
                 className={FORM_STYLES.inputReadOnly}
                 value={user?.name || ''}
                 readOnly
               />
-          </div>
+            </div>
 
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-              <label className={FORM_STYLES.label}>店舗：</label>
-            <select
-                className={`${FORM_STYLES.input} sm:flex-1`}
+            <div>
+              <label className={FORM_STYLES.label}>実施店舗</label>
+              <select
+                className={FORM_STYLES.input}
                 value={formData.storeId}
                 onChange={(e) => setFormData({ ...formData, storeId: e.target.value })}
-              required
-            >
-              <option value="">選択してください</option>
+                required
+              >
+                <option value="">選択してください</option>
                 {stores.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.name}
-                </option>
-              ))}
-            </select>
-            </div>
-          </div>
-          </div>
-
-        <div className="space-y-4">
-          <h2 className={FORM_STYLES.sectionHeading}>体調・食事</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 md:gap-y-5 md:gap-x-12">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-              <label className={FORM_STYLES.label}>体調：</label>
-            <input
-              type="text"
-                className={`${FORM_STYLES.input} sm:flex-1`}
-              value={formData.condition ?? ''}
-              onChange={(e) => setFormData({ ...formData, condition: e.target.value })}
-                placeholder="体調メモ (condition)"
-                maxLength={500}
-            />
-          </div>
-
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-              <label className={FORM_STYLES.label}>食事：</label>
-            <input
-              type="text"
-                className={`${FORM_STYLES.input} sm:flex-1`}
-              value={formData.meal ?? ''}
-              onChange={(e) => setFormData({ ...formData, meal: e.target.value })}
-                placeholder="食事内容 (meal)"
-                maxLength={500}
-            />
-            </div>
-          </div>
-          </div>
-
-        <div className="space-y-4">
-          <div className="space-y-3">
-            <h2 className={FORM_STYLES.sectionHeading}>開始時間・終了時間</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-y-3 md:gap-x-12 md:gap-y-4">
-              <div className="flex flex-row items-center gap-3 md:gap-4">
-                <label className={FORM_STYLES.label}>開始時間：</label>
-            <input
-              type="datetime-local"
-                  className={`${FORM_STYLES.input} flex-1`}
-              value={formData.startDate ?? ''}
-              onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-              required
-            />
-          </div>
-
-              <div className="flex flex-row items-center gap-3 md:gap-4">
-                <label className={FORM_STYLES.label}>終了時間：</label>
-            <input
-              type="datetime-local"
-                  className={`${FORM_STYLES.input} flex-1`}
-              value={formData.endDate ?? ''}
-              onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-              required
-            />
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <h2 className={FORM_STYLES.sectionHeading}>次回予約</h2>
-          <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
-            <span className={FORM_STYLES.label}>日にち/時刻：</span>
-            <input
-              type="datetime-local"
-                className={`${FORM_STYLES.input} md:flex-1`}
-              value={formData.nextDate ?? ''}
-              onChange={(e) => setFormData({ ...formData, nextDate: e.target.value })}
-            />
-          </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6">
-              <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
-                <label className={FORM_STYLES.label}>次回店舗：</label>
-            <select
-                  className={`${FORM_STYLES.input} md:flex-1`}
-              value={formData.nextStoreId ?? ''}
-              onChange={(e) => setFormData({ ...formData, nextStoreId: e.target.value })}
-            >
-              <option value="">未定</option>
-              {stores.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-              <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
-                <label className={FORM_STYLES.label}>次回トレーナー：</label>
-            <select
-                  className={`${FORM_STYLES.input} md:flex-1`}
-              value={formData.nextUserId ?? ''}
-              onChange={(e) => setFormData({ ...formData, nextUserId: e.target.value })}
-            >
-              <option value="">未定</option>
-              {users
-                .filter((u) => {
-                  // 管理者（ADMIN）を除外し、店長（MANAGER）とトレーナー（TRAINER）のみ選択可能
-                  // バックエンドで既にフィルタリングされているが、念のためフロントエンドでも除外
-                  return !u.role || (u.role !== 'ADMIN');
-                })
-                .map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.name}
                   </option>
                 ))}
-            </select>
+              </select>
+            </div>
           </div>
-        </div>
+        </section>
+
+        {/* 体調・食事セクション */}
+        <section className="space-y-4">
+          <h3 className={FORM_STYLES.sectionHeading}>体調・食事</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className={FORM_STYLES.label}>体調</label>
+              <input
+                type="text"
+                className={FORM_STYLES.input}
+                value={formData.condition ?? ''}
+                onChange={(e) => setFormData({ ...formData, condition: e.target.value })}
+                placeholder="体調メモ (condition)"
+                maxLength={500}
+              />
+            </div>
+
+            <div>
+              <label className={FORM_STYLES.label}>食事</label>
+              <input
+                type="text"
+                className={FORM_STYLES.input}
+                value={formData.meal ?? ''}
+                onChange={(e) => setFormData({ ...formData, meal: e.target.value })}
+                placeholder="食事内容 (meal)"
+                maxLength={500}
+              />
+            </div>
           </div>
-        </div>
+        </section>
+
+        {/* レッスン日時セクション */}
+        <section className="space-y-4">
+          <h3 className={FORM_STYLES.sectionHeading}>レッスン日時</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className={FORM_STYLES.label}>開始時間</label>
+              <input
+                type="datetime-local"
+                className={FORM_STYLES.input}
+                value={formData.startDate ?? ''}
+                onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                required
+              />
+            </div>
+
+            <div>
+              <label className={FORM_STYLES.label}>終了時間</label>
+              <input
+                type="datetime-local"
+                className={FORM_STYLES.input}
+                value={formData.endDate ?? ''}
+                onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                required
+              />
+            </div>
+          </div>
+        </section>
 
         <div className="border-2 border-gray-50 rounded-[2rem] p-4 space-y-3 bg-white shadow-sm">
           <div className="text-lg font-medium text-gray-800">トレーニング内容</div>
@@ -667,26 +610,24 @@ export const LessonCreate: React.FC = () => {
           {trainings.map((t, idx) => (
             <div
               key={idx}
-              className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4 border-2 border-gray-50 rounded-2xl p-3 bg-gray-50/50"
+              className="flex flex-col md:flex-row md:items-end gap-3 md:gap-4 border-2 border-gray-50 rounded-2xl p-3 bg-gray-50/50"
             >
-              <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3 flex-1">
-                <div className="flex items-center gap-2 md:min-w-[100px]">
-                  <span className="text-lg font-semibold text-gray-800">名称：</span>
-                </div>
-              <input
-                type="text"
+              <div className="flex-1">
+                <label className={FORM_STYLES.label}>名称</label>
+                <input
+                  type="text"
                   placeholder="例：スクワット、腹筋"
-                  className={`${FORM_STYLES.input} flex-1`}
-                value={t.name}
-                onChange={(e) => handleTrainingChange(idx, 'name', e.target.value)}
-                required
-                maxLength={100}
-              />
+                  className={FORM_STYLES.input}
+                  value={t.name}
+                  onChange={(e) => handleTrainingChange(idx, 'name', e.target.value)}
+                  required
+                  maxLength={100}
+                />
               </div>
 
-              <div className="flex items-center gap-2 md:gap-3">
-                <span className="text-lg font-semibold text-gray-800">回数：</span>
-                <div className="flex items-center gap-2 border-2 border-gray-50 rounded-2xl px-2 py-1 bg-white shadow-sm">
+              <div className="flex-1 md:flex-initial">
+                <label className={FORM_STYLES.label}>回数</label>
+                <div className="flex items-center gap-2 border-2 border-gray-50 rounded-2xl px-2 py-1 bg-white shadow-sm h-14">
                   <button
                     type="button"
                     className="px-2 py-1 text-lg font-semibold text-gray-700 hover:text-gray-900"
@@ -696,15 +637,15 @@ export const LessonCreate: React.FC = () => {
                   >
                     −
                   </button>
-              <input
-                type="number"
-                    className="w-16 text-center border-none focus:outline-none text-lg"
-                value={t.reps}
-                onChange={(e) => handleTrainingChange(idx, 'reps', e.target.value)}
-                required
-              />
-              <button
-                type="button"
+                  <input
+                    type="number"
+                    className="w-16 text-center border-none focus:outline-none text-lg bg-white"
+                    value={t.reps}
+                    onChange={(e) => handleTrainingChange(idx, 'reps', e.target.value)}
+                    required
+                  />
+                  <button
+                    type="button"
                     className="px-2 py-1 text-lg font-semibold text-gray-700 hover:text-gray-900"
                     onClick={() => handleTrainingChange(idx, 'reps', String((t.reps || 0) + 1))}
                   >
@@ -715,7 +656,7 @@ export const LessonCreate: React.FC = () => {
 
               <button
                 type="button"
-                className="text-sm text-red-600 hover:text-red-700 self-start md:self-center"
+                className="text-sm text-red-600 hover:text-red-700 self-start md:self-end mb-1"
                 onClick={() => removeTraining(idx)}
               >
                 削除
@@ -820,7 +761,62 @@ export const LessonCreate: React.FC = () => {
           </p>
         </div>
 
-        <div className="space-y-2">
+        {/* 次回予約セクション */}
+        <section className="space-y-4">
+          <h3 className={FORM_STYLES.sectionHeading}>次回予約</h3>
+          <div>
+            <label className={FORM_STYLES.label}>日にち/時刻</label>
+            <input
+              type="datetime-local"
+              className={FORM_STYLES.input}
+              value={formData.nextDate ?? ''}
+              onChange={(e) => setFormData({ ...formData, nextDate: e.target.value })}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className={FORM_STYLES.label}>次回トレーナー</label>
+              <select
+                className={FORM_STYLES.input}
+                value={formData.nextUserId ?? ''}
+                onChange={(e) => setFormData({ ...formData, nextUserId: e.target.value })}
+              >
+                <option value="">未定</option>
+                {users
+                  .filter((u) => {
+                    // 管理者（ADMIN）を除外し、店長（MANAGER）とトレーナー（TRAINER）のみ選択可能
+                    // バックエンドで既にフィルタリングされているが、念のためフロントエンドでも除外
+                    return !u.role || (u.role !== 'ADMIN');
+                  })
+                  .map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.name}
+                    </option>
+                  ))}
+              </select>
+            </div>
+
+            <div>
+              <label className={FORM_STYLES.label}>次回店舗</label>
+              <select
+                className={FORM_STYLES.input}
+                value={formData.nextStoreId ?? ''}
+                onChange={(e) => setFormData({ ...formData, nextStoreId: e.target.value })}
+              >
+                <option value="">未定</option>
+                {stores.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </section>
+
+        {/* 備考欄セクション */}
+        <section className="space-y-2">
           <label className={FORM_STYLES.label}>備考欄</label>
           <textarea
             className={`${FORM_STYLES.input} min-h-[180px]`}
@@ -829,7 +825,7 @@ export const LessonCreate: React.FC = () => {
             rows={5}
             maxLength={1000}
           />
-        </div>
+        </section>
 
         <div className="pt-4 flex gap-3 justify-end">
           <button

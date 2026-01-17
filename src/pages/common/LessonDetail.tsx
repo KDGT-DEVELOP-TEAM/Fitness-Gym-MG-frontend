@@ -73,11 +73,12 @@ export const LessonDetail: React.FC = () => {
           <p className="text-sm text-gray-500">登録済みのレッスン情報を表示します</p>
         </div>
 
-        <div className="space-y-4">
-          <h2 className={FORM_STYLES.sectionHeading}>顧客・体重</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-y-4 md:gap-y-5 md:gap-x-12">
-            <div className="flex flex-col gap-1">
-              <label className={FORM_STYLES.label}>顧客：</label>
+        {/* 基本情報セクション */}
+        <section className="space-y-4">
+          <h3 className={FORM_STYLES.sectionHeading}>基本情報</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className={FORM_STYLES.label}>顧客</label>
               <div className="flex items-center gap-2">
                 <input className={FORM_STYLES.inputReadOnly} value={lesson.customerName || ''} readOnly />
                 {lesson.customerDeleted && (
@@ -87,8 +88,8 @@ export const LessonDetail: React.FC = () => {
                 )}
               </div>
             </div>
-            <div className="flex flex-col gap-1">
-              <label className={FORM_STYLES.label}>体重 (kg)：</label>
+            <div>
+              <label className={FORM_STYLES.label}>体重 (kg)</label>
               <input
                 className={FORM_STYLES.inputReadOnly}
                 value={lesson.weight ?? ''}
@@ -96,9 +97,17 @@ export const LessonDetail: React.FC = () => {
                 placeholder="—"
               />
             </div>
+            <div>
+              <label className={FORM_STYLES.label}>担当トレーナー</label>
+              <input className={FORM_STYLES.inputReadOnly} value={lesson.trainerName || ''} readOnly />
+            </div>
+            <div>
+              <label className={FORM_STYLES.label}>実施店舗</label>
+              <input className={FORM_STYLES.inputReadOnly} value={lesson.storeName || ''} readOnly />
+            </div>
             {lesson.bmi !== null && lesson.bmi !== undefined && (
-              <div className="flex flex-col gap-1">
-                <label className={FORM_STYLES.label}>BMI：</label>
+              <div>
+                <label className={FORM_STYLES.label}>BMI</label>
                 <input
                   className={FORM_STYLES.inputReadOnly}
                   value={lesson.bmi.toFixed(1)}
@@ -108,68 +117,56 @@ export const LessonDetail: React.FC = () => {
               </div>
             )}
           </div>
-        </div>
+        </section>
 
-        <div className="space-y-4">
-          <h2 className={FORM_STYLES.sectionHeading}>担当・店舗</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 md:gap-y-5 md:gap-x-12">
-            <div className="flex flex-col gap-1">
-              <label className={FORM_STYLES.label}>担当：</label>
-              <input className={FORM_STYLES.inputReadOnly} value={lesson.trainerName || ''} readOnly />
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className={FORM_STYLES.label}>店舗：</label>
-              <input className={FORM_STYLES.inputReadOnly} value={lesson.storeName || ''} readOnly />
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <h2 className={FORM_STYLES.sectionHeading}>体調・食事</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 md:gap-y-5 md:gap-x-12">
-            <div className="flex flex-col gap-1">
-              <label className={FORM_STYLES.label}>体調：</label>
+        {/* 体調・食事セクション */}
+        <section className="space-y-4">
+          <h3 className={FORM_STYLES.sectionHeading}>体調・食事</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className={FORM_STYLES.label}>体調</label>
               <input className={FORM_STYLES.inputReadOnly} value={lesson.condition ?? ''} readOnly />
             </div>
-            <div className="flex flex-col gap-1">
-              <label className={FORM_STYLES.label}>食事：</label>
+            <div>
+              <label className={FORM_STYLES.label}>食事</label>
               <input className={FORM_STYLES.inputReadOnly} value={lesson.meal ?? ''} readOnly />
             </div>
           </div>
-        </div>
+        </section>
 
-        <div className="space-y-3">
-          <h2 className={FORM_STYLES.sectionHeading}>開始時間・終了時間</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-y-3 md:gap-x-12 md:gap-y-4">
-            <div className="flex flex-col gap-1">
-              <label className="text-2xl font-semibold text-gray-800">開始時間：</label>
+        {/* レッスン日時セクション */}
+        <section className="space-y-4">
+          <h3 className={FORM_STYLES.sectionHeading}>レッスン日時</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className={FORM_STYLES.label}>開始時間</label>
               <input className={FORM_STYLES.inputReadOnly} value={lesson.startDate ? formatDateTime(lesson.startDate) : ''} readOnly />
             </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-2xl font-semibold text-gray-800">終了時間：</label>
+            <div>
+              <label className={FORM_STYLES.label}>終了時間</label>
               <input className={FORM_STYLES.inputReadOnly} value={lesson.endDate ? formatDateTime(lesson.endDate) : ''} readOnly />
             </div>
           </div>
-        </div>
 
-        <div className="space-y-3">
-          <h2 className={FORM_STYLES.sectionHeading}>次回予約</h2>
-          <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
-            <span className="text-2xl font-semibold text-gray-800 whitespace-nowrap">日にち/時刻：</span>
-            <input className={`${FORM_STYLES.inputReadOnly} md:flex-1`} value={lesson.nextDate ? formatDateTime(lesson.nextDate) : ''} readOnly />
-          </div>
+          <div className="space-y-4 mt-6">
+            <h4 className="text-base font-medium text-gray-700 mb-3">次回予約</h4>
+            <div>
+              <label className={FORM_STYLES.label}>日にち/時刻</label>
+              <input className={FORM_STYLES.inputReadOnly} value={lesson.nextDate ? formatDateTime(lesson.nextDate) : ''} readOnly />
+            </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6">
-            <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
-              <label className={FORM_STYLES.label}>次回店舗：</label>
-              <input className={`${FORM_STYLES.inputReadOnly} md:flex-1`} value={lesson.nextStoreName || ''} readOnly />
-            </div>
-            <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
-              <label className={FORM_STYLES.label}>次回トレーナー：</label>
-              <input className={`${FORM_STYLES.inputReadOnly} md:flex-1`} value={lesson.nextTrainerName || ''} readOnly />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className={FORM_STYLES.label}>次回トレーナー</label>
+                <input className={FORM_STYLES.inputReadOnly} value={lesson.nextTrainerName || ''} readOnly />
+              </div>
+              <div>
+                <label className={FORM_STYLES.label}>次回店舗</label>
+                <input className={FORM_STYLES.inputReadOnly} value={lesson.nextStoreName || ''} readOnly />
+              </div>
             </div>
           </div>
-        </div>
+        </section>
 
         <div className="border-2 border-gray-50 rounded-[2rem] p-4 space-y-3 bg-white shadow-sm">
           <div className="text-lg font-medium text-gray-800">トレーニング内容</div>
@@ -181,23 +178,21 @@ export const LessonDetail: React.FC = () => {
           {trainings.map((t, idx) => (
             <div
               key={idx}
-              className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4 border-2 border-gray-50 rounded-2xl p-3 bg-gray-50/50"
+              className="flex flex-col md:flex-row md:items-end gap-3 md:gap-4 border-2 border-gray-50 rounded-2xl p-3 bg-gray-50/50"
             >
-              <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3 flex-1">
-                <div className="flex items-center gap-2 md:min-w-[100px]">
-                  <span className="text-lg font-semibold text-gray-800">名称：</span>
-                </div>
+              <div className="flex-1">
+                <label className={FORM_STYLES.label}>名称</label>
                 <input
                   type="text"
-                  className={`${FORM_STYLES.inputReadOnly} flex-1`}
+                  className={FORM_STYLES.inputReadOnly}
                   value={t.name}
                   readOnly
                 />
               </div>
 
-              <div className="flex items-center gap-2 md:gap-3">
-                <span className="text-lg font-semibold text-gray-800">回数：</span>
-                <div className="flex items-center gap-2 border-2 border-gray-50 rounded-2xl px-2 py-1 bg-white shadow-sm">
+              <div className="flex-1 md:flex-initial">
+                <label className={FORM_STYLES.label}>回数</label>
+                <div className="flex items-center gap-2 border-2 border-gray-50 rounded-2xl px-2 py-1 bg-white shadow-sm h-14">
                   <input
                     type="number"
                     className="w-16 text-center border-none focus:outline-none text-lg bg-white"
@@ -248,7 +243,8 @@ export const LessonDetail: React.FC = () => {
           </div>
         </div>
 
-        <div className="space-y-2">
+        {/* 備考欄セクション */}
+        <section className="space-y-2">
           <label className={FORM_STYLES.label}>備考欄</label>
           <textarea
             className={`${FORM_STYLES.inputReadOnly} min-h-[180px]`}
@@ -256,7 +252,7 @@ export const LessonDetail: React.FC = () => {
             readOnly
             rows={5}
           />
-        </div>
+        </section>
       </div>
     </div>
   );
