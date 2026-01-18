@@ -241,7 +241,7 @@ export const LessonHistory: React.FC = () => {
   const chartWidth = Math.max(1200, bmiData.length * 90); // 800 * 1.5 = 1200px、データポイントごとに90px
   const graphHeight = chartHeight - chartPadding.top - chartPadding.bottom;
   const graphWidth = chartWidth - chartPadding.left - chartPadding.right;
-  const bmiMin = 18;
+  const bmiMin = 10;
   const bmiMax = 40;
   const bmiRange = bmiMax - bmiMin;
 
@@ -346,7 +346,7 @@ export const LessonHistory: React.FC = () => {
             {/* Y軸の目盛り（左側、固定表示） */}
             {bmiData.length > 0 && (
               <div className="flex-shrink-0 h-96 relative pr-3" style={{ width: `${chartPadding.left}px` }}>
-                {[40, 35, 30, 25, 20].map((value) => {
+                {[40, 35, 30, 25, 20, 15, 10].map((value) => {
                   const y = getYPosition(value);
                   return (
                     <span
@@ -369,7 +369,7 @@ export const LessonHistory: React.FC = () => {
                 <div className="relative" style={{ width: `${chartWidth}px`, height: `${chartHeight}px`, minWidth: `${chartWidth}px` }}>
                   <svg width={chartWidth} height={chartHeight} className="absolute inset-0" style={{ minWidth: `${chartWidth}px` }}>
                   {/* グリッド線（BMI値5ずつ） */}
-                  {[20, 25, 30, 35, 40].map((value) => {
+                  {[10, 15, 20, 25, 30, 35, 40].map((value) => {
                     const y = getYPosition(value);
                     return (
                       <line
