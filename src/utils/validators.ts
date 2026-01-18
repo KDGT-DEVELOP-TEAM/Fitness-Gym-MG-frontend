@@ -206,3 +206,19 @@ export const validateNextLesson = (
   return !anySet || !!allSet;
 };
 
+/**
+ * Get current date-time in local timezone formatted for datetime-local input
+ * Returns format: YYYY-MM-DDTHH:mm
+ * 
+ * @returns Current date-time string in datetime-local format
+ */
+export const getCurrentLocalDateTime = (): string => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+};
+

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { LessonFormData } from '../../types/lesson';
 import { useOptions } from '../../hooks/useOptions';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
+import { getCurrentLocalDateTime } from '../../utils/validators';
 
 interface LessonFormProps {
   initialData?: Partial<LessonFormData>;
@@ -110,6 +111,7 @@ export const LessonForm: React.FC<LessonFormProps> = ({
           type="datetime-local"
           value={formData.startDate ?? ''}
           onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+          max={getCurrentLocalDateTime()}
           required
           className="mt-1 block w-full px-3 py-2 border rounded-md"
         />
@@ -121,6 +123,7 @@ export const LessonForm: React.FC<LessonFormProps> = ({
           type="datetime-local"
           value={formData.endDate ?? ''}
           onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+          max={getCurrentLocalDateTime()}
           required
           className="mt-1 block w-full px-3 py-2 border rounded-md"
         />

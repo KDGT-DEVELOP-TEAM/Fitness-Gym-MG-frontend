@@ -13,7 +13,7 @@ import { IMAGE_QUALITY, CANVAS_DIMENSIONS } from '../../constants/image';
 import { IMAGE_CONSTANTS, MAX_FILE_SIZE_BYTES } from '../../constants/image';
 import { FORM_STYLES } from '../../styles/formStyles';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
-import { validateRequired, validateDateRange, validateNumericRange, validateNextLesson, validateNotFutureDateTime } from '../../utils/validators';
+import { validateRequired, validateDateRange, validateNumericRange, validateNextLesson, validateNotFutureDateTime, getCurrentLocalDateTime } from '../../utils/validators';
 import { ERROR_MESSAGES } from '../../constants/errorMessages';
 import { useAuth } from '../../context/AuthContext';
 
@@ -600,7 +600,7 @@ export const LessonCreate: React.FC = () => {
                 className={FORM_STYLES.input}
                 value={formData.startDate ?? ''}
                 onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                max={new Date().toISOString().slice(0, 16)}
+                max={getCurrentLocalDateTime()}
                 required
               />
             </div>
@@ -612,7 +612,7 @@ export const LessonCreate: React.FC = () => {
                 className={FORM_STYLES.input}
                 value={formData.endDate ?? ''}
                 onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                max={new Date().toISOString().slice(0, 16)}
+                max={getCurrentLocalDateTime()}
                 required
               />
             </div>
