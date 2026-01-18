@@ -26,11 +26,11 @@ const ITEMS_PER_PAGE = 10;
 // モジュールレベルの実行ガード（全インスタンス間で共有）
 const globalFetchState: {
   lastFetchKey: string;
-  isFetching: boolean;
+  pendingPromise: Promise<void> | null;
   abortController: AbortController | null;
 } = {
   lastFetchKey: '',
-  isFetching: false,
+  pendingPromise: null,
   abortController: null,
 };
 
@@ -59,18 +59,22 @@ export const LessonHistory: React.FC = () => {
     
     // customerIdが変更された場合、前回の取得処理をキャンセル
     if (globalFetchState.lastFetchKey !== fetchKey && globalFetchState.abortController) {
+      logger.debug('Customer ID changed, aborting previous request', 
+        { oldKey: globalFetchState.lastFetchKey, newKey: fetchKey }, 
+        'LessonHistory');
       globalFetchState.abortController.abort();
-      globalFetchState.isFetching = false;
+      globalFetchState.pendingPromise = null;
     }
     
-    // 既に同じ条件で取得済み、または取得中の場合は実行しないガード
-    if (globalFetchState.lastFetchKey === fetchKey && globalFetchState.isFetching) {
+    // 既に同じ条件で取得中の場合は、そのPromiseを再利用（重複防止）
+    if (globalFetchState.lastFetchKey === fetchKey && globalFetchState.pendingPromise) {
+      logger.debug('Reusing pending request (deduplication)', { customerId }, 'LessonHistory');
       return;
     }
     
-    // 実行フラグを設定（非同期処理開始前に設定）
+    // 新しい取得処理を開始
+    logger.debug('Starting new fetch', { customerId }, 'LessonHistory');
     globalFetchState.lastFetchKey = fetchKey;
-    globalFetchState.isFetching = true;
 
     // 新しいAbortControllerを作成
     const abortController = new AbortController();
@@ -91,11 +95,15 @@ export const LessonHistory: React.FC = () => {
 
         // キャンセルされた場合は状態を更新しない
         if (abortController.signal.aborted) {
+          logger.debug('Request aborted', { customerId }, 'LessonHistory');
           return;
         }
 
         setLessons(lessonsResponse.data || []);
         setCustomerHeight(customerResponse.height || 189);
+        logger.debug('Fetch completed successfully', 
+          { customerId, lessonsCount: lessonsResponse.data?.length }, 
+          'LessonHistory');
       } catch (err) {
         // キャンセルされた場合はエラー処理も実行しない
         if (abortController.signal.aborted) {
@@ -114,6 +122,7 @@ export const LessonHistory: React.FC = () => {
             : getErrorMessage(err);
           setLessonsError(errorMessage);
           setCustomerError(errorMessage);
+          logger.error('Fetch failed', err, 'LessonHistory');
         } else if (err instanceof Error) {
           // AbortErrorの場合は無視
           if (err.name === 'AbortError') {
@@ -122,29 +131,34 @@ export const LessonHistory: React.FC = () => {
           const errorMessage = getErrorMessage(err);
           setLessonsError(errorMessage);
           setCustomerError(errorMessage);
+          logger.error('Fetch failed', err, 'LessonHistory');
         } else {
           const errorMessage = getErrorMessage(err);
           setLessonsError(errorMessage);
           setCustomerError(errorMessage);
+          logger.error('Unknown error', err, 'LessonHistory');
         }
       } finally {
         // キャンセルされた場合は状態を更新しない
         if (!abortController.signal.aborted) {
           setLessonsLoading(false);
           setCustomerLoading(false);
-          globalFetchState.isFetching = false;
         }
+        // 取得処理完了後、Promiseをクリア
+        globalFetchState.pendingPromise = null;
       }
     };
 
-    fetchData();
+    // Promiseを保存して重複を防止
+    globalFetchState.pendingPromise = fetchData();
 
     // クリーンアップ関数: コンポーネントのアンマウント時またはcustomerId変更時に実行
     return () => {
       // このインスタンスのfetchKeyと一致する場合のみクリーンアップ
       if (globalFetchState.lastFetchKey === fetchKey && globalFetchState.abortController) {
+        logger.debug('Cleanup: aborting request', { fetchKey }, 'LessonHistory');
         globalFetchState.abortController.abort();
-        globalFetchState.isFetching = false;
+        globalFetchState.pendingPromise = null;
       }
     };
   }, [customerId]);
