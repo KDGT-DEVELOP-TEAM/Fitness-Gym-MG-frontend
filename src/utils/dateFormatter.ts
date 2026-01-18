@@ -34,24 +34,8 @@ export const formatDateForGrouping = (date: string | Date | null | undefined): s
   if (isNaN(d.getTime())) {
     return '日付不明';
   }
-  
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const targetDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  const diffTime = today.getTime() - targetDate.getTime();
-  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
-  if (diffDays === 0) {
-    return '今日';
-  } else if (diffDays === 1) {
-    return '昨日';
-  } else if (diffDays === 2) {
-    return '一昨日';
-  } else {
-    const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
-    const weekday = weekdays[d.getDay()];
-    return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日(${weekday})`;
-  }
+  return formatDateWithWeekday(d);
 };
 
 export const formatDateTimeForCompare = (date: string | Date | null | undefined): string => {

@@ -144,7 +144,12 @@ export const PostureImageGrid: React.FC<PostureImageGridProps> = ({
   onToggleSelection,
 }) => {
   const groupedImages = useMemo(() => {
-    return groupByDate(images);
+    const sorted = [...images].sort((a, b) => {
+      const tA = a.takenAt ? new Date(a.takenAt).getTime() : 0;
+      const tB = b.takenAt ? new Date(b.takenAt).getTime() : 0;
+      return tB - tA; // 降順（新しいほど上）
+    });
+    return groupByDate(sorted);
   }, [images]);
 
   if (groupedImages.size === 0) {

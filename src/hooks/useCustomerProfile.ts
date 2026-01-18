@@ -117,34 +117,50 @@ export const useCustomerProfile = (customerId: string) => {
             firstPostureGroupId: data.firstPostureGroupId
           }, 'useCustomerProfile');
           
-          let firstPostureGroup;
+          // 画像が存在する姿勢グループのみをフィルタ（最初に姿勢を撮影したレッスンから表示するため）
+          const groupsWithImages = postureGroups.filter(
+            (group) => group.images && group.images.length > 0
+          );
+
+          // ========== 詳細デバッグログ（コンソールに出力） ==========
+          console.log('=== [useCustomerProfile] 姿勢グループ調査 ===');
+          console.log('全グループ数:', postureGroups.length);
+          console.log('全グループの詳細:');
+          postureGroups.forEach((g, i) => {
+            console.log(`  [${i}] id=${g.id}, lessonStartDate=${g.lessonStartDate}, imageCount=${g.images?.length || 0}`);
+          });
           
-          if (data.firstPostureGroupId) {
-            // firstPostureGroupIdに一致するグループを検索
-            firstPostureGroup = postureGroups.find(
-              (group) => group.id === data.firstPostureGroupId
-            );
-          } else {
-            // firstPostureGroupIdがnullの場合、最も古いレッスンの姿勢グループを自動検出
-            logger.debug('[useCustomerProfile] firstPostureGroupId is null, auto-detecting first posture group', {
-              customerId,
-              groupCount: postureGroups.length
-            }, 'useCustomerProfile');
+          console.log('画像ありグループ数:', groupsWithImages.length);
+          console.log('画像ありグループの詳細:');
+          groupsWithImages.forEach((g, i) => {
+            const dateObj = new Date(g.lessonStartDate);
+            console.log(`  [${i}] id=${g.id}, lessonStartDate=${g.lessonStartDate}, parsed=${dateObj.toISOString()}, timestamp=${dateObj.getTime()}, imageCount=${g.images?.length || 0}`);
+          });
+
+          let firstPostureGroup;
+          if (groupsWithImages.length > 0) {
+            // 画像がある最も古いレッスンの姿勢グループを検出
+            // lessonStartDateで昇順（古い順）にソートして最初の要素を取得
+            const sortedGroups = [...groupsWithImages].sort((a, b) => {
+              const dateA = new Date(a.lessonStartDate).getTime();
+              const dateB = new Date(b.lessonStartDate).getTime();
+              console.log(`  比較: ${a.lessonStartDate}(${dateA}) vs ${b.lessonStartDate}(${dateB}) => ${dateA - dateB}`);
+              return dateA - dateB; // 昇順（古い順）
+            });
             
-            if (postureGroups.length > 0) {
-              // lessonStartDateが最も古い姿勢グループを検出
-              firstPostureGroup = postureGroups.reduce((oldest, current) => {
-                const oldestDate = new Date(oldest.lessonStartDate);
-                const currentDate = new Date(current.lessonStartDate);
-                return currentDate < oldestDate ? current : oldest;
-              });
-              
-              logger.debug('[useCustomerProfile] Auto-detected first posture group:', {
-                groupId: firstPostureGroup.id,
-                lessonStartDate: firstPostureGroup.lessonStartDate,
-                imageCount: firstPostureGroup.images?.length
-              }, 'useCustomerProfile');
-            }
+            console.log('ソート後の順序:');
+            sortedGroups.forEach((g, i) => {
+              console.log(`  [${i}] lessonStartDate=${g.lessonStartDate}, id=${g.id}`);
+            });
+            
+            firstPostureGroup = sortedGroups[0];
+            
+            console.log('選択された初回姿勢グループ:', {
+              groupId: firstPostureGroup.id,
+              lessonStartDate: firstPostureGroup.lessonStartDate,
+              imageCount: firstPostureGroup.images?.length
+            });
+            console.log('=== 調査終了 ===');
           }
 
           // デバッグログ: 初回姿勢グループを確認
