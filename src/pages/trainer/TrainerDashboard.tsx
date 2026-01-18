@@ -34,6 +34,14 @@ export const TrainerDashboard: React.FC = () => {
         size: pageSize,
       });
       
+      // デバッグ用：取得したデータの確認
+      logger.debug('TrainerDashboard: レスポンスデータ受信', {
+        upcomingLessons: data.upcomingLessons,
+        upcomingLessonsLength: data.upcomingLessons?.length || 0,
+        totalLessonCount: data.totalLessonCount,
+        page
+      }, 'TrainerDashboard');
+      
       // upcomingLessonsとtotalLessonCountを使用
       setNextLessons(data.upcomingLessons || []);
       setTotalCount(data.totalLessonCount || 0);

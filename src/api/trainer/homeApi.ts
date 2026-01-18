@@ -30,7 +30,19 @@ export const trainerHomeApi = {
       ? `/trainers/home?${queryString}` 
       : '/trainers/home';
     
-    return axiosInstance.get<HomeResponse>(url).then(res => res.data);
+    return axiosInstance.get<HomeResponse>(url).then(res => {
+      // デバッグ用：レスポンスデータの確認
+      if (import.meta.env.DEV) {
+        console.log('[trainerHomeApi] レスポンスデータ:', {
+          url,
+          upcomingLessons: res.data.upcomingLessons,
+          upcomingLessonsLength: res.data.upcomingLessons?.length || 0,
+          totalLessonCount: res.data.totalLessonCount,
+          fullResponse: res.data
+        });
+      }
+      return res.data;
+    });
   },
 };
 

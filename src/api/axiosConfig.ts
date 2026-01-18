@@ -48,7 +48,8 @@ axiosInstance.interceptors.response.use(
         url: response.config.url,
         method: response.config.method,
         status: response.status,
-        statusText: response.statusText
+        statusText: response.statusText,
+        data: response.data
       });
     }
     return response;
