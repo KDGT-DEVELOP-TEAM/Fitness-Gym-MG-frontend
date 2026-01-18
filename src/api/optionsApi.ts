@@ -88,18 +88,51 @@ export const fetchCustomerOptions = async (): Promise<Option[]> => {
 };
 
 /**
+ * グローバルなリクエスト重複排除用
+ * 同時に複数のコンポーネントから呼ばれても、1つのリクエストのみ実行
+ */
+let pendingOptionsRequest: Promise<{
+  stores: Option[];
+  users: Option[];
+  customers: Option[];
+}> | null = null;
+
+/**
  * すべてのオプションを一度に取得
+ * リクエストの重複を防ぐため、実行中のリクエストがある場合はそれを再利用
  */
 export const fetchAllOptions = async (): Promise<{
   stores: Option[];
   users: Option[];
   customers: Option[];
 }> => {
-  const [stores, users, customers] = await Promise.all([
-    fetchStoreOptions(),
-    fetchUserOptions(),
-    fetchCustomerOptions(),
-  ]);
+  // 既に実行中のリクエストがある場合は、それを返す
+  if (pendingOptionsRequest) {
+    logger.debug('Reusing pending options request (deduplication)', {}, 'optionsApi');
+    return pendingOptionsRequest;
+  }
 
-  return { stores, users, customers };
+  logger.debug('Starting new options request', {}, 'optionsApi');
+
+  // 新しいリクエストを開始
+  pendingOptionsRequest = (async () => {
+    try {
+      const [stores, users, customers] = await Promise.all([
+        fetchStoreOptions(),
+        fetchUserOptions(),
+        fetchCustomerOptions(),
+      ]);
+
+      logger.debug('Options request completed', 
+        { storesCount: stores.length, usersCount: users.length, customersCount: customers.length }, 
+        'optionsApi');
+
+      return { stores, users, customers };
+    } finally {
+      // リクエスト完了後、pendingをクリア
+      pendingOptionsRequest = null;
+    }
+  })();
+
+  return pendingOptionsRequest;
 };
