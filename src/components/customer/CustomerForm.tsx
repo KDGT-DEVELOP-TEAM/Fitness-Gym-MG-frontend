@@ -36,7 +36,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
     kana: initialData?.kana || '',
     gender: initialData?.gender || 'MALE', // バックエンドのGender Enum（MALE/FEMALE）に対応
     birthday: initialData?.birthdate || '', // バックエンドのCustomerResponse.birthdateをフォームのbirthdayに変換
-    height: initialData?.height || 0,
+    height: initialData?.height?.toString() || '', // 入力中は文字列として保持
     email: initialData?.email || '',
     phone: initialData?.phone || '',
     address: initialData?.address || '',
@@ -58,19 +58,15 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
       const numericValue = value.replace(/[^0-9]/g, '');
       finalValue = numericValue;
     } else if (name === 'height') {
-      // 身長：数値に変換し、範囲外の場合は範囲内に制限
-      const numValue = value === '' ? 0 : parseFloat(value);
-      if (!isNaN(numValue)) {
-        // 範囲外の場合は範囲内に制限
-        if (numValue < 50) {
-          finalValue = 50;
-        } else if (numValue > 300) {
-          finalValue = 300;
-        } else {
-          finalValue = numValue;
-        }
+      // 身長：入力中は文字列として保持（即座の範囲チェックは行わない）
+      // 数値のみを許可（小数点を含む）
+      const numericValue = value.replace(/[^0-9.]/g, '');
+      // 複数の小数点を1つに制限
+      const parts = numericValue.split('.');
+      if (parts.length > 2) {
+        finalValue = parts[0] + '.' + parts.slice(1).join('');
       } else {
-        finalValue = 0;
+        finalValue = numericValue;
       }
     } else if (name === 'name' || name === 'kana' || name === 'address') {
       // 氏名、フリガナ、住所：先頭・末尾の空白をトリム（入力中はトリムしないが、送信時に検証）
@@ -79,6 +75,66 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
     }
 
     setFormData(prev => ({ ...prev, [name]: finalValue }));
+  };
+
+  const handleHeightBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (value === '' || value.trim() === '') {
+      // 空の場合は0に設定
+      setFormData(prev => ({ ...prev, height: 0 }));
+      return;
+    }
+
+    const numValue = parseFloat(value);
+    if (isNaN(numValue)) {
+      // 数値でない場合は0に設定
+      setFormData(prev => ({ ...prev, height: 0 }));
+      return;
+    }
+
+    // 範囲チェックと補正
+    let finalValue: number;
+    if (numValue < 50) {
+      finalValue = 50;
+    } else if (numValue > 300) {
+      finalValue = 300;
+    } else {
+      finalValue = numValue;
+    }
+
+    setFormData(prev => ({ ...prev, height: finalValue }));
+  };
+
+  // HTML5バリデーションメッセージを日本語化
+  const handleInvalidInput = (e: React.InvalidEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const fieldName = e.currentTarget.getAttribute('data-field-name') || 'この項目';
+    const input = e.currentTarget;
+    
+    // メールアドレスの形式エラーの場合
+    if (input.type === 'email' && input.validity.typeMismatch) {
+      input.setCustomValidity('有効なメールアドレスを入力してください');
+    }
+    // 必須項目が空の場合
+    else if (input.validity.valueMissing) {
+      input.setCustomValidity(`${fieldName}を入力してください`);
+    }
+    // その他のバリデーションエラー
+    else {
+      input.setCustomValidity(`${fieldName}が正しくありません`);
+    }
+  };
+
+  const handleInvalidSelect = (e: React.InvalidEvent<HTMLSelectElement>) => {
+    e.preventDefault();
+    const fieldName = e.currentTarget.getAttribute('data-field-name') || 'この項目';
+    e.currentTarget.setCustomValidity(`${fieldName}を選択してください`);
+  };
+
+  // 入力時にカスタムバリデーションメッセージをクリア
+  const handleInput = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    e.currentTarget.setCustomValidity('');
+    handleChange(e);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -123,8 +179,9 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
       return;
     }
 
-    // 身長の範囲チェック
-    if (formData.height < 50 || formData.height > 300) {
+    // 身長の範囲チェック（文字列の場合は数値に変換）
+    const heightValue = typeof formData.height === 'string' ? parseFloat(formData.height) : formData.height;
+    if (isNaN(heightValue) || heightValue < 50 || heightValue > 300) {
       setErrorMsg('身長は50cm以上300cm以下である必要があります');
       return;
     }
@@ -133,12 +190,15 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
       // フォーム用データを API リクエスト用に整形
       // birthday: type="date"のinputから取得されるため、ISO8601形式（YYYY-MM-DD）の文字列として送信
       // height: number型として送信され、Spring Bootが自動的にBigDecimalに変換
+      // 身長を数値に変換（文字列の場合は数値に変換）
+      const heightNumber = typeof formData.height === 'string' ? parseFloat(formData.height) : formData.height;
+
       const requestData: CustomerRequest = {
         name: formData.name.trim(), // 先頭・末尾の空白をトリム
         kana: formData.kana.trim(), // 先頭・末尾の空白をトリム
         gender: formData.gender,
         birthday: formData.birthday, // ISO8601形式の文字列（YYYY-MM-DD）
-        height: formData.height, // number型、Spring BootがBigDecimalに自動変換
+        height: heightNumber, // number型、Spring BootがBigDecimalに自動変換
         email: formData.email.trim(), // 先頭・末尾の空白をトリム
         phone: formData.phone.trim(), // 先頭・末尾の空白をトリム（ハイフンは既にフィルタリング済み）
         address: formData.address.trim(), // 先頭・末尾の空白をトリム
@@ -217,11 +277,29 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">氏名 <RequiredBadge /></label>
-            <input name="name" value={formData.name} onChange={handleChange} required maxLength={100} className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium" />
+            <input 
+              name="name" 
+              value={formData.name} 
+              onChange={handleInput} 
+              onInvalid={handleInvalidInput}
+              data-field-name="氏名"
+              required 
+              maxLength={100} 
+              className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium" 
+            />
           </div>
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">フリガナ <RequiredBadge /></label>
-            <input name="kana" value={formData.kana || ''} onChange={handleChange} required maxLength={100} className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium" />
+            <input 
+              name="kana" 
+              value={formData.kana || ''} 
+              onChange={handleInput} 
+              onInvalid={handleInvalidInput}
+              data-field-name="フリガナ"
+              required 
+              maxLength={100} 
+              className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium" 
+            />
           </div>
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">生年月日 <RequiredBadge /></label>
@@ -229,7 +307,9 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
               type="date" 
               name="birthday" 
               value={formData.birthday} 
-              onChange={handleChange} 
+              onChange={handleInput}
+              onInvalid={handleInvalidInput}
+              data-field-name="生年月日"
               required 
               max={new Date().toISOString().split('T')[0]} // 今日以前の日付のみ選択可能
               className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium" 
@@ -237,7 +317,16 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
           </div>
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">性別 <RequiredBadge /></label>
-            <select name="gender" value={formData.gender} onChange={handleChange} className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium cursor-pointer appearance-none bg-white">
+            <select 
+              name="gender" 
+              value={formData.gender} 
+              onChange={handleInput}
+              onInvalid={handleInvalidSelect}
+              data-field-name="性別"
+              required
+              className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium cursor-pointer appearance-none bg-white"
+            >
+              <option value="">選択してください</option>
               <option value="MALE">男</option>
               <option value="FEMALE">女</option>
             </select>
@@ -276,7 +365,14 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
                       checked={formData.storeId === store.id}
                       onChange={(e) => {
                         setFormData(prev => ({ ...prev, storeId: e.target.value }));
+                        // カスタムバリデーションメッセージをクリア
+                        const radioGroup = document.querySelectorAll('input[name="storeId"]');
+                        radioGroup.forEach((radio) => {
+                          (radio as HTMLInputElement).setCustomValidity('');
+                        });
                       }}
+                      onInvalid={handleInvalidInput}
+                      data-field-name="担当店舗"
                       required={showStoreSelection && !initialData}
                       className="hidden"
                     />
@@ -298,11 +394,31 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2">
             <label className="block text-sm font-bold text-gray-700 mb-1">住所 <RequiredBadge /></label>
-            <input type="text" name="address" value={formData.address || ''} onChange={handleChange} required maxLength={500} className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium" />
+            <input 
+              type="text" 
+              name="address" 
+              value={formData.address || ''} 
+              onChange={handleInput}
+              onInvalid={handleInvalidInput}
+              data-field-name="住所"
+              required 
+              maxLength={500} 
+              className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium" 
+            />
           </div>
           <div className="col-span-2">
             <label className="block text-sm font-bold text-gray-700 mb-1">メールアドレス <RequiredBadge /></label>
-            <input type="email" name="email" value={formData.email || ''} onChange={handleChange} required maxLength={255} className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium" />
+            <input 
+              type="email" 
+              name="email" 
+              value={formData.email || ''} 
+              onChange={handleInput}
+              onInvalid={handleInvalidInput}
+              data-field-name="メールアドレス"
+              required 
+              maxLength={255} 
+              className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium" 
+            />
           </div>
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">電話番号 <RequiredBadge /></label>
@@ -310,7 +426,9 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
               type="tel" 
               name="phone" 
               value={formData.phone || ''} 
-              onChange={handleChange} 
+              onChange={handleInput}
+              onInvalid={handleInvalidInput}
+              data-field-name="電話番号"
               required 
               maxLength={15}
               inputMode="numeric"
@@ -320,7 +438,21 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
           </div>
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">身長 (cm) <RequiredBadge /></label>
-            <input type="number" step="0.1" name="height" value={formData.height || ''} onChange={handleChange} required min="50" max="300" className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium" />
+            <input 
+              type="text" 
+              inputMode="decimal"
+              step="0.1" 
+              name="height" 
+              value={formData.height || ''} 
+              onChange={handleChange} 
+              onBlur={handleHeightBlur}
+              onInvalid={handleInvalidInput}
+              data-field-name="身長"
+              required 
+              min="50" 
+              max="300" 
+              className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium" 
+            />
           </div>
         </div>
       </section>

@@ -5,7 +5,7 @@ export interface CustomerFormData {
   kana: string;
   gender: Gender;
   birthday: string;
-  height: number;
+  height: string | number; // 入力中は文字列として保持、送信時は数値に変換
   email: string;
   phone: string;
   address: string;
