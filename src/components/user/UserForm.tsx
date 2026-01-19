@@ -41,7 +41,7 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
     kana: '',
     pass: '',
     role: 'TRAINER',
-    storeIds: [],
+    storeId: undefined, // ユーザーは1つの店舗にのみ所属可能
     active: true,
   });
 
@@ -54,7 +54,7 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
         kana: initialData.kana,
         pass: '', // 更新時は空文字スタート
         role: initialData.role,
-        storeIds: initialData.storeIds || [],
+        storeId: initialData.storeIds && initialData.storeIds.length > 0 ? initialData.storeIds[0] : undefined,
         active: initialData.active,
       });
     }
@@ -71,6 +71,38 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
     }));
   };
 
+  // HTML5バリデーションメッセージを日本語化
+  const handleInvalidInput = (e: React.InvalidEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const fieldName = e.currentTarget.getAttribute('data-field-name') || 'この項目';
+    const input = e.currentTarget;
+    
+    // メールアドレスの形式エラーの場合
+    if (input.type === 'email' && input.validity.typeMismatch) {
+      input.setCustomValidity('有効なメールアドレスを入力してください');
+    }
+    // 必須項目が空の場合
+    else if (input.validity.valueMissing) {
+      input.setCustomValidity(`${fieldName}を入力してください`);
+    }
+    // その他のバリデーションエラー
+    else {
+      input.setCustomValidity(`${fieldName}が正しくありません`);
+    }
+  };
+
+  const handleInvalidSelect = (e: React.InvalidEvent<HTMLSelectElement>) => {
+    e.preventDefault();
+    const fieldName = e.currentTarget.getAttribute('data-field-name') || 'この項目';
+    e.currentTarget.setCustomValidity(`${fieldName}を選択してください`);
+  };
+
+  // 入力時にカスタムバリデーションメッセージをクリア
+  const handleInput = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    e.currentTarget.setCustomValidity('');
+    handleChange(e);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
@@ -81,10 +113,10 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
       return;
     }
 
-    // トレーナーと店長の場合、店舗が1つ以上選択されていることを確認
+    // トレーナーと店長の場合、店舗が選択されていることを確認
     if ((formData.role === 'MANAGER' || formData.role === 'TRAINER') && 
-        (!formData.storeIds || formData.storeIds.length === 0)) {
-      setErrorMsg('店舗を1つ以上選択してください');
+        (!formData.storeId || formData.storeId.trim() === '')) {
+      setErrorMsg('担当店舗を選択してください');
       return;
     }
 
@@ -96,8 +128,10 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
         kana: formData.kana,
         role: formData.role,
         active: formData.active,
-        // 仕様: MANAGERとTRAINERは店舗IDを送る
-        storeIds: (formData.role === 'MANAGER' || formData.role === 'TRAINER') ? formData.storeIds : [],
+        // 仕様: MANAGERとTRAINERは店舗IDを送る（1つのみ選択可能）
+        storeIds: (formData.role === 'MANAGER' || formData.role === 'TRAINER') && formData.storeId
+          ? [formData.storeId]
+          : [],
       };
 
       // パスワード: 入力がある場合のみリクエストに含める
@@ -181,13 +215,32 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
                     {/* Email */}
                     <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1">メールアドレス <RequiredBadge /></label>
-                        <input type="email" name="email" value={formData.email} onChange={handleChange} required maxLength={255} disabled={isEditMode} className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium disabled:bg-gray-50" />
+                        <input 
+                          type="email" 
+                          name="email" 
+                          value={formData.email} 
+                          onChange={handleInput}
+                          onInvalid={handleInvalidInput}
+                          data-field-name="メールアドレス"
+                          required 
+                          maxLength={255} 
+                          disabled={isEditMode} 
+                          className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium disabled:bg-gray-50" 
+                        />
                     </div>
 
                     {/* Role */}
                     <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1">権限 <RequiredBadge /></label>
-                        <select name="role" value={formData.role} onChange={handleChange} required className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium cursor-pointer appearance-none bg-white">
+                        <select 
+                          name="role" 
+                          value={formData.role} 
+                          onChange={handleInput}
+                          onInvalid={handleInvalidSelect}
+                          data-field-name="権限"
+                          required 
+                          className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium cursor-pointer appearance-none bg-white"
+                        >
                             {!isManager && <option value="ADMIN">管理者</option>}
                             {!isManager && <option value="MANAGER">店長</option>}
                             <option value="TRAINER">トレーナー</option>
@@ -199,13 +252,35 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
                     {/* Name */}
                     <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1">氏名 <RequiredBadge /></label>
-                        <input type="text" name="name" value={formData.name} onChange={handleChange} required minLength={2} maxLength={100} className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium" />
+                        <input 
+                          type="text" 
+                          name="name" 
+                          value={formData.name} 
+                          onChange={handleInput}
+                          onInvalid={handleInvalidInput}
+                          data-field-name="氏名"
+                          required 
+                          minLength={2} 
+                          maxLength={100} 
+                          className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium" 
+                        />
                     </div>
                     
                     {/* Kana */}
                     <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1">フリガナ <RequiredBadge /></label>
-                        <input type="text" name="kana" value={formData.kana} onChange={handleChange} required minLength={2} maxLength={100} className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium" />
+                        <input 
+                          type="text" 
+                          name="kana" 
+                          value={formData.kana} 
+                          onChange={handleInput}
+                          onInvalid={handleInvalidInput}
+                          data-field-name="フリガナ"
+                          required 
+                          minLength={2} 
+                          maxLength={100} 
+                          className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium" 
+                        />
                     </div>
                 </div>
                 
@@ -227,39 +302,40 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
                     </label>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto p-1">
-                        {stores.map((store) => {
-                            // formData.storeId が undefined や null の場合の安全策
-                            const currentStoreIds = formData.storeIds || [];
-                            const isSelected = currentStoreIds.includes(store.id);
-
-                            return (
-                                <label 
-                                    key={store.id} 
-                                    className={`
-                                        flex items-center p-2.5 rounded-2xl border-2 cursor-pointer transition-all shadow-sm
-                                        ${isSelected 
-                                            ? 'bg-white border-green-500 text-green-700 ring-1 ring-green-500' 
-                                            : 'bg-white/50 border-gray-50 text-gray-500 hover:bg-white'}
-                                    `}
-                                >
-                                    <input
-                                        type="checkbox"
-                                        className="hidden"
-                                        checked={isSelected}
-                                        onChange={() => {
-                                            const newIds = isSelected
-                                                ? currentStoreIds.filter(id => id !== store.id)
-                                                : [...currentStoreIds, store.id];
-                                            setFormData({ ...formData, storeIds: newIds });
-                                        }}
-                                    />
-                                    <div className={`w-5 h-5 mr-3 rounded-md border flex items-center justify-center transition-colors ${isSelected ? 'bg-green-600 border-green-600' : 'bg-white border-gray-300'}`}>
-                                        {isSelected && <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/></svg>}
-                                    </div>
-                                    <span className="text-sm font-bold">{store.name}</span>
-                                </label>
-                            );
-                        })}
+                        {stores.map((store) => (
+                            <label
+                                key={store.id}
+                                className={`
+                                    flex items-center p-2.5 rounded-2xl border-2 cursor-pointer transition-all shadow-sm
+                                    ${formData.storeId === store.id
+                                        ? 'bg-white border-green-500 text-green-700 ring-1 ring-green-500'
+                                        : 'bg-white/50 border-gray-50 text-gray-500 hover:bg-white'}
+                                `}
+                            >
+                                <input
+                                    type="radio"
+                                    name="storeId"
+                                    value={store.id}
+                                    checked={formData.storeId === store.id}
+                                    onChange={(e) => {
+                                        setFormData(prev => ({ ...prev, storeId: e.target.value }));
+                                        // カスタムバリデーションメッセージをクリア
+                                        const radioGroup = document.querySelectorAll('input[name="storeId"]');
+                                        radioGroup.forEach((radio) => {
+                                            (radio as HTMLInputElement).setCustomValidity('');
+                                        });
+                                    }}
+                                    onInvalid={handleInvalidInput}
+                                    data-field-name="担当店舗"
+                                    required
+                                    className="hidden"
+                                />
+                                <div className={`w-5 h-5 mr-3 rounded-md border flex items-center justify-center transition-colors ${formData.storeId === store.id ? 'bg-green-600 border-green-600' : 'bg-white border-gray-300'}`}>
+                                    {formData.storeId === store.id && <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/></svg>}
+                                </div>
+                                <span className="text-sm font-bold">{store.name}</span>
+                            </label>
+                        ))}
                     </div>
                 </div>
             )}
