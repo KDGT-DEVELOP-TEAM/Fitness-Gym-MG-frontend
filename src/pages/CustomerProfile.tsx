@@ -43,6 +43,13 @@ export const CustomerProfile: React.FC = () => {
     handleChange,
     handleBlur,
     dismissError,
+    // 基本情報編集用
+    isEditingBasicInfo,
+    basicInfoFormData,
+    handleStartEditBasicInfo,
+    handleCancelEditBasicInfo,
+    handleBasicInfoChange,
+    handleSaveBasicInfo,
   } = useCustomerProfile(profileId);
 
   if (loading) {
@@ -65,111 +72,207 @@ export const CustomerProfile: React.FC = () => {
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
-      {/* エラーメッセージ（編集時のエラーなど、インライン表示） */}
-      {error && (
-        <div className="p-4 bg-red-50 border border-red-100 rounded-2xl flex items-start gap-3">
-          <HiExclamation className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <p className="text-red-800 font-medium">エラーが発生しました</p>
-            <p className="text-red-600 text-sm">{error}</p>
+      <div className="bg-white rounded-[2rem] shadow-sm border-2 border-gray-50 p-8 relative">
+        {/* エラーメッセージ（絶対配置でシート上部に重ねて表示） */}
+        {error && (
+          <div className="absolute top-0 left-0 right-0 z-10 px-8 pt-8">
+            <div className="p-4 bg-red-50 border border-red-100 rounded-2xl flex items-start gap-3 shadow-lg animate-in slide-in-from-top-2 duration-200">
+              <HiExclamation className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-red-800 font-medium">エラーが発生しました</p>
+                <p className="text-red-600 text-sm">{error}</p>
+              </div>
+              <button
+                onClick={dismissError}
+                className="text-red-400 hover:text-red-600 transition-colors"
+                aria-label="エラーを閉じる"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
           </div>
-          <button
-            onClick={dismissError}
-            className="text-red-400 hover:text-red-600 transition-colors"
-            aria-label="エラーを閉じる"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-      )}
-
-      <div className="bg-white rounded-[2rem] shadow-sm border-2 border-gray-50 p-8">
+        )}
         {/* 基本情報セクション */}
         <div className="mb-8">
-          <h2 className="text-xl font-semibold mb-4 text-gray-800 pb-2 border-b border-gray-200">
-            基本情報
-          </h2>
+          <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-200">
+            <h2 className="text-xl font-semibold text-gray-800">
+              基本情報
+            </h2>
+            {!isEditingBasicInfo ? (
+              <button
+                onClick={handleStartEditBasicInfo}
+                className="px-4 py-2 text-sm font-medium text-white bg-[#68BE6B] hover:bg-[#5aa85e] rounded-xl transition-colors shadow-sm"
+              >
+                編集
+              </button>
+            ) : (
+              <div className="flex gap-2">
+                <button
+                  onClick={handleCancelEditBasicInfo}
+                  disabled={saving}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors disabled:opacity-50"
+                >
+                  キャンセル
+                </button>
+                <button
+                  onClick={handleSaveBasicInfo}
+                  disabled={saving}
+                  className="px-4 py-2 text-sm font-medium text-white bg-[#68BE6B] hover:bg-[#5aa85e] rounded-xl transition-colors shadow-sm disabled:opacity-50"
+                >
+                  {saving ? '保存中...' : '保存'}
+                </button>
+              </div>
+            )}
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-            <EditableField
-              label="氏名"
-              value={profileData.name}
-              isRequired
-              isEditing={editingField === 'name'}
-              fieldName="name"
-              onEdit={handleEdit}
-              onChange={(value) => handleChange('name', value)}
-              onBlur={handleBlur}
-              isSaving={saving && editingField === 'name'}
-              icon={<HiUser className="w-4 h-4" />}
-            />
-            <EditableField
-              label="フリガナ"
-              value={profileData.kana}
-              isRequired
-              isEditing={editingField === 'kana'}
-              fieldName="kana"
-              onEdit={handleEdit}
-              onChange={(value) => handleChange('kana', value)}
-              onBlur={handleBlur}
-              isSaving={saving && editingField === 'kana'}
-              icon={<HiIdentification className="w-4 h-4" />}
-            />
-            <EditableField
-              label="生年月日"
-              value={profileData.birthdate}
-              isRequired
-              isEditing={editingField === 'birthdate'}
-              fieldName="birthdate"
-              onEdit={handleEdit}
-              onChange={(value) => handleChange('birthdate', value)}
-              onBlur={handleBlur}
-              type="date"
-              isSaving={saving && editingField === 'birthdate'}
-              icon={<HiCalendar className="w-4 h-4" />}
-            />
-            <EditableField
-              label="性別"
-              value={profileData.gender || 'MALE'}
-              isRequired
-              isEditing={editingField === 'gender'}
-              fieldName="gender"
-              onEdit={handleEdit}
-              onChange={(value) => handleChange('gender', value)}
-              onBlur={handleBlur}
-              type="select"
-              options={[
-                { value: 'MALE', label: '男' },
-                { value: 'FEMALE', label: '女' },
-              ]}
-              showEmptyOption={false}
-              isSaving={saving && editingField === 'gender'}
-              icon={<HiUser className="w-4 h-4" />}
-            />
-            <EditableField
-              label="年齢"
-              value={profileData.age.toString()}
-              isEditing={false}
-              fieldName="age"
-              onEdit={handleEdit}
-              onChange={(value) => handleChange('age', value)}
-              onBlur={handleBlur}
-              disabled
-              icon={<HiCake className="w-4 h-4" />}
-            />
-            <EditableField
-              label="身長 (cm)"
-              value={profileData.height}
-              isRequired
-              isEditing={editingField === 'height'}
-              fieldName="height"
-              onEdit={handleEdit}
-              onChange={(value) => handleChange('height', value)}
-              onBlur={handleBlur}
-              isSaving={saving && editingField === 'height'}
-              icon={<HiArrowsExpand className="w-4 h-4" />}
-            />
+            {isEditingBasicInfo ? (
+              <>
+                {/* 編集モード */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                    <HiUser className="w-4 h-4 text-[#68BE6B]" />
+                    氏名 <span className="text-red-500 text-xs">必須</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={basicInfoFormData.name || ''}
+                    onChange={(e) => handleBasicInfoChange('name', e.target.value)}
+                    className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all"
+                    disabled={saving}
+                  />
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                    <HiIdentification className="w-4 h-4 text-[#68BE6B]" />
+                    フリガナ <span className="text-red-500 text-xs">必須</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={basicInfoFormData.kana || ''}
+                    onChange={(e) => handleBasicInfoChange('kana', e.target.value)}
+                    className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all"
+                    disabled={saving}
+                  />
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                    <HiCalendar className="w-4 h-4 text-[#68BE6B]" />
+                    生年月日 <span className="text-red-500 text-xs">必須</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={basicInfoFormData.birthdate || ''}
+                    onChange={(e) => handleBasicInfoChange('birthdate', e.target.value)}
+                    max={new Date().toISOString().split('T')[0]}
+                    className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all"
+                    disabled={saving}
+                  />
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                    <HiUser className="w-4 h-4 text-[#68BE6B]" />
+                    性別 <span className="text-red-500 text-xs">必須</span>
+                  </label>
+                  <select
+                    value={basicInfoFormData.gender || 'MALE'}
+                    onChange={(e) => handleBasicInfoChange('gender', e.target.value)}
+                    className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all appearance-none bg-white"
+                    disabled={saving}
+                  >
+                    <option value="MALE">男</option>
+                    <option value="FEMALE">女</option>
+                  </select>
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                    <HiCake className="w-4 h-4 text-[#68BE6B]" />
+                    年齢
+                  </label>
+                  <div className="h-14 px-4 py-3 bg-gray-100 rounded-2xl shadow-sm border-2 border-gray-50 flex items-center text-gray-500">
+                    {profileData.age || '-'}
+                  </div>
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                    <HiArrowsExpand className="w-4 h-4 text-[#68BE6B]" />
+                    身長 (cm) <span className="text-red-500 text-xs">必須</span>
+                  </label>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={basicInfoFormData.height || ''}
+                    onChange={(e) => {
+                      const numericValue = e.target.value.replace(/[^0-9.]/g, '');
+                      const parts = numericValue.split('.');
+                      const filteredValue = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : numericValue;
+                      handleBasicInfoChange('height', filteredValue);
+                    }}
+                    className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all"
+                    disabled={saving}
+                  />
+                </div>
+              </>
+            ) : (
+              <>
+                {/* 表示モード */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                    <HiUser className="w-4 h-4 text-[#68BE6B]" />
+                    氏名
+                  </label>
+                  <div className="h-14 px-4 py-3 bg-gray-50 rounded-2xl shadow-sm border-2 border-gray-50 flex items-center text-gray-900">
+                    {profileData.name || <span className="text-gray-400">未入力</span>}
+                  </div>
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                    <HiIdentification className="w-4 h-4 text-[#68BE6B]" />
+                    フリガナ
+                  </label>
+                  <div className="h-14 px-4 py-3 bg-gray-50 rounded-2xl shadow-sm border-2 border-gray-50 flex items-center text-gray-900">
+                    {profileData.kana || <span className="text-gray-400">未入力</span>}
+                  </div>
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                    <HiCalendar className="w-4 h-4 text-[#68BE6B]" />
+                    生年月日
+                  </label>
+                  <div className="h-14 px-4 py-3 bg-gray-50 rounded-2xl shadow-sm border-2 border-gray-50 flex items-center text-gray-900">
+                    {profileData.birthdate || <span className="text-gray-400">未入力</span>}
+                  </div>
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                    <HiUser className="w-4 h-4 text-[#68BE6B]" />
+                    性別
+                  </label>
+                  <div className="h-14 px-4 py-3 bg-gray-50 rounded-2xl shadow-sm border-2 border-gray-50 flex items-center text-gray-900">
+                    {profileData.gender === 'MALE' ? '男' : profileData.gender === 'FEMALE' ? '女' : <span className="text-gray-400">未入力</span>}
+                  </div>
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                    <HiCake className="w-4 h-4 text-[#68BE6B]" />
+                    年齢
+                  </label>
+                  <div className="h-14 px-4 py-3 bg-gray-100 rounded-2xl shadow-sm border-2 border-gray-50 flex items-center text-gray-500">
+                    {profileData.age || '-'}
+                  </div>
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                    <HiArrowsExpand className="w-4 h-4 text-[#68BE6B]" />
+                    身長 (cm)
+                  </label>
+                  <div className="h-14 px-4 py-3 bg-gray-50 rounded-2xl shadow-sm border-2 border-gray-50 flex items-center text-gray-900">
+                    {profileData.height && profileData.height !== 'null' && profileData.height.trim() !== '' ? profileData.height : <span className="text-gray-400">未入力</span>}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
 

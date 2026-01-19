@@ -483,7 +483,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
 
       <div className="pt-4 space-y-3">
         <button type="submit" disabled={isSubmitting} className="w-full py-4 bg-green-600 text-white font-bold rounded-2xl hover:bg-green-700 shadow-lg transition-all active:scale-[0.98] disabled:opacity-50">
-          {isSubmitting ? '保存中...' : initialData ? '情報を更新する' : '新規登録する'}
+          {isSubmitting ? '保存中...' : initialData ? '情報を更新する' : '新規顧客を登録する'}
         </button>
 
         {initialData && onDelete && (
