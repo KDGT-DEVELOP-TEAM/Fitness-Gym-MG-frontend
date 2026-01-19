@@ -141,6 +141,16 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
 
       await onSubmit(requestData);
     } catch (err: unknown) {
+      // デバッグ: エラーレスポンスの内容を確認
+      if (import.meta.env.DEV && axios.isAxiosError(err)) {
+        console.log('[UserForm] Error response:', {
+          status: err.response?.status,
+          data: err.response?.data,
+          message: err.response?.data?.message,
+          code: (err.response?.data as any)?.code
+        });
+      }
+      
       // 複数エラーメッセージを取得
       const allErrors = getAllErrorMessages(err);
       if (allErrors.length > 0) {
@@ -287,7 +297,7 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
                 {/* Password */}
                 <div>
                     <label className="block text-sm font-bold text-gray-700 mb-1">パスワード {isEditMode && '(変更する場合のみ)'}</label>
-                    <input type="password" name="pass" value={formData.pass} onChange={handleChange} required={!isEditMode} className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium" />
+                    <input type="text" name="pass" value={formData.pass} onChange={handleChange} required={!isEditMode} className="w-full h-14 px-4 py-3 border-2 border-gray-50 rounded-2xl shadow-sm focus:outline-none focus:border-green-500 focus:ring-0 transition-all text-gray-700 font-medium" />
                 </div>
             </section>
             

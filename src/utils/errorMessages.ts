@@ -9,10 +9,8 @@ import { ErrorResponse, ErrorCode, isErrorResponse } from '../types/api/error';
 const getMessageByErrorCode = (errorResponse: ErrorResponse, context?: 'login'): string | null => {
   switch (errorResponse.code) {
     case ErrorCode.CONFLICT:
-      // 重複エラー時の詳細メッセージ
-      if (errorResponse.message.includes('email') || errorResponse.message.includes('メール')) {
-        return 'このメールアドレスは既に登録されています。';
-      }
+      // バックエンドからの具体的なメッセージを優先的に返す
+      // 汎用的なメッセージに置き換えない
       return errorResponse.message || 'リソースが既に存在します。';
 
     case ErrorCode.VALIDATION_ERROR:
