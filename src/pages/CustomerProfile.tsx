@@ -197,7 +197,7 @@ export const CustomerProfile: React.FC = () => {
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
                     <HiArrowsExpand className="w-4 h-4 text-[#68BE6B]" />
-                    身長 (cm) <span className="text-red-500 text-xs">必須</span>
+                    身長 <span className="text-red-500 text-xs">必須</span>
                   </label>
                   <input
                     type="text"
