@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { adminLogsApi } from '../../api/admin/logsApi';
+import { MAX_PAGE_SIZE } from '../../constants/pagination';
 import { AuditLog } from '../../types/admin/log';
 import { LoadingRow, EmptyRow } from '../../components/common/TableStatusRows';
 import { Pagination } from '../../components/common/Pagination';
@@ -54,11 +55,11 @@ export const AuditLogPage: React.FC = () => {
       setLoading(true);
       setError(null);
       try {
-        // バックエンドの最大ページサイズ（100）を使用
+        // バックエンドの最大ページサイズを使用
         // 複数ページに分けて取得する必要がある場合は、後で改善
         const response = await adminLogsApi.getLogs({
           page: 0,
-          size: 100, // バックエンドのMAX_PAGE_SIZE
+          size: MAX_PAGE_SIZE, // バックエンドのApplicationConstants.MAX_PAGE_SIZEと一致
         });
         // response.dataが配列
         const logsData = response.data || [];

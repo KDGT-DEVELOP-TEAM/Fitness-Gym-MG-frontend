@@ -14,7 +14,7 @@ import { IMAGE_CONSTANTS, MAX_FILE_SIZE_BYTES } from '../../constants/image';
 import { FORM_STYLES } from '../../styles/formStyles';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import { validateRequired, validateDateRange, validateNumericRange, validateNextLesson, validateNotFutureDateTime, getCurrentLocalDateTime } from '../../utils/validators';
-import { ERROR_MESSAGES } from '../../constants/errorMessages';
+import { ERROR_MESSAGES } from '../../utils/errorMessages';
 import { useAuth } from '../../context/AuthContext';
 
 export const LessonCreate: React.FC = () => {

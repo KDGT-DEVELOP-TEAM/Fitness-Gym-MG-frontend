@@ -1,6 +1,7 @@
 import axiosInstance from './axiosConfig';
 import { Posture, PostureComparison, PostureGroupResponse, PostureImageUploadResponse, SignedUrlResponse, BatchSignedUrlResponse } from '../types/posture';
 import { API_ENDPOINTS } from '../constants/apiEndpoints';
+import { SIGNED_URL_CONSTANTS } from '../constants/time';
 
 export const postureApi = {
   /**
@@ -56,12 +57,12 @@ export const postureApi = {
   /**
    * 単一の署名付きURL取得
    * GET /api/posture_images/{imageId}/signed-url
-   * クエリパラメータ: expiresIn (optional, default: 3600)
+   * クエリパラメータ: expiresIn (optional, default: SIGNED_URL_CONSTANTS.DEFAULT_EXPIRES_IN)
    * レスポンス: SignedUrlResponse
    */
-  getSignedUrl: (imageId: string, expiresIn: number = 3600): Promise<SignedUrlResponse> => {
+  getSignedUrl: (imageId: string, expiresIn: number = SIGNED_URL_CONSTANTS.DEFAULT_EXPIRES_IN): Promise<SignedUrlResponse> => {
     const queryParams = new URLSearchParams();
-    if (expiresIn !== 3600) {
+    if (expiresIn !== SIGNED_URL_CONSTANTS.DEFAULT_EXPIRES_IN) {
       queryParams.append('expiresIn', String(expiresIn));
     }
     const queryString = queryParams.toString();
@@ -75,8 +76,10 @@ export const postureApi = {
    * POST /api/posture_images/signed-urls
    * リクエスト: { imageIds: UUID[], expiresIn: number }
    * レスポンス: BatchSignedUrlResponse
+   * 
+   * 注意: imageIdsの件数はSIGNED_URL_CONSTANTS.MAX_BATCH_COUNT（50件）以下であること
    */
-  getBatchSignedUrls: (imageIds: string[], expiresIn: number = 3600): Promise<BatchSignedUrlResponse> =>
+  getBatchSignedUrls: (imageIds: string[], expiresIn: number = SIGNED_URL_CONSTANTS.DEFAULT_EXPIRES_IN): Promise<BatchSignedUrlResponse> =>
     axiosInstance.post<BatchSignedUrlResponse>(API_ENDPOINTS.POSTURE_IMAGES.BATCH_SIGNED_URLS, { imageIds, expiresIn }).then(res => res.data),
 
   /**
