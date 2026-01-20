@@ -24,8 +24,9 @@ export interface UserRequest {
   kana: string;
   role: UserRole;
   /**
-   * 店舗ID
-   * ADMIN: 不要 / MANAGER: 必須（1つ） / TRAINER: 任意（0個以上）
+   * 店舗ID（配列形式）
+   * ADMIN: 不要（空配列を送信） / MANAGER: 必須（1つのみ） / TRAINER: 任意（0個以上）
+   * 注意: MANAGERの場合は配列に1つのみ含めること
    */
   storeIds?: string[];
   /**

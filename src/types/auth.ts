@@ -4,6 +4,11 @@ export type { User } from './api/user';
 
 export interface LoginCredentials {
   email: string;
+  /**
+   * パスワード（平文）
+   * ⚠️ セキュリティ注意: このフィールドは平文パスワードを含みます。
+   * ログ出力やデバッグ情報に含めないでください。
+   */
   password: string;
 }
 
@@ -20,17 +25,4 @@ export interface LoginResponse {
   token: string;
 }
 
-/**
- * @deprecated LoginResponseを使用してください
- * 後方互換性のため残していますが、新しいコードではLoginResponseを使用してください
- */
-export interface AuthResponse {
-  user: {
-    id: string;
-    email: string;
-    name: string;
-    role: UserRole;
-  };
-  token: string;
-}
 

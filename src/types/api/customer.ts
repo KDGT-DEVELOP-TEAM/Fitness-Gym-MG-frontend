@@ -9,7 +9,7 @@ export interface Customer {
   kana: string;
   name: string;
   gender: Gender;
-  birthdate: string; // バックエンドのCustomerResponse.birthdateに対応（birthdayから変換される）
+  birthdate: string; // バックエンドのCustomerResponse.birthdateに対応（Entityのbirthdayフィールドから変換される。HTMLフォームとの互換性のためバックエンドでは意図的にbirthdateという名前を使用）
   age: number; // バックエンドのCustomerResponse.age（計算値）
   height: number;
   email: string;
@@ -30,18 +30,63 @@ export interface Customer {
  */
 export interface CustomerRequest {
   // 必須項目
+  /**
+   * フリガナ
+   * バリデーション要件: 必須、最大100文字
+   */
   kana: string;
+  /**
+   * 名前
+   * バリデーション要件: 必須、最大100文字
+   */
   name: string;
+  /**
+   * 性別
+   * バリデーション要件: 必須（MALE/FEMALE）
+   */
   gender: Gender;
-  birthday: string; // ISO8601形式の日付文字列
+  /**
+   * 生年月日
+   * ISO8601形式の日付文字列（バックエンドのCustomerRequest.birthdayに対応。EntityおよびRequestではbirthday、Responseではbirthdateと意図的に使い分けている）
+   * バリデーション要件: 必須、過去の日付のみ有効（未来の日付は指定できない）
+   */
+  birthday: string;
+  /**
+   * 身長（cm）
+   * バリデーション要件: 必須、50.0cm以上、300.0cm以下
+   */
   height: number;
+  /**
+   * メールアドレス
+   * バリデーション要件: 必須、有効なメールアドレス形式、最大255文字
+   */
   email: string;
+  /**
+   * 電話番号
+   * バリデーション要件: 必須、10文字以上15文字以下の数字のみ（ハイフンは含めない）
+   */
   phone: string;
+  /**
+   * 住所
+   * バリデーション要件: 必須、最大500文字
+   */
   address: string;
 
   // 任意項目
+  /**
+   * 既往歴
+   * バリデーション要件: 任意、最大100文字
+   */
   medical?: string;
+  /**
+   * 禁忌事項
+   * バリデーション要件: 任意、最大100文字
+   */
   taboo?: string;
+  /**
+   * メモ
+   * バリデーション要件: 任意、最大500文字
+   */
   memo?: string;
   firstPostureGroupId?: string | null;
   /**
@@ -52,8 +97,9 @@ export interface CustomerRequest {
 
   /**
    * 店舗ID
-   * ADMINの場合: 不要（送信しない）。顧客は店舗に紐づかない。
-   * MANAGERの場合: パス変数から取得されるため、リクエストボディでは不要。
+   * ADMINの場合: 任意（送信しない場合は店舗に紐付けない）
+   * MANAGERの場合: リクエストボディで指定可能。指定された場合は認可チェックが実施される。
+   * 注意: バックエンドではパス変数（storeIdFromPath）が優先され、nullの場合はリクエストボディのstoreIdを使用します。
    * 店舗と紐付くのはLessonであり、顧客自体は店舗に紐づかない。
    * ただし、MANAGERが作成する顧客は検索・フィルタリングのため店舗と紐付ける。
    */

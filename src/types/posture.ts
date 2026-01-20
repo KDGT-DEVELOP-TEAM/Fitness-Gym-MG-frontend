@@ -49,7 +49,12 @@ export interface PostureImage {
   signedUrl?: string; // バックエンド: signedUrl (レッスン詳細取得時に生成される)
   // フロントエンド用の追加フィールド
   postureGroupId?: string; // バックエンド: postureGroupId (PostureImageUploadResponseに含まれる)
-  url?: string; // 生成された署名付きURL（フロントエンドで追加、非推奨: signedUrlを使用）
+  /**
+   * レガシーコードとの互換性のため残存
+   * PostureImageGrid.tsx等で使用中。将来的なリファクタリング時にsignedUrlに統一予定
+   * 新規コードではsignedUrlを使用すること
+   */
+  url?: string;
   date?: string; // フォーマットされた日付（フロントエンドで追加）
   formattedDateTime?: string; // 比較モーダル用の日時表示（フロントエンドで追加）
 }

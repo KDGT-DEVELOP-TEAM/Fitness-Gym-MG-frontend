@@ -25,6 +25,15 @@ export interface PasswordResetRequestResponse {
 
 export interface PasswordResetApproval {
   requestId: string;
+  /**
+   * 新しいパスワード
+   * バリデーション要件:
+   * - 必須
+   * - 8文字以上
+   * - 英字（大文字・小文字）と数字を含む必要があります
+   * ⚠️ セキュリティ注意: このフィールドは平文パスワードを含みます。
+   * ログ出力やデバッグ情報に含めないでください。
+   */
   newPassword: string;
   note?: string;
 }

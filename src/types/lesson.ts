@@ -61,18 +61,49 @@ export interface LessonRequest {
   trainerId: string;
   storeId: string;
 
+  /**
+   * 開始日時
+   * ISO8601形式の日時文字列
+   * バリデーション要件: 必須、現在の日時より未来に設定できない（過去または現在のみ）
+   */
   startDate: string;
+  /**
+   * 終了日時
+   * ISO8601形式の日時文字列
+   * バリデーション要件: 必須、開始日時より後である必要がある、現在の日時より未来に設定できない（過去または現在のみ）
+   */
   endDate: string;
 
+  /**
+   * 体調
+   * バリデーション要件: 任意、最大500文字
+   */
   condition?: string;
+  /**
+   * 体重（kg）
+   * バリデーション要件: 任意、30.0kg以上、300.0kg以下
+   */
   weight?: number | null;
+  /**
+   * 食事内容
+   * バリデーション要件: 任意、最大500文字
+   */
   meal?: string | null;
+  /**
+   * メモ
+   * バリデーション要件: 任意、最大1000文字
+   */
   memo?: string | null;
 
   nextDate?: string | null;
   nextStoreId?: string | null;
   nextTrainerId?: string | null;
 
+  /**
+   * トレーニングリスト
+   * バリデーション要件: 任意、最大50件まで（パフォーマンス・DoS対策のため）
+   * バックエンドのApplicationConstants.MAX_LESSON_TRAININGS_COUNTに対応
+   */
   trainings?: TrainingRequest[];
 }
 
@@ -93,9 +124,21 @@ export interface LessonFormData extends Omit<LessonRequest, 'trainerId' | 'nextT
  * レッスン作成・更新時に使用
  */
 export interface TrainingRequest {
-  orderNo: number; // 順序番号（1以上、必須）
-  name: string; // トレーニング種目名（必須）
-  reps: number; // 実施回数（1以上、必須）
+  /**
+   * 順序番号
+   * バリデーション要件: 必須、1以上
+   */
+  orderNo: number;
+  /**
+   * トレーニング種目名
+   * バリデーション要件: 必須、最大100文字
+   */
+  name: string;
+  /**
+   * 実施回数
+   * バリデーション要件: 必須、1以上、10000以下
+   */
+  reps: number;
 }
 
 /**
