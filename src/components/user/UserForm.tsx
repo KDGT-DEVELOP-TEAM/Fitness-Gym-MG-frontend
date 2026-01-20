@@ -3,10 +3,12 @@ import axios from 'axios';
 import { User, UserRequest, UserRole } from '../../types/api/user';
 import { UserFormData } from '../../types/form/user';
 import { Store } from '../../types/store';
-import { validatePasswordPattern } from '../../utils/validators';
+import { validateUserForm } from '../../utils/validators';
 import { getAllErrorMessages } from '../../utils/errorMessages';
 import { isErrorResponse } from '../../types/api/error';
 import { ConfirmModal } from '../common/ConfirmModal';
+import { logger } from '../../utils/logger';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
 
 interface UserFormProps {
   initialData?: User;
@@ -27,6 +29,7 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
   const [errorMessages, setErrorMessages] = useState<string[]>([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const isEditMode = !!initialData;
+  const { handleError } = useErrorHandler();
   
   // マネージャーの場合はトレーナーのみ選択可能
   // 注意: currentUserRoleはUserRole型なので、直接比較が型安全で明確
@@ -107,16 +110,18 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
     e.preventDefault();
     setErrorMsg(null);
 
-    // パスワードバリデーション（新規作成時、または更新時にパスワードが指定されている場合）
-    if ((!isEditMode || (formData.pass && formData.pass.trim() !== '')) && formData.pass && !validatePasswordPattern(formData.pass)) {
-      setErrorMsg('パスワードは8文字以上16文字以内で、英字と数字を含めてください');
-      return;
-    }
+    // バリデーション実行（分離した関数を使用）
+    const validationResult = validateUserForm(
+      {
+        pass: formData.pass,
+        role: formData.role,
+        storeId: formData.storeId,
+      },
+      isEditMode
+    );
 
-    // トレーナーと店長の場合、店舗が選択されていることを確認
-    if ((formData.role === 'MANAGER' || formData.role === 'TRAINER') && 
-        (!formData.storeId || formData.storeId.trim() === '')) {
-      setErrorMsg('担当店舗を選択してください');
+    if (!validationResult.isValid) {
+      setErrorMsg(validationResult.error || 'バリデーションエラーが発生しました');
       return;
     }
 
@@ -141,14 +146,14 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
 
       await onSubmit(requestData);
     } catch (err: unknown) {
-      // デバッグ: エラーレスポンスの内容を確認
+      // デバッグ: エラーレスポンスの内容を確認（開発環境のみ）
       if (import.meta.env.DEV && axios.isAxiosError(err)) {
-        console.log('[UserForm] Error response:', {
+        logger.debug('Error response', {
           status: err.response?.status,
-          data: err.response?.data,
+          hasData: !!err.response?.data,
           message: err.response?.data?.message,
           code: (err.response?.data as any)?.code
-        });
+        }, 'UserForm');
       }
       
       // 複数エラーメッセージを取得
@@ -165,17 +170,8 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
           setErrorMsg(firstError);
         }
       } else {
-        // エラーメッセージを取得
-        let message = "保存中にエラーが発生しました。";
-        if (axios.isAxiosError(err)) {
-          if (err.response?.data && isErrorResponse(err.response.data)) {
-            message = err.response.data.message || err.message;
-          } else {
-            message = (err.response?.data as { message?: string })?.message || err.message;
-          }
-        } else if (err instanceof Error) {
-          message = err.message;
-        }
+        // エラーメッセージを取得（useErrorHandlerを使用して統一）
+        const message = handleError(err, 'UserForm');
         
         if (message.includes("関連データが存在するため")) {
           setErrorMsg("このユーザーにはレッスン履歴があるため削除できません。");

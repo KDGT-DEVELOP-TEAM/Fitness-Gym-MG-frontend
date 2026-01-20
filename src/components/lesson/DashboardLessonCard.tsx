@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LessonHistoryItem } from '../../types/lesson';
 import { formatDateTimeSplit } from '../../utils/dateFormatter';
+import { logger } from '../../utils/logger';
 
 interface DashboardLessonCardProps {
   lesson: LessonHistoryItem;
@@ -17,7 +18,7 @@ export const DashboardLessonCard: React.FC<DashboardLessonCardProps> = ({ lesson
 
   const handleClick = () => {
     if (!lesson.customerId) {
-      console.error('[DashboardLessonCard] customerId is missing');
+      logger.error('customerId is missing', { lessonId: lesson.id }, 'DashboardLessonCard');
       return;
     }
     

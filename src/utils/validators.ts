@@ -226,3 +226,130 @@ export const getCurrentLocalDateTime = (): string => {
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 };
 
+/**
+ * Validation result type
+ * Used for form validation functions that return both validation status and error message
+ */
+export interface ValidationResult {
+  isValid: boolean;
+  error?: string;
+}
+
+/**
+ * Customer form data for validation
+ */
+export interface CustomerFormValidationData {
+  name: string;
+  kana: string;
+  address: string;
+  email: string;
+  phone: string;
+  birthday?: string;
+  height: string | number;
+}
+
+/**
+ * Validate customer form data
+ * 
+ * Validates all required fields and business rules for customer form.
+ * Returns validation result with error message if validation fails.
+ * 
+ * Validation rules:
+ * - All required fields (name, kana, address, email, phone) must not be empty after trimming
+ * - Phone number must not contain hyphens
+ * - Phone number must be 10-15 digits only
+ * - Birthday must be in the past (if provided)
+ * - Height must be between 50 and 300 cm (if provided)
+ * 
+ * @param formData - Customer form data to validate
+ * @returns Validation result object { isValid: boolean, error?: string }
+ */
+export const validateCustomerForm = (
+  formData: CustomerFormValidationData
+): ValidationResult => {
+  // 必須項目の空白チェック（先頭・末尾の空白をトリムして検証）
+  if (!formData.name.trim()) {
+    return { isValid: false, error: '氏名は必須です' };
+  }
+  if (!formData.kana.trim()) {
+    return { isValid: false, error: 'フリガナは必須です' };
+  }
+  if (!formData.address.trim()) {
+    return { isValid: false, error: '住所は必須です' };
+  }
+  if (!formData.email.trim()) {
+    return { isValid: false, error: 'メールアドレスは必須です' };
+  }
+  if (!formData.phone.trim()) {
+    return { isValid: false, error: '電話番号は必須です' };
+  }
+
+  // 電話番号のバリデーション（ハイフンを含めない）
+  if (formData.phone.includes('-')) {
+    return { isValid: false, error: '電話番号にハイフン（-）を含めることはできません' };
+  }
+  if (!validatePhoneWithoutHyphens(formData.phone)) {
+    return { isValid: false, error: '電話番号は10文字以上15文字以下の数字のみで入力してください' };
+  }
+
+  // 過去日付チェック
+  if (formData.birthday && !validatePastDate(formData.birthday)) {
+    return { isValid: false, error: '生年月日は過去の日付である必要があります' };
+  }
+
+  // 身長の範囲チェック（文字列の場合は数値に変換）
+  const heightValue = typeof formData.height === 'string' 
+    ? parseFloat(formData.height) 
+    : formData.height;
+  if (isNaN(heightValue) || heightValue < 50 || heightValue > 300) {
+    return { isValid: false, error: '身長は50cm以上300cm以下である必要があります' };
+  }
+
+  return { isValid: true };
+};
+
+/**
+ * User form data for validation
+ */
+export interface UserFormValidationData {
+  pass: string;
+  role: string;
+  storeId?: string;
+}
+
+/**
+ * Validate user form data
+ * 
+ * Validates business rules for user form.
+ * Returns validation result with error message if validation fails.
+ * 
+ * Validation rules:
+ * - Password must meet pattern requirements (8-16 chars, letter + digit) if provided
+ *   - For new users: password is required
+ *   - For existing users: password is optional (only validated if provided)
+ * - Store must be selected for MANAGER and TRAINER roles
+ * 
+ * @param formData - User form data to validate
+ * @param isEditMode - Whether form is in edit mode (default: false)
+ * @returns Validation result object { isValid: boolean, error?: string }
+ */
+export const validateUserForm = (
+  formData: UserFormValidationData,
+  isEditMode: boolean = false
+): ValidationResult => {
+  // パスワードバリデーション（新規作成時、または更新時にパスワードが指定されている場合）
+  if ((!isEditMode || (formData.pass && formData.pass.trim() !== '')) && 
+      formData.pass && 
+      !validatePasswordPattern(formData.pass)) {
+    return { isValid: false, error: 'パスワードは8文字以上16文字以内で、英字と数字を含めてください' };
+  }
+
+  // トレーナーと店長の場合、店舗が選択されていることを確認
+  if ((formData.role === 'MANAGER' || formData.role === 'TRAINER') && 
+      (!formData.storeId || formData.storeId.trim() === '')) {
+    return { isValid: false, error: '担当店舗を選択してください' };
+  }
+
+  return { isValid: true };
+};
+

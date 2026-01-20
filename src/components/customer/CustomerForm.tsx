@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { Customer, CustomerRequest } from '../../types/api/customer';
 import { CustomerFormData } from '../../types/form/customer';
-import { validatePastDate } from '../../utils/validators';
+import { validateCustomerForm } from '../../utils/validators';
 import { getAllErrorMessages } from '../../utils/errorMessages';
 import { isErrorResponse } from '../../types/api/error';
 import { useAuth } from '../../context/AuthContext';
@@ -141,48 +141,19 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
     e.preventDefault();
     setErrorMsg(null);
 
-    // 必須項目の空白チェック（先頭・末尾の空白をトリムして検証）
-    if (!formData.name.trim()) {
-      setErrorMsg('氏名は必須です');
-      return;
-    }
-    if (!formData.kana.trim()) {
-      setErrorMsg('フリガナは必須です');
-      return;
-    }
-    if (!formData.address.trim()) {
-      setErrorMsg('住所は必須です');
-      return;
-    }
-    if (!formData.email.trim()) {
-      setErrorMsg('メールアドレスは必須です');
-      return;
-    }
-    if (!formData.phone.trim()) {
-      setErrorMsg('電話番号は必須です');
-      return;
-    }
+    // バリデーション実行（分離した関数を使用）
+    const validationResult = validateCustomerForm({
+      name: formData.name,
+      kana: formData.kana,
+      address: formData.address,
+      email: formData.email,
+      phone: formData.phone,
+      birthday: formData.birthday,
+      height: formData.height,
+    });
 
-    // 電話番号のバリデーション（ハイフンを含めない）
-    if (formData.phone.includes('-')) {
-      setErrorMsg('電話番号にハイフン（-）を含めることはできません');
-      return;
-    }
-    if (!/^[0-9]{10,15}$/.test(formData.phone.trim())) {
-      setErrorMsg('電話番号は10文字以上15文字以下の数字のみで入力してください');
-      return;
-    }
-
-    // 過去日付チェック
-    if (formData.birthday && !validatePastDate(formData.birthday)) {
-      setErrorMsg('生年月日は過去の日付である必要があります');
-      return;
-    }
-
-    // 身長の範囲チェック（文字列の場合は数値に変換）
-    const heightValue = typeof formData.height === 'string' ? parseFloat(formData.height) : formData.height;
-    if (isNaN(heightValue) || heightValue < 50 || heightValue > 300) {
-      setErrorMsg('身長は50cm以上300cm以下である必要があります');
+    if (!validationResult.isValid) {
+      setErrorMsg(validationResult.error || 'バリデーションエラーが発生しました');
       return;
     }
 
