@@ -215,7 +215,7 @@ export const useCustomerProfile = (customerId: string) => {
           postureImages,
         });
       } catch (error) {
-        console.error('Failed to load profile:', error);
+        logger.error('プロフィールの読み込みに失敗しました', error, 'useCustomerProfile');
         // 403エラーの場合は論理削除済み顧客のメッセージを表示
         if (axios.isAxiosError(error) && error.response?.status === 403) {
           setError('この顧客は無効化されているため、プロフィールを表示できません。');

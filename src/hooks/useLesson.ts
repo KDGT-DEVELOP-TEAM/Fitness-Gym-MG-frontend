@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import axios from 'axios';
-import { Lesson, LessonHistoryItem } from '../types/lesson';
+import { Lesson } from '../types/lesson';
 import { lessonApi } from '../api/lessonApi';
-import { PaginationParams } from '../types/common';
+import { useErrorHandler } from './useErrorHandler';
 
 /* =========================
  * 単一 Lesson 取得
@@ -12,6 +11,13 @@ export const useLesson = (id?: string) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fetchedIdRef = useRef<string | null>(null);
+  const { handleError } = useErrorHandler();
+  const handleErrorRef = useRef(handleError);
+
+  // handleErrorが変更された場合にrefを更新
+  useEffect(() => {
+    handleErrorRef.current = handleError;
+  }, [handleError]);
 
   const fetchLesson = useCallback(async (lessonId: string) => {
     setLoading(true);
@@ -20,13 +26,8 @@ export const useLesson = (id?: string) => {
       const data = await lessonApi.getById(lessonId);
       setLesson(data);
     } catch (err: unknown) {
-      if (axios.isAxiosError(err)) {
-        setError(err.response?.data?.message || err.message);
-      } else if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('不明なエラーが発生しました');
-      }
+      const errorMessage = handleErrorRef.current(err, 'useLesson');
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -60,47 +61,6 @@ export const useLesson = (id?: string) => {
 };
 
 /* =========================
- * Lesson 履歴一覧（ページング）
- * @deprecated バックエンドに実装されていないため、このフックは非推奨です
- * ========================= */
-export const useLessons = (params?: PaginationParams) => {
-  const [lessons, setLessons] = useState<LessonHistoryItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>('バックエンドに実装されていないため、レッスン履歴の取得は現在利用できません');
-
-  const fetchLessons = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      // バックエンドに実装が存在しないため、空のデータを返す
-      setLessons([]);
-      setError('バックエンドに実装されていないため、レッスン履歴の取得は現在利用できません');
-    } catch (err: unknown) {
-      if (axios.isAxiosError(err)) {
-        setError(err.response?.data?.message || err.message);
-      } else if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('不明なエラーが発生しました');
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [params?.page, params?.limit]);
-
-  useEffect(() => {
-    fetchLessons();
-  }, [fetchLessons]);
-
-  return {
-    lessons,
-    loading,
-    error,
-    refetch: fetchLessons,
-  };
-};
-
-/* =========================
  * 顧客別 Lesson 一覧
  * ========================= */
 export const useLessonsByCustomer = (customerId?: string) => {
@@ -108,6 +68,13 @@ export const useLessonsByCustomer = (customerId?: string) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fetchedCustomerIdRef = useRef<string | null>(null);
+  const { handleError } = useErrorHandler();
+  const handleErrorRef = useRef(handleError);
+
+  // handleErrorが変更された場合にrefを更新
+  useEffect(() => {
+    handleErrorRef.current = handleError;
+  }, [handleError]);
 
   const fetchLessons = useCallback(async () => {
     if (!customerId) return;
@@ -119,13 +86,8 @@ export const useLessonsByCustomer = (customerId?: string) => {
       const data = response.data || [];
       setLessons(data);
     } catch (err: unknown) {
-      if (axios.isAxiosError(err)) {
-        setError(err.response?.data?.message || err.message);
-      } else if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('不明なエラーが発生しました');
-      }
+      const errorMessage = handleErrorRef.current(err, 'useLessonsByCustomer');
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

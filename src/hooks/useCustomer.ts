@@ -114,10 +114,46 @@ export const useCustomers = (selectedStoreId?: string) => {
   }, [authUser, selectedStoreId]); // searchQueryを依存配列から除外（searchQueryRef.currentを使用するため）
 
 
-  // CustomerRequest 型を受け取るように修正
-  const createCustomer = (data: CustomerRequest) => adminCustomersApi.createCustomer(data);
-  const updateCustomer = (id: string, data: CustomerRequest) => customerApi.updateProfile(id, data);
-  const deleteCustomer = (id: string) => adminCustomersApi.deleteCustomer(id);
+  // ロールベースのAPI選択を実装
+  const createCustomer = async (data: CustomerRequest) => {
+    if (!authUser) {
+      throw new Error('認証が必要です');
+    }
+    
+    if (isAdmin(authUser)) {
+      await adminCustomersApi.createCustomer(data);
+    } else if (isManager(authUser)) {
+      // MANAGERの場合はstoreIdは不要（バックエンドの実装による）
+      // POST /api/manager/customers を使用
+      await managerCustomersApi.createCustomer(data);
+    } else {
+      throw new Error('この操作を実行する権限がありません');
+    }
+  };
+
+  const updateCustomer = (id: string, data: CustomerRequest) => 
+    customerApi.updateProfile(id, data);
+
+  const deleteCustomer = async (id: string) => {
+    if (!authUser) {
+      throw new Error('認証が必要です');
+    }
+    
+    if (isAdmin(authUser)) {
+      await adminCustomersApi.deleteCustomer(id);
+    } else if (isManager(authUser)) {
+      // MANAGERの場合はstoreIdが必要
+      // DELETE /api/stores/{storeId}/manager/customers/{customerId} を使用
+      const storeId = getStoreIdForManagerOrThrow(
+        authUser,
+        selectedStoreId,
+        storesRef.current
+      );
+      await managerCustomersApi.deleteCustomer(storeId, id);
+    } else {
+      throw new Error('この操作を実行する権限がありません');
+    }
+  };
 
   return {
     customers,

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
 import { storeApi } from '../api/storeApi';
 import { Store } from '../types/store';
+import { useErrorHandler } from './useErrorHandler';
 
 // モジュールレベルのキャッシュ（アプリケーション全体で共有）
 interface CachedStores {
@@ -22,6 +22,13 @@ export const useStores = () => {
   const [loading, setLoading] = useState(!cachedStores);
   const [error, setError] = useState<string | null>(null);
   const isMountedRef = useRef(true);
+  const { handleError } = useErrorHandler();
+  const handleErrorRef = useRef(handleError);
+
+  // handleErrorが変更された場合にrefを更新
+  useEffect(() => {
+    handleErrorRef.current = handleError;
+  }, [handleError]);
 
   const loadStores = async (forceRefresh = false) => {
     // キャッシュが有効で、強制リフレッシュでない場合はキャッシュを使用
@@ -45,14 +52,8 @@ export const useStores = () => {
         })
         .catch((err) => {
           if (isMountedRef.current) {
-            console.error('店舗一覧の取得に失敗しました:', err);
-            if (axios.isAxiosError(err)) {
-              setError(err.response?.data?.message || err.message);
-            } else if (err instanceof Error) {
-              setError(err.message);
-            } else {
-              setError('店舗情報を取得できませんでした');
-            }
+            const errorMessage = handleErrorRef.current(err, 'useStore');
+            setError(errorMessage);
             setLoading(false);
           }
         });
@@ -81,17 +82,11 @@ export const useStores = () => {
         return data;
       })
       .catch((err: unknown) => {
-        console.error('店舗一覧の取得に失敗しました:', err);
         globalFetchPromise = null;
         
         if (isMountedRef.current) {
-          if (axios.isAxiosError(err)) {
-            setError(err.response?.data?.message || err.message);
-          } else if (err instanceof Error) {
-            setError(err.message);
-          } else {
-            setError('店舗情報を取得できませんでした');
-          }
+          const errorMessage = handleErrorRef.current(err, 'useStore');
+          setError(errorMessage);
           setLoading(false);
         }
         throw err;
