@@ -1,6 +1,7 @@
 import axiosInstance from '../axiosConfig';
 import { convertPageResponse, PaginatedResponse, SpringPage } from '../../utils/pagination';
 import { User, UserRequest, UserListParams } from '../../types/api/user';
+import { API_ENDPOINTS } from '../../constants/apiEndpoints';
 
 export const adminUsersApi = {
   getUsers: (params?: UserListParams): Promise<PaginatedResponse<User>> => {
@@ -42,4 +43,12 @@ export const adminUsersApi = {
 
   deleteUser: (userId: string): Promise<void> =>
     axiosInstance.delete<void>(`/admin/users/${userId}`).then(() => undefined),
+
+  /**
+   * 全ユーザーを取得（ページングなし、オプション選択用）
+   * GET /api/users
+   * UserList.tsxやオプション選択で使用
+   */
+  getAllUsers: (): Promise<User[]> =>
+    axiosInstance.get<User[]>(API_ENDPOINTS.USERS.BASE).then(res => res.data || []),
 };

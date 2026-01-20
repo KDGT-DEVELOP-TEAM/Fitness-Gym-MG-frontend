@@ -6,6 +6,7 @@ import { Pagination } from '../../components/common/Pagination';
 import { formatDateTimeSplit } from '../../utils/dateFormatter';
 import { logger } from '../../utils/logger';
 import { getErrorMessage, getAllErrorMessages } from '../../utils/errorMessages';
+import { validatePasswordRequired } from '../../utils/validators';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -67,13 +68,8 @@ export const PasswordResetRequestPage: React.FC = () => {
       return;
     }
 
-    if (newPassword.length < 8) {
-      setPasswordError('パスワードは8文字以上で入力してください');
-      return;
-    }
-
-    if (!/^(?=.*[a-zA-Z])(?=.*\d).+$/.test(newPassword)) {
-      setPasswordError('パスワードは英字と数字を含めてください');
+    if (!validatePasswordRequired(newPassword)) {
+      setPasswordError('パスワードは8文字以上16文字以内で、英字と数字を含めてください');
       return;
     }
 

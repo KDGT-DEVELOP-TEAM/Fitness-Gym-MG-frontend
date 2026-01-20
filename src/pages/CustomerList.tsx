@@ -163,8 +163,8 @@ export const CustomerList: React.FC = () => {
                   </td>
                 </tr>
               ) : (
-                customers.map((customer) => (
-                  <tr key={customer.id || `temp-key-${Math.random()}`} className="hover:bg-gray-50/50 transition-colors">
+                customers.map((customer, index) => (
+                  <tr key={customer.id || `customer-${index}`} className="hover:bg-gray-50/50 transition-colors">
                     <td className="px-8 py-6 text-center">
                       <div className="font-black text-gray-900 text-base">{customer.name}</div>
                     </td>

@@ -93,6 +93,36 @@ export const validatePasswordPattern = (password: string): boolean => {
 };
 
 /**
+ * Validate password pattern (required field)
+ * 8-16 characters, must not be empty
+ * Must contain at least one letter (uppercase or lowercase) and one digit
+ * 
+ * バックエンドのバリデーション要件（LoginRequest, UserRequest）と整合:
+ * - 8文字以上16文字以内
+ * - 英字（大文字・小文字）と数字を含む必要があります
+ * - 空文字列は許可しない（新規作成や必須更新時に使用）
+ * 
+ * @param password - Password to validate
+ * @returns True if password meets requirements
+ */
+export const validatePasswordRequired = (password: string): boolean => {
+  if (!password || password.trim() === '') {
+    return false; // Empty is not allowed
+  }
+  
+  // 長さチェック
+  if (password.length < 8 || password.length > 16) {
+    return false;
+  }
+  
+  // 英字と数字を含む必要がある（バックエンドのLoginRequestとUserRequestと整合）
+  const hasLetter = /[a-zA-Z]/.test(password);
+  const hasDigit = /\d/.test(password);
+  
+  return hasLetter && hasDigit;
+};
+
+/**
  * Validate numeric value range
  * 
  * @param value - Numeric value to validate
