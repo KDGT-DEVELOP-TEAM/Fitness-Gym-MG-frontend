@@ -57,6 +57,9 @@ export const getStoreIdForManagerOrThrow = (
 /**
  * Get list of stores accessible by the user based on their role
  * 
+ * ADMIN, MANAGER, TRAINER: 全店舗にアクセス可能（バックエンドのStoreAuthorizationServiceと整合）
+ * ただし、MANAGERの実際の操作（レッスン作成など）は自分の店舗のみに制限される場合がある
+ * 
  * @param authUser - Authenticated user
  * @param stores - List of all stores
  * @returns List of accessible stores
@@ -67,7 +70,7 @@ export const getAccessibleStores = (
 ): Store[] => {
   if (!stores || stores.length === 0) return [];
   
-  // ADMIN, MANAGER, and TRAINER can access all stores
+  // ADMIN, MANAGER, TRAINER: 全店舗にアクセス可能（バックエンドのStoreAuthorizationServiceと整合）
   if (isAdmin(authUser) || isManager(authUser) || isTrainer(authUser)) {
     return stores;
   }

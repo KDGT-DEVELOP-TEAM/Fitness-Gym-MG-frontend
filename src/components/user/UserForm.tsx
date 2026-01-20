@@ -109,7 +109,7 @@ const UserForm: React.FC<UserFormProps> = ({ initialData, stores, onSubmit, onDe
 
     // パスワードバリデーション（新規作成時、または更新時にパスワードが指定されている場合）
     if ((!isEditMode || (formData.pass && formData.pass.trim() !== '')) && formData.pass && !validatePasswordPattern(formData.pass)) {
-      setErrorMsg('パスワードは8文字以上16文字以内で設定してください');
+      setErrorMsg('パスワードは8文字以上16文字以内で、英字と数字を含めてください');
       return;
     }
 

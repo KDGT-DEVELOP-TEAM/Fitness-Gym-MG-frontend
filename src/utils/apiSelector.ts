@@ -7,6 +7,7 @@ import { adminCustomersApi } from '../api/admin/customersApi';
 import { managerCustomersApi } from '../api/manager/customersApi';
 import { customerApi } from '../api/customerApi';
 import { isAdmin } from './roleUtils';
+import { getStoreIdForManagerOrThrow } from './storeUtils';
 
 /**
  * User service selector based on user role
@@ -16,23 +17,28 @@ export const getUserService = (authUser: User | null) => {
   if (!authUser) return null;
   
   const userIsAdmin = isAdmin(authUser);
-  const storeId = Array.isArray(authUser.storeIds) 
-    ? authUser.storeIds[0] 
-    : authUser.storeIds;
+  
+  // storeIdの取得（MANAGERの場合のみ必要）
+  const getStoreId = (): string => {
+    if (userIsAdmin) {
+      throw new Error('ADMINロールではstoreIdは不要です');
+    }
+    return getStoreIdForManagerOrThrow(authUser);
+  };
 
   return {
     create: (request: UserRequest) => 
       userIsAdmin 
         ? adminUsersApi.createUser(request) 
-        : managerUsersApi.createUser(storeId!, request),
+        : managerUsersApi.createUser(getStoreId(), request),
     update: (id: string, request: UserRequest) => 
       userIsAdmin 
         ? adminUsersApi.updateUser(id, request) 
-        : managerUsersApi.updateUser(storeId!, id, request),
+        : managerUsersApi.updateUser(getStoreId(), id, request),
     delete: (id: string) => 
       userIsAdmin 
         ? adminUsersApi.deleteUser(id) 
-        : managerUsersApi.deleteUser(storeId!, id),
+        : managerUsersApi.deleteUser(getStoreId(), id),
   };
 };
 
@@ -44,9 +50,14 @@ export const getCustomerService = (authUser: User | null) => {
   if (!authUser) return null;
   
   const userIsAdmin = isAdmin(authUser);
-  const storeId = Array.isArray(authUser.storeIds) 
-    ? authUser.storeIds[0] 
-    : authUser.storeIds;
+  
+  // storeIdの取得（MANAGERの場合のみ必要）
+  const getStoreId = (): string => {
+    if (userIsAdmin) {
+      throw new Error('ADMINロールではstoreIdは不要です');
+    }
+    return getStoreIdForManagerOrThrow(authUser);
+  };
 
   return {
     create: (data: CustomerRequest) => 
@@ -58,6 +69,6 @@ export const getCustomerService = (authUser: User | null) => {
     delete: (id: string) => 
       userIsAdmin 
         ? adminCustomersApi.deleteCustomer(id) 
-        : managerCustomersApi.deleteCustomer(storeId!, id),
+        : managerCustomersApi.deleteCustomer(getStoreId(), id),
   };
 };

@@ -1,3 +1,5 @@
+import { logger } from './logger';
+
 const USER_KEY = 'user';
 const TOKEN_KEY = 'token';
 
@@ -15,7 +17,7 @@ export const storage = {
       return JSON.parse(userStr);
     } catch (error) {
       // 不正なデータの場合は削除してnullを返す
-      console.error('[storage] Failed to parse user data:', error);
+      logger.error('Failed to parse user data', error, 'storage');
       localStorage.removeItem(USER_KEY);
       return null;
     }
