@@ -66,13 +66,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   const login = useCallback(async (email: string, password: string): Promise<User> => {
+    // 既にログイン/ログアウト処理中の場合は拒否（競合状態の防止）
+    if (actionLoading) {
+      throw new Error('既にログイン処理が実行中です。しばらくお待ちください。');
+    }
+    
     setActionLoading(true);
     try {
       logger.debug('ログイン開始', undefined, 'AuthContext');
       const loginResponse = await authApi.login({ email, password });
       logger.debug('ログインAPI成功', { userId: loginResponse.userId }, 'AuthContext');
       
-      // トークンを保存（ストレージ操作をAuthContextで行う）
+      // トークンとユーザー情報を保存
+      // 注意: ストレージ操作はAuthContextで一元管理することで、状態の整合性を保つ
+      // - トークンとユーザー情報が常に同期される
+      // - 複数の場所でストレージ操作が分散することを防ぐ
+      // - 認証状態の変更が一箇所で管理される
       storage.setToken(loginResponse.token);
       storage.setUser({
         userId: loginResponse.userId,
@@ -93,9 +102,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } finally {
       setActionLoading(false);
     }
-  }, []);
+  }, [actionLoading]);
 
   const logout = useCallback(async () => {
+    // 既にログイン/ログアウト処理中の場合は拒否（競合状態の防止）
+    if (actionLoading) {
+      throw new Error('既にログアウト処理が実行中です。しばらくお待ちください。');
+    }
+    
     setActionLoading(true);
     try {
       await authApi.logout();
@@ -103,12 +117,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // ログアウトAPIが失敗してもローカルの状態はクリア
       logger.error('ログアウトAPIが失敗しました', error, 'AuthContext');
     } finally {
-      // ストレージ操作をAuthContextで行う
+      // ストレージと状態をクリア
+      // 注意: ストレージ操作はAuthContextで一元管理することで、状態の整合性を保つ
+      // - トークンとユーザー情報が確実に削除される
+      // - 認証状態（user）とストレージが常に同期される
+      // - ログアウト処理が一箇所で管理される
       storage.clear();
       setUser(null);
       setActionLoading(false);
     }
-  }, []);
+  }, [actionLoading]);
 
   // Contextのvalueをメモ化して不要な再レンダリングを防ぐ
   const contextValue = useMemo(
