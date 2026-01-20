@@ -1,8 +1,6 @@
 import axiosInstance from './axiosConfig';
 import {
   Lesson,
-  LessonHistoryItem,
-  LessonChartData,
   LessonRequest,
 } from '../types/lesson';
 import {
@@ -11,18 +9,6 @@ import {
   SpringPage,
 } from '../utils/pagination';
 import { API_ENDPOINTS } from '../constants/apiEndpoints';
-
-/**
- * ============================
- * Query Params
- * ============================
- */
-
-export interface LessonHistoryParams {
-  storeId?: string; // 'all' または UUID
-  page?: number;
-  size?: number;
-}
 
 /**
  * ============================
@@ -94,57 +80,4 @@ export const lessonApi = {
     );
     return response.data;
   },
-
-  // 以下のエンドポイントはバックエンドに実装されていないため、コメントアウト
-  // 必要に応じてバックエンドに実装を追加するか、この機能を削除してください
-
-  /**
-   * レッスン履歴一覧（管理画面）
-   * @deprecated バックエンドに実装されていません
-   */
-  // getHistory: async (
-  //   params?: LessonHistoryParams
-  // ): Promise<PaginatedResponse<LessonHistoryItem>> => {
-  //   const query = new URLSearchParams();
-  //   if (params?.storeId && params.storeId !== 'all') {
-  //     query.append('storeId', params.storeId);
-  //   }
-  //   if (params?.page !== undefined) {
-  //     query.append('page', String(params.page));
-  //   }
-  //   if (params?.size !== undefined) {
-  //     query.append('size', String(params.size));
-  //   }
-  //   const response = await axiosInstance.get<
-  //     SpringPage<LessonHistoryItem>
-  //   >(`/api/lessons/history?${query.toString()}`);
-  //   return convertPageResponse(response.data);
-  // },
-
-  /**
-   * グラフ用データ取得
-   * @deprecated バックエンドに実装されていません
-   */
-  // getChartData: async (
-  //   storeId: string | undefined,
-  //   type: 'week' | 'month'
-  // ): Promise<LessonChartData> => {
-  //   const query = new URLSearchParams();
-  //   if (storeId && storeId !== 'all') {
-  //     query.append('storeId', storeId);
-  //   }
-  //   query.append('type', type);
-  //   const response = await axiosInstance.get<LessonChartData>(
-  //     `/api/lessons/chart?${query.toString()}`
-  //   );
-  //   return response.data;
-  // },
-
-  /**
-   * レッスン削除
-   * @deprecated バックエンドに実装されていません
-   */
-  // delete: async (lessonId: string): Promise<void> => {
-  //   await axiosInstance.delete(`/api/lessons/${lessonId}`);
-  // },
 };

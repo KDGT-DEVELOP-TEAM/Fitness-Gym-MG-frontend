@@ -1,5 +1,6 @@
 import axiosInstance from '../axiosConfig';
 import { HomeResponse } from '../../types/admin/home';
+import { logger } from '../../utils/logger';
 
 /**
  * Trainer用ホームAPI
@@ -31,15 +32,13 @@ export const trainerHomeApi = {
       : '/trainers/home';
     
     return axiosInstance.get<HomeResponse>(url).then(res => {
-      // デバッグ用：レスポンスデータの確認
+      // デバッグ用：レスポンスデータの確認（機密情報を含むfullResponseは出力しない）
       if (import.meta.env.DEV) {
-        console.log('[trainerHomeApi] レスポンスデータ:', {
+        logger.debug('レスポンスデータ', {
           url,
-          upcomingLessons: res.data.upcomingLessons,
           upcomingLessonsLength: res.data.upcomingLessons?.length || 0,
-          totalLessonCount: res.data.totalLessonCount,
-          fullResponse: res.data
-        });
+          totalLessonCount: res.data.totalLessonCount
+        }, 'trainerHomeApi');
       }
       return res.data;
     });

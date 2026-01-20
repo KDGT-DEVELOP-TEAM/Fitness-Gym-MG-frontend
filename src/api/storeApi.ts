@@ -1,5 +1,6 @@
 import axiosInstance from './axiosConfig';
 import { Store } from '../types/store';
+import { API_ENDPOINTS } from '../constants/apiEndpoints';
 
 /**
  * Store API
@@ -11,5 +12,5 @@ export const storeApi = {
    * レスポンス: Store[]
    */
   getStores: (): Promise<Store[]> =>
-    axiosInstance.get<Store[]>('/stores').then(res => res.data),
+    axiosInstance.get<Store[]>(API_ENDPOINTS.STORES.BASE).then(res => res.data),
 };

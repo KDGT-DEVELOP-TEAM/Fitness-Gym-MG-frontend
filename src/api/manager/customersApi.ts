@@ -16,6 +16,13 @@ export const managerCustomersApi = {
       .then(res => convertPageResponse(res.data));
   },
 
+  /**
+   * 顧客作成
+   * POST /api/manager/customers
+   * 注意: バックエンドの実装では、POSTのみstoreIdを含まないエンドポイント（/manager/customers）を使用
+   * GET/DELETEは/storeIdパスを含むエンドポイント（/stores/{storeId}/manager/customers）を使用
+   * これはバックエンドの設計によるもので、フロントエンド側ではバックエンドの仕様に従う
+   */
   createCustomer: (customerData: CustomerRequest): Promise<void> =>
     axiosInstance.post<void>(`/manager/customers`, customerData).then(() => undefined),
 
