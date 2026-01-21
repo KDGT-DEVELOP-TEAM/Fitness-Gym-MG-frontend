@@ -1,4 +1,5 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { logger } from '../../utils/logger';
 
 interface Props {
   children: ReactNode;
@@ -20,19 +21,25 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Error caught by boundary:', error, errorInfo);
+    logger.error('Error caught by boundary', { error, errorInfo }, 'ErrorBoundary');
   }
 
   render() {
     if (this.state.hasError) {
+      const isProduction = process.env.NODE_ENV === 'production';
       return (
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center">
+        <div className="flex items-center justify-center min-h-full p-8">
+          <div className="text-center bg-white rounded-[2rem] shadow-sm border-2 border-gray-50 p-8 max-w-md">
             <h1 className="text-2xl font-bold text-red-600 mb-4">エラーが発生しました</h1>
-            <p className="text-gray-600 mb-4">{this.state.error?.message}</p>
+            {!isProduction && (
+              <p className="text-gray-600 mb-4 break-words">{this.state.error?.message}</p>
+            )}
             <button
-              onClick={() => window.location.reload()}
-              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+              onClick={() => {
+                this.setState({ hasError: false, error: undefined });
+                window.location.reload();
+              }}
+              className="px-6 py-3 bg-[#7AB77A] text-white font-bold rounded-2xl hover:bg-[rgba(122,183,122,0.9)] transition-all active:scale-95"
             >
               ページを再読み込み
             </button>

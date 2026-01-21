@@ -5,7 +5,7 @@ export interface UserFormData {
   name: string;
   kana: string;
   role: UserRole;
-  storeIds: string[]; // フォーム内では常に配列として扱う
+  storeId?: string; // ユーザーは1つの店舗にのみ所属可能（ラジオボタンで選択）
   pass: string;      // フォーム内では空文字等で保持する
 }
 

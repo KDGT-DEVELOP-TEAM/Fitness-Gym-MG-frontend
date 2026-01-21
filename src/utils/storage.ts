@@ -1,3 +1,5 @@
+import { logger } from './logger';
+
 const USER_KEY = 'user';
 const TOKEN_KEY = 'token';
 
@@ -11,10 +13,22 @@ export const storage = {
   getUser: (): { userId: string; email: string; name: string; role: string } | null => {
     const userStr = localStorage.getItem(USER_KEY);
     if (!userStr) return null;
-    return JSON.parse(userStr);
+    try {
+      return JSON.parse(userStr);
+    } catch (error) {
+      // 不正なデータの場合は削除してnullを返す
+      logger.error('Failed to parse user data', error, 'storage');
+      localStorage.removeItem(USER_KEY);
+      return null;
+    }
   },
 
-  // JWTトークンの保存
+  /**
+   * JWTトークンの保存
+   * ⚠️ セキュリティ注意: localStorageはXSS攻撃の影響を受けます。
+   * 本番環境では、可能な限りHttpOnly Cookieの使用を検討してください。
+   * 現在の実装では、XSS対策（入力値のサニタイズ、CSP設定など）を徹底してください。
+   */
   setToken: (token: string): void => {
     localStorage.setItem(TOKEN_KEY, token);
   },

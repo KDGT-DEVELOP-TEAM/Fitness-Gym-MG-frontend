@@ -3,13 +3,32 @@ import { CustomerListItem } from '../../types/api/customer';
 
 interface CustomerCardProps {
   customer: CustomerListItem;
-  calculateAge: (birthday: string) => number;
-  onEdit: (customer: CustomerListItem) => void;
+  calculateAge: (birthdate: string) => number;
+  onEdit?: (customer: CustomerListItem) => void;
+  onHistoryClick?: (customerId: string) => void;
 }
 
-export const CustomerCard: React.FC<CustomerCardProps> = ({ customer, calculateAge, onEdit }) => {
+export const CustomerCard: React.FC<CustomerCardProps> = ({ customer, calculateAge, onEdit, onHistoryClick }) => {
+  const handleRowClick = () => {
+    if (onHistoryClick) {
+      onHistoryClick(customer.id);
+    }
+  };
+
+  const handleEditClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // カード全体のクリックイベントを停止
+    if (onEdit) {
+      onEdit(customer);
+    }
+  };
+
   return (
-    <tr className="hover:bg-green-50/30 transition-colors group">
+    <tr 
+      className={`hover:bg-green-50/30 transition-colors group ${
+        onHistoryClick ? 'cursor-pointer' : ''
+      }`}
+      onClick={handleRowClick}
+    >
       {/* 氏名 */}
       <td className="px-8 py-6">
         <div className="flex flex-col items-center text-center">
@@ -25,33 +44,42 @@ export const CustomerCard: React.FC<CustomerCardProps> = ({ customer, calculateA
       {/* 年齢 */}
       <td className="px-8 py-6 text-center">
         <span className="text-sm font-bold text-gray-600">
-          {calculateAge(customer.birthday)}歳
+          {calculateAge(customer.birthdate)}歳
+        </span>
+      </td>
+
+      {/* 店舗 */}
+      <td className="px-8 py-6 text-center">
+        <span className="text-sm font-bold text-gray-600">
+          {customer.storeName || '-'}
         </span>
       </td>
 
       {/* ステータス */}
       <td className="px-8 py-6 text-center">
         <span className={`inline-flex items-center px-4 py-1 rounded-full text-xs font-black tracking-widest uppercase ${
-          customer.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'
+          customer.active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'
         }`}>
-          {customer.isActive ? '有効' : '無効'}
+          {customer.active ? '有効' : '無効'}
         </span>
       </td>
 
       {/* 編集ボタン */}
-      <td className="px-8 py-6">
-        <div className="flex justify-center">
-          <button 
-            onClick={() => onEdit(customer)} 
-            className="inline-flex items-center gap-2 px-5 py-2 text-green-600 hover:bg-green-600 hover:text-white rounded-xl transition-all font-bold text-sm border border-green-50 shadow-sm hover:shadow-green-100 active:scale-95"
-          >
-            <span>編集</span>
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
-            </svg>
-          </button>
-        </div>
-      </td>
+      {onEdit && (
+        <td className="px-8 py-6">
+          <div className="flex justify-center">
+            <button 
+              onClick={handleEditClick} 
+              className="inline-flex items-center gap-2 px-5 py-2 text-green-600 hover:bg-green-600 hover:text-white rounded-xl transition-all font-bold text-sm border border-green-50 shadow-sm hover:shadow-green-100 active:scale-95"
+            >
+              <span>編集</span>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+              </svg>
+            </button>
+          </div>
+        </td>
+      )}
     </tr>
   );
 };

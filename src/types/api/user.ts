@@ -1,6 +1,7 @@
 export type UserRole = 'ADMIN' | 'MANAGER' | 'TRAINER';
 
 /**
+ * バックエンドのUserResponseに対応する型
  * ユーザー詳細（レスポンス用）
  */
 export interface User {
@@ -9,10 +10,9 @@ export interface User {
   name: string;
   kana: string;
   role: UserRole;
-  storeIds: string[] | null;
-  isActive: boolean;
+  storeIds: string[]; // バックエンドはSet<UUID>、空の場合は空Set（nullではなく空配列）
+  active: boolean; // バックエンドはactiveフィールド
   createdAt: string;
-  updatedAt: string;
 }
 
 /**
@@ -24,19 +24,23 @@ export interface UserRequest {
   kana: string;
   role: UserRole;
   /**
-   * 店舗ID
-   * ADMIN: 不要 / MANAGER: 必須（1つ） / TRAINER: 任意（0個以上）
+   * 店舗ID（配列形式）
+   * ADMIN: 不要（空配列を送信） / MANAGER: 必須（1つのみ） / TRAINER: 任意（0個以上）
+   * 注意: MANAGERの場合は配列に1つのみ含めること
    */
   storeIds?: string[];
   /**
-   * パスワード
+   * パスワード（平文）
    * 作成時: 必須 / 更新時: 任意（未指定なら更新しない）
+   * ⚠️ セキュリティ注意: このフィールドは平文パスワードを含みます。
+   * ログ出力やデバッグ情報に含めないでください。
    */
   pass?: string;
   /**
-   * 有効 / 無効（更新時のみ使用）
+   * 有効 / 無効（バックエンドはactiveフィールド）
+   * デフォルト値: true（バックエンドのUserRequest.active = trueに対応）
    */
-  isActive?: boolean;
+  active?: boolean;
 }
 
 export interface UserListItem {
@@ -44,7 +48,7 @@ export interface UserListItem {
     name: string;
     kana: string;
     role: UserRole;
-    isActive: boolean;
+    active: boolean;
   }
 
 export interface UserListParams {
@@ -52,5 +56,12 @@ export interface UserListParams {
   size?: number;
   name?: string;
   role?: UserRole;
-  isActive?: boolean;
+  /**
+   * ソート順
+   * バックエンドのUserSortType Enumに対応（created: 登録日時降順, kana: カナ昇順）
+   * デフォルト値: "created"（バックエンドのUserApiControllerのdefaultValueに合わせる）
+   */
+  sort?: 'created' | 'kana';
+  // バックエンドが受け取らないパラメータを削除:
+  // active: バックエンドのUserApiControllerでは受け取らない
 }
