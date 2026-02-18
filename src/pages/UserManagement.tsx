@@ -1,18 +1,44 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import useUsers from '../hooks/useUser'; 
 import { useStores } from '../hooks/useStore'; 
 import { UserCard } from '../components/user/UserCard'; 
 import UserFormModal from '../components/user/UserFormModal'; 
 import { LoadingRow, EmptyRow } from '../components/common/TableStatusRows';
+import { Pagination } from '../components/common/Pagination';
 import { UserRole, User, UserRequest, UserListItem } from '../types/api/user'; // UserRequestを使用
 import { useAuth } from '../context/AuthContext';
 import { adminUsersApi } from '../api/admin/usersApi';
 import { managerUsersApi } from '../api/manager/usersApi';
+import { ConfirmModal } from '../components/common/ConfirmModal';
+import { isManager } from '../utils/roleUtils';
+import { getAccessibleStores, getInitialStoreId } from '../utils/storeUtils';
+import { getUserService } from '../utils/apiSelector';
 
 const ITEMS_PER_PAGE = 10;
 
 export const UserManagement: React.FC = () => {
   const { user: authUser } = useAuth();
+  const { stores, loading: storesLoading } = useStores(); // UserFormModalで使用するため保持
+  const userIsManager = isManager(authUser);
+  const [selectedStoreId, setSelectedStoreId] = useState<string>('');
+  
+  // マネージャーがアクセス可能な店舗のリスト
+  const accessibleStores = React.useMemo(() => {
+    return getAccessibleStores(authUser, stores);
+  }, [authUser, stores]);
+
+  // 初期値の設定
+  useEffect(() => {
+    if (storesLoading) return; // storesの読み込みが完了するまで待つ
+    
+    if (!selectedStoreId) {
+      const initialStoreId = getInitialStoreId(authUser, accessibleStores, false);
+      if (initialStoreId && initialStoreId !== 'all') {
+        setSelectedStoreId(initialStoreId);
+      }
+    }
+  }, [authUser, stores, storesLoading, accessibleStores, selectedStoreId]);
+
   const { 
     users,
     total,
@@ -21,60 +47,76 @@ export const UserManagement: React.FC = () => {
     filters, 
     handleFilterChange, 
     refetchUsers,
-  } = useUsers();
+  } = useUsers(userIsManager ? selectedStoreId : undefined);
   
-  const { stores } = useStores();
+  // refetchUsersとfiltersをrefで保持（useEffectの依存配列から除外するため）
+  const refetchUsersRef = useRef(refetchUsers);
+  const filtersRef = useRef(filters);
+  
+  useEffect(() => {
+    refetchUsersRef.current = refetchUsers;
+  }, [refetchUsers]);
+  
+  useEffect(() => {
+    filtersRef.current = filters;
+  }, [filters]);
+  
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | undefined>(undefined);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-
-  // --- API セレクター ---
-  // 引数の型を UserRequest に変更
-  const getUserService = useCallback(() => {
-    if (!authUser) return null;
-    const isAdmin = authUser?.role?.toUpperCase() === 'ADMIN';
-    const storeId = Array.isArray(authUser.storeIds) 
-      ? authUser.storeIds[0] 
-      : authUser.storeIds;
-
-    return {
-      create: (request: UserRequest) => 
-        isAdmin ? adminUsersApi.createUser(request) : managerUsersApi.createUser(storeId!, request),
-      update: (id: string, request: UserRequest) => 
-        isAdmin ? adminUsersApi.updateUser(id, request) : managerUsersApi.updateUser(storeId!, id, request),
-      delete: (id: string) => 
-        isAdmin ? adminUsersApi.deleteUser(id) : managerUsersApi.deleteUser(storeId!, id),
-    };
-  }, [authUser]);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string>('');
 
   // --- ページネーション・フィルタ制御 ---
   const totalPages = Math.ceil(total / ITEMS_PER_PAGE) || 1;
 
-  useEffect(() => {
-    refetchUsers(currentPage - 1);
-  }, [currentPage, refetchUsers]);
-
+  // フィルタ変更時にページをリセット
   useEffect(() => {
     setCurrentPage(1);
-  }, [filters.nameOrKana, filters.role]);
+  }, [filters.nameOrKana, filters.role, selectedStoreId]);
+
+  // ページ変更時またはフィルタ変更時にデータを再取得（統合版）
+  const lastFetchKeyRef = useRef<string>('');
+  useEffect(() => {
+    // storesの読み込みが完了するまで待つ（MANAGERの場合）
+    if (userIsManager && storesLoading) {
+      return;
+    }
+    
+    // selectedStoreIdが設定されていない場合は待つ（MANAGERの場合）
+    if (userIsManager && !selectedStoreId) {
+      return;
+    }
+    
+    const fetchKey = `${currentPage}-${filtersRef.current.nameOrKana}-${filtersRef.current.role}-${selectedStoreId || 'all'}`;
+    
+    // 既に同じ条件で取得済みの場合は実行しないガード
+    if (lastFetchKeyRef.current === fetchKey) {
+      return;
+    }
+    
+    lastFetchKeyRef.current = fetchKey;
+    refetchUsersRef.current(currentPage - 1);
+  }, [currentPage, filters.nameOrKana, filters.role, selectedStoreId, userIsManager, storesLoading]); // refetchUsersを依存配列から除外、filtersの個別プロパティを追加
 
   // --- ハンドラー ---
   const handleEditClick = async (userItem: UserListItem) => {
     if (!authUser) return;
     setIsSubmitting(true);
     try {
-      const isAdmin = authUser?.role === 'ADMIN';
+      const userIsAdmin = authUser?.role === 'ADMIN';
       const storeId = Array.isArray(authUser?.storeIds) ? authUser.storeIds[0] : authUser?.storeIds;
       
-      const fullUserData = isAdmin 
+      const fullUserData = userIsAdmin 
         ? await adminUsersApi.getUser(userItem.id)
         : await managerUsersApi.getUser(storeId!, userItem.id);
 
       setEditingUser(fullUserData);
       setIsModalOpen(true);
     } catch (err) {
-      alert("ユーザー詳細の取得に失敗しました。");
+      setErrorMessage("ユーザー詳細の取得に失敗しました。");
+      setShowErrorModal(true);
     } finally {
       setIsSubmitting(false);
     }
@@ -83,7 +125,7 @@ export const UserManagement: React.FC = () => {
   // 引数を UserRequest に変更。UserForm側ですでに変換済みのため、ここではそのままAPIに渡す
   const handleSubmit = async (requestData: UserRequest) => {
     setIsSubmitting(true);
-    const service = getUserService();
+    const service = getUserService(authUser);
     if (!service) return;
 
     try {
@@ -103,21 +145,28 @@ export const UserManagement: React.FC = () => {
   };
 
   const handleDelete = async (userId: string) => {
-    // 削除確認は UserForm 内の window.confirm でも行っているが、念のためこちらでも保持
     setIsSubmitting(true);
-    const service = getUserService();
-    if (!service) return;
+    const service = getUserService(authUser);
+    if (!service) {
+      setIsSubmitting(false);
+      return;
+    }
     try {
       await service.delete(userId);
       await refetchUsers(currentPage - 1); 
       setIsModalOpen(false);
     } catch (err: any) {
       const msg = err.response?.data?.message || "削除に失敗しました。";
-      alert(msg);
-      throw err;
+      setErrorMessage(msg);
+      setShowErrorModal(true);
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleErrorModalClose = () => {
+    setShowErrorModal(false);
+    setErrorMessage('');
   };
 
   return (
@@ -132,12 +181,12 @@ export const UserManagement: React.FC = () => {
         </div>
         <button
           onClick={() => { setEditingUser(undefined); setIsModalOpen(true); }}
-          className="h-12 px-6 bg-green-600 text-white font-black rounded-2xl hover:bg-green-700 shadow-xl shadow-green-100 transition-all active:scale-95 flex items-center justify-center gap-2"
+          className="h-12 px-6 bg-[#7AB77A] text-white font-black rounded-2xl hover:bg-[rgba(122,183,122,0.9)] transition-all active:scale-95 flex items-center justify-center gap-2"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
           </svg>
-          新規スタッフ登録
+          新規ユーザー作成
         </button>
       </div>
       
@@ -155,19 +204,51 @@ export const UserManagement: React.FC = () => {
             value={filters.nameOrKana}
             onChange={(e) => handleFilterChange({ nameOrKana: e.target.value })}
             className="w-full h-14 bg-white border-2 border-gray-50 pl-14 pr-6 rounded-2xl focus:border-green-500 focus:ring-0 outline-none transition-all text-gray-700 font-medium shadow-sm"
+            maxLength={100}
           />
         </div>
         
-        <select
-          value={filters.role}
-          onChange={(e) => handleFilterChange({ role: e.target.value as UserRole | "all" })}
-          className="h-14 px-6 bg-white border-2 border-gray-50 rounded-2xl text-sm font-black text-gray-600 focus:border-green-500 focus:ring-0 outline-none cursor-pointer shadow-sm transition-all"
-        >
-          <option value="all">全てのロール</option>
-          <option value="ADMIN">管理者</option>
-          <option value="MANAGER">店長</option>
-          <option value="TRAINER">トレーナー</option>
-        </select>
+        {/* 権限フィルタ（ADMINのみ表示） */}
+        {!userIsManager && (
+          <select
+            value={filters.role}
+            onChange={(e) => handleFilterChange({ role: e.target.value as UserRole | "all" })}
+            className="h-14 px-6 bg-white border-2 border-gray-50 rounded-2xl text-sm font-black text-gray-600 focus:border-green-500 focus:ring-0 outline-none cursor-pointer shadow-sm transition-all"
+          >
+            <option value="all">全権限</option>
+            <option value="ADMIN">管理者</option>
+            <option value="MANAGER">店長</option>
+            <option value="TRAINER">トレーナー</option>
+          </select>
+        )}
+        {/* 店舗選択ドロップダウン（MANAGERロールの場合のみ表示） */}
+        {userIsManager && (
+          <div className="relative group">
+            <select 
+              className="h-14 pl-6 pr-10 bg-white border-2 border-gray-50 rounded-2xl text-sm font-black text-gray-600 focus:border-green-500 focus:ring-0 outline-none cursor-pointer shadow-sm transition-all hover:border-gray-200 appearance-none disabled:opacity-50 disabled:cursor-not-allowed"
+              value={selectedStoreId}
+              onChange={(e) => {
+                setSelectedStoreId(e.target.value);
+                setCurrentPage(1);
+              }}
+              disabled={storesLoading || accessibleStores.length === 0}
+            >
+              {accessibleStores.length === 0 ? (
+                <option value="">店舗を読み込み中...</option>
+              ) : (
+                accessibleStores.map(s => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))
+              )}
+            </select>
+            {/* カスタム矢印アイコン */}
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* エラー表示 */}
@@ -178,13 +259,13 @@ export const UserManagement: React.FC = () => {
       )}
 
       {/* ユーザー一覧テーブル */}
-      <div className="bg-white rounded-[2rem] shadow-2xl shadow-gray-200/50 border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-[2rem] shadow-sm border-2 border-gray-50 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y table-fixed divide-gray-50">
             <thead className="bg-gray-50/50">
               <tr>
                 <th className="w-[30%] text-center px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">ユーザー名</th>
-                <th className="w-[25%] text-center px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">権限ロール</th>
+                <th className="w-[25%] text-center px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">権限</th>
                 <th className="w-[20%] text-center px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">ステータス</th>
                 <th className="w-[25%] text-center px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">編集</th>
               </tr>
@@ -209,29 +290,11 @@ export const UserManagement: React.FC = () => {
       </div>
 
       {/* ページネーション */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between px-2">
-          <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest">
-            Page {currentPage} of {totalPages}
-          </p>
-          <div className="flex gap-3">
-            <button
-              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-              className="h-10 px-6 bg-white border border-gray-200 rounded-xl text-xs font-black text-gray-600 disabled:opacity-30 hover:bg-gray-50 transition-all shadow-sm active:scale-95"
-            >
-              PREV
-            </button>
-            <button
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages}
-              className="h-10 px-6 bg-white border border-gray-200 rounded-xl text-xs font-black text-gray-600 disabled:opacity-30 hover:bg-gray-50 transition-all shadow-sm active:scale-95"
-            >
-              NEXT
-            </button>
-          </div>
-        </div>
-      )}
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+      />
       
       {/* モーダル */}
       <UserFormModal 
@@ -242,6 +305,18 @@ export const UserManagement: React.FC = () => {
         onSubmit={handleSubmit}
         onDelete={handleDelete} 
         isSubmitting={isSubmitting} 
+      />
+
+      {/* エラーモーダル */}
+      <ConfirmModal
+        isOpen={showErrorModal}
+        title="エラー"
+        message={errorMessage}
+        confirmText="了解"
+        cancelText=""
+        onConfirm={handleErrorModalClose}
+        onCancel={handleErrorModalClose}
+        isLoading={false}
       />
     </div>
   );
